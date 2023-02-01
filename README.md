@@ -8,7 +8,7 @@
 
 ## Project Summary
 
-- https://lternet.edu/working-groups/producers-consumers-and-disturbance/
+- https://lternet.edu/working-groups/soil-p-control-of-c-and-n/
 
 ## Guidelines for sharing scripts
 
