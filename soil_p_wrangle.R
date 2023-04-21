@@ -176,5 +176,32 @@ tidy_v1 <- df_list %>%
 # Glimpse it
 dplyr::glimpse(tidy_v1)
 
+# Clean up environment
+rm(list = setdiff(ls(), "tidy_v1"))
+
+## ------------------------------------------ ##
+# Data Wrangling ----
+## ------------------------------------------ ##
+
+# UNDER CONSTRUCTION
+## Need to discuss with Soil P working group about what goes on in here
+
+
+## ------------------------------------------ ##
+# Export ----
+## ------------------------------------------ ##
+
+# Create a final data object
+final_tidy <- tidy_v1
+
+# Check its structure
+dplyr::glimpse(final_tidy)
+
+# Save out the final data object
+write.csv(x = final_tidy, file = "tidy_soil_p.csv", row.names = F, na = "")
+
+# Upload to GoogleDrive
+googledrive::drive_upload(media = "tidy_soil_p.csv", overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9"))
 
 # End ----
