@@ -120,7 +120,7 @@ for(j in 1:length(raw_files)){
   
   # If any are found, print a warning for whoever is running this
   if(length(missing_cols) != 0){
-    message("Not all expected columns are in data key!")
+    message("Not all expected columns in '", focal_raw, "' are in data key!")
     message("Check (and fix if needed) raw columns: ", 
             paste0("'", missing_cols, "'", collapse = " & ")) }
   
