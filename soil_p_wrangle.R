@@ -69,8 +69,8 @@ key <- key_v0 %>%
     # If conditions not specified, return column unmodified
     TRUE ~ Raw_Column_Name)) %>%
   ## Unconditional fixes
-  ## Spaces & parentheses & slashes in a CSV column name will be coerced to periods
-  dplyr::mutate(Raw_Column_Name = gsub(pattern = " |\\(|\\)|\\/", replacement = ".", 
+  ## Spaces & parentheses & slashes & hyphens in a CSV column name will be coerced to periods
+  dplyr::mutate(Raw_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-", replacement = ".", 
                                        x = Raw_Column_Name)) %>%
   ## Percent symbols become Xs
   dplyr::mutate(Raw_Column_Name = gsub(pattern = "\\%", replacement = "X", 
@@ -86,7 +86,7 @@ df_list <- list()
 
 # For each raw file...
 # for(j in 1:length(raw_files)){
-j <- 3
+j <- 4
 
 # Grab its name
 focal_raw <- raw_files[j]
