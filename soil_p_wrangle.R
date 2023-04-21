@@ -57,16 +57,24 @@ key <- key_v0 %>%
   # Subset to only files we downloaded
   dplyr::filter(Raw_Filename %in% raw_files) %>%
   # Tweak what the key expects raw file column names to be
-  ## Spaces in a CSV column name will be coerced to periods
-  dplyr::mutate(Raw_Column_Name = gsub(pattern = " ", replacement = ".", 
+  ## Identify what the first character is (some fixes depend on this)
+  dplyr::mutate(first_char = stringr::str_sub(Raw_Column_Name, start = 1, end = 1)) %>%
+  ## Conditional fixes
+  dplyr::mutate(Raw_Column_Name = dplyr::case_when(
+    # Leading % becomes X. when reading in CSV
+    first_char == "%" ~ paste0("X.", gsub(pattern = "%", replacement = "",
+                                          x = Raw_Column_Name)),
+    # Leading number becomes X 
+    !is.na(suppressWarnings(as.numeric(first_char))) ~ paste0("X", Raw_Column_Name),
+    # If conditions not specified, return column unmodified
+    TRUE ~ Raw_Column_Name)) %>%
+  ## Unconditional fixes
+  ## Spaces & parentheses & slashes in a CSV column name will be coerced to periods
+  dplyr::mutate(Raw_Column_Name = gsub(pattern = " |\\(|\\)|\\/", replacement = ".", 
                                        x = Raw_Column_Name)) %>%
-  ## Column names that begin with a number get an "X" added before the number
-  dplyr::mutate(
-    first_char = stringr::str_sub(string = Raw_Column_Name, start = 1, end = 1),
-    ### If the first character *IS NOT* NA when coerced to numeric, add the leading "X"
-    Raw_Column_Name = ifelse(test = !is.na(suppressWarnings(as.numeric(first_char))),
-                             yes = paste0("X", Raw_Column_Name),
-                             no = Raw_Column_Name)) %>%
+  ## Percent symbols become Xs
+  dplyr::mutate(Raw_Column_Name = gsub(pattern = "\\%", replacement = "X", 
+                                       x = Raw_Column_Name)) %>%
   # Drop unwanted column(s)
   dplyr::select(-first_char, -Extraction_Method, -Notes)
 
@@ -78,13 +86,17 @@ df_list <- list()
 
 # For each raw file...
 # for(j in 1:length(raw_files)){
-j <- 1
+j <- 3
 
 # Grab its name
 focal_raw <- raw_files[j]
 
-# Subset the key to only that file
-key_sub <- dplyr::filter(key, Raw_Filename == focal_raw)
+# Subset the key object a bit
+key_sub <- key %>%
+  # Only this file's section
+  dplyr::filter(Raw_Filename == focal_raw) %>%
+  # And only columns that have a synonymized equivalent
+  dplyr::filter(!is.na(Combined_Column_Name) & nchar(Combined_Column_Name) != 0)
 
 # Load in that file
 raw_df_v1 <- read.csv(file = file.path("raw_data", focal_raw))
@@ -107,9 +119,11 @@ raw_df_v2 <- raw_df_v1 %>%
 # Identify any columns that are in the data key but (apparently) not in the data
 missing_cols <- setdiff(x = key_sub$Raw_Column_Name, y = unique(raw_df_v2$Raw_Column_Name))
 
-# Print a warning for whoever is running this
-message("Not all expected columns are in data key! Check (and fix if needed) raw columns: ", 
-        paste0("'", missing_cols, "'", collapse = " & "))
+# If any are found, print a warning for whoever is running this
+if(length(missing_cols) != 0){
+  message("Not all expected columns are in data key!")
+  message("Check (and fix if needed) raw columns: ", 
+          paste0("'", missing_cols, "'", collapse = " & ")) }
 
 # Drop this object (if it exists) to avoid false warning with the next run of the loop
 if(exists("missing_cols") == T){ rm(list = "missing_cols") }
@@ -142,7 +156,9 @@ raw_df <- raw_df_v2 %>%
   # Drop non-unique rows (there shouldn't be any but better safe than sorry)
   dplyr::distinct() %>%
   # Make numeric columns actually be numeric (had to coerce to character earlier)
-  dplyr::mutate(dplyr::across(.cols = c(lat, lon, dplyr::ends_with("_mg_kg"),
+  dplyr::mutate(dplyr::across(.cols = c(dplyr::starts_with("lat"), 
+                                        dplyr::starts_with("lon"),
+                                        dplyr::ends_with("_mg_kg"),
                                         dplyr::ends_with("_percent")),
                               .fns = as.numeric))
 
