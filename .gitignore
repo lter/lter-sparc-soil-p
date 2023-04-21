@@ -43,3 +43,9 @@ vignettes/*.pdf
 
 # DS_Store (for Mac users)
 .DS_Store
+
+# Folders to ignore
+raw_data/
+
+# Files to ignore
+LTER_P_DataKey.csv
