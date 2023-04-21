@@ -170,8 +170,18 @@ for(j in 1:length(raw_files)){
 } # Close loop
 
 # Unlist the list we just generated
-tidy_v1 <- df_list %>%
+tidy_v0 <- df_list %>%
   purrr::list_rbind()
+
+# Process that object a little
+tidy_v1 <- tidy_v0 %>%
+  # Reorder columns somewhat
+  dplyr::select(Dataset, Raw_Filename, site, lat, lon, plot, block,
+                core, treatment, depth_cm, dplyr::ends_with("_mg_kg"),
+                dplyr::ends_with("_percent"))
+
+# Make sure no columns were dropped / added
+supportR::diff_check(old = names(tidy_v0), new = names(tidy_v1))
 
 # Glimpse it
 dplyr::glimpse(tidy_v1)
