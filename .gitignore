@@ -48,4 +48,4 @@ vignettes/*.pdf
 raw_data/
 
 # Files to ignore
-LTER_P_DataKey.csv
+*.csv
