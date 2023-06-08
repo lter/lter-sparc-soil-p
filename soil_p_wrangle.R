@@ -50,7 +50,7 @@ key_v0 <- read.csv(file = file.path("LTER_P_DataKey.csv"))
 raw_files <- dir(path = file.path("raw_data"))
 
 # Compare the two to see if all file names in the key were in the Drive
-supportR::diff_check(old = raw_files, unique(key_v0$Raw_Filename))
+supportR::diff_check(old = raw_files, new = unique(key_v0$Raw_Filename))
 
 # Wrangle key object
 key <- key_v0 %>%
