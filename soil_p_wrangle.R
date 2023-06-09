@@ -190,12 +190,73 @@ dplyr::glimpse(tidy_v1)
 rm(list = setdiff(ls(), "tidy_v1"))
 
 ## ------------------------------------------ ##
-# Data Wrangling ----
+# Data Wrangling - Site Info Checks ----
 ## ------------------------------------------ ##
 
-# UNDER CONSTRUCTION
-## Need to discuss with Soil P working group about what goes on in here
+# Re-check data structure
+dplyr::glimpse(tidy_v1)
 
+# Check for typos in the site/sample information columns
+sort(unique(tidy_v1$Dataset))
+sort(unique(tidy_v1$Raw_Filename))
+sort(unique(tidy_v1$site))
+sort(unique(tidy_v1$lat))
+sort(unique(tidy_v1$lon))
+sort(unique(tidy_v1$plot))
+sort(unique(tidy_v1$block))
+sort(unique(tidy_v1$core))
+sort(unique(tidy_v1$treatment))
+
+# Fix any typos identified above
+tidy_v2 <- tidy_v1 %>%
+  # Rename the dataset & raw file columns to match naming convention of other columns
+  dplyr::rename(dataset = Dataset,
+                raw_filename = Raw_Filename)
+
+# Check structure
+dplyr::glimpse(tidy_v2)
+
+## ------------------------------------------ ##
+# Data Wrangling - Depth Info ----
+## ------------------------------------------ ##
+
+# Next, we need to handle the depth column
+sort(unique(tidy_v2$depth_cm))
+
+# Do wrangling
+tidy_v3 <- tidy_v2 %>%
+  # Standardize range formatting
+  dplyr::mutate(depth_range_cm = gsub(pattern = "_", replacement = "-", x = depth_cm)) %>%
+  # Remove any spaces in these values
+  dplyr::mutate(depth_range_cm = gsub(pattern = " ", replacement = "", x = depth_range_cm)) %>%
+  # Fix some non-ranges
+  dplyr::mutate(depth_range_cm = dplyr::case_when(
+    dataset == "Coweeta" & depth_range_cm == "10" ~ "10-30", # All other begin at 10 are 10-30
+    dataset == "Coweeta" & depth_range_cm == "30+" ~ "30-60", # End of range is a guess
+    # dataset == "" &  depth_range_cm == "" ~ "",
+    TRUE ~ depth_range_cm)) %>%
+  # Now that everything is a range, we can split based on the hyphen
+  tidyr::separate_wider_delim(cols = depth_range_cm, delim = "-", cols_remove = F,
+                              names = c("depth_start_cm", "depth_end_cm"),
+                              too_few = "error", too_many = "error") %>%
+  # Make the resulting columns numeric
+  dplyr::mutate(depth_start_cm = as.numeric(depth_start_cm),
+                depth_end_cm = as.numeric(depth_end_cm)) %>%
+  # Calculate the difference in depth (i.e., sampling length regardless of depth)
+  dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm, .after = depth_cm) %>%
+  # Relocate the depth columns to the same place
+  dplyr::relocate(dplyr::starts_with("depth_"), .after = treatment) %>%
+  # Throw away the original (un-tidied) depth column
+  dplyr::select(-depth_cm)
+
+# Re-check structure
+dplyr::glimpse(tidy_v3)
+
+# Also take a quick glance at each of the depth columns we just generated
+sort(unique(tidy_v3$depth_range_cm))
+psych::multi.hist(x = tidy_v3$depth_start_cm)
+psych::multi.hist(x = tidy_v3$depth_end_cm)
+psych::multi.hist(x = tidy_v3$core_length_cm)
 
 ## ------------------------------------------ ##
 # Export ----
