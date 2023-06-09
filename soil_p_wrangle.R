@@ -190,7 +190,7 @@ dplyr::glimpse(tidy_v1)
 rm(list = setdiff(ls(), "tidy_v1"))
 
 ## ------------------------------------------ ##
-# Data Wrangling - Site Info Checks ----
+    # Data Wrangling - Site Info Checks ----
 ## ------------------------------------------ ##
 
 # Re-check data structure
@@ -217,7 +217,7 @@ tidy_v2 <- tidy_v1 %>%
 dplyr::glimpse(tidy_v2)
 
 ## ------------------------------------------ ##
-# Data Wrangling - Depth Info ----
+        # Data Wrangling - Depth ----
 ## ------------------------------------------ ##
 
 # Next, we need to handle the depth column
@@ -243,20 +243,48 @@ tidy_v3 <- tidy_v2 %>%
   dplyr::mutate(depth_start_cm = as.numeric(depth_start_cm),
                 depth_end_cm = as.numeric(depth_end_cm)) %>%
   # Calculate the difference in depth (i.e., sampling length regardless of depth)
-  dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm, .after = depth_cm) %>%
+  dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm) %>%
   # Relocate the depth columns to the same place
-  dplyr::relocate(dplyr::starts_with("depth_"), .after = treatment) %>%
+  dplyr::relocate(depth_range_cm, depth_start_cm, depth_end_cm, core_length_cm,
+                  .after = treatment) %>%
   # Throw away the original (un-tidied) depth column
   dplyr::select(-depth_cm)
 
-# Re-check structure
-dplyr::glimpse(tidy_v3)
-
-# Also take a quick glance at each of the depth columns we just generated
+# Take a quick glance at each of the depth columns we just generated
 sort(unique(tidy_v3$depth_range_cm))
 psych::multi.hist(x = tidy_v3$depth_start_cm)
 psych::multi.hist(x = tidy_v3$depth_end_cm)
 psych::multi.hist(x = tidy_v3$core_length_cm)
+
+# Re-check structure
+dplyr::glimpse(tidy_v3)
+
+## ------------------------------------------ ##
+# Data Wrangling - Bulk Density ----
+## ------------------------------------------ ##
+
+# We need soil bulk density to convert 'per sample' values to absolute totals of P/C/N
+tidy_v4 <- tidy_v3 %>%
+  # We're hard coding bulk density in here rather than typing manually
+  ## Citations/justifications are included next to each bulk density value
+  dplyr::mutate(bulk_density = dplyr::case_when(
+    dataset == "Calhoun" ~ 0.9,
+    dataset == "Coweeta" ~ 0.9,
+    dataset == "Niwot_Liptzen2006" ~ 0.9,
+    dataset == "Sevilletta_Cross1994" ~ 0.9,
+    # dataset == "" ~ ,
+    # If no bulk density is supplied by above conditions, fill with NA
+    TRUE ~ NA), .after = core_length_cm)
+
+# Check whether we're missing any bulk density values
+## If so, need to add another conditional to the above `case_when`
+tidy_v4 %>%
+  dplyr::filter(is.na(bulk_density)) %>%
+  dplyr::select(dataset, site, plot, block) %>%
+  dplyr::distinct()
+
+# Check structure
+dplyr::glimpse(tidy_v4)
 
 ## ------------------------------------------ ##
 # Export ----
