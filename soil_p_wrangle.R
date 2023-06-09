@@ -290,7 +290,7 @@ tidy_v4 %>%
 dplyr::glimpse(tidy_v4)
 
 ## ------------------------------------------ ##
-# Data Wrangling - P Sums ----
+        # Data Wrangling - P Sums ----
 ## ------------------------------------------ ##
 
 # Now we'll want to add together our various types of P (conditionally)
@@ -360,8 +360,21 @@ tidy_v5 <- tidy_v4 %>%
 # Check structure
 dplyr::glimpse(tidy_v5)
 
+## ------------------------------------------ ##
+# Data Wrangling - Absolute P ----
+## ------------------------------------------ ##
 
-
+# Calculate absolute P totals (rather than portions of each core)
+tidy_v6 <- tidy_v5 %>%
+  # Due to our earlier depth/bulk density prep this is easy!
+  dplyr::mutate(slow_P_absolute = slow_P_mg_kg * core_length_cm * bulk_density,
+                .before = slow_P_mg_kg) %>%
+  dplyr::mutate(total_P_absolute = total_P_mg_kg * core_length_cm * bulk_density,
+                .before = total_P_mg_kg)
+## Units of absolute sums are mg x cm / L (I think?)
+  
+# Re-check structure
+dplyr::glimpse(tidy_v6)
 
 
 
