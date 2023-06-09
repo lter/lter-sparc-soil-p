@@ -361,7 +361,7 @@ tidy_v5 <- tidy_v4 %>%
 dplyr::glimpse(tidy_v5)
 
 ## ------------------------------------------ ##
-# Data Wrangling - Absolute P ----
+      # Data Wrangling - Absolute P ----
 ## ------------------------------------------ ##
 
 # Calculate absolute P totals (rather than portions of each core)
@@ -371,19 +371,17 @@ tidy_v6 <- tidy_v5 %>%
                 .before = slow_P_mg_kg) %>%
   dplyr::mutate(total_P_absolute = total_P_mg_kg * core_length_cm * bulk_density,
                 .before = total_P_mg_kg)
-## Units of absolute sums are mg x cm / L (I think?)
+## Units of absolute sums are ____?
   
 # Re-check structure
 dplyr::glimpse(tidy_v6)
-
-
 
 ## ------------------------------------------ ##
 # Export ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-final_tidy <- tidy_v1
+final_tidy <- tidy_v6
 
 # Check its structure
 dplyr::glimpse(final_tidy)
