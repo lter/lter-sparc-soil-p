@@ -13,7 +13,7 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, supportR)
+librarian::shelf(tidyverse, googledrive, supportR, psych)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("raw_data"), showWarnings = F)
@@ -178,7 +178,10 @@ tidy_v1 <- tidy_v0 %>%
   # Reorder columns somewhat
   dplyr::select(Dataset, Raw_Filename, site, lat, lon, plot, block,
                 core, treatment, depth_cm, dplyr::ends_with("_mg_kg"),
-                dplyr::ends_with("_percent"))
+                dplyr::ends_with("_percent")) %>%
+  # Group C/N columns together
+  dplyr::relocate(C_conc_percent, C_conc_mg_kg, .after = depth_cm) %>%
+  dplyr::relocate(N_conc_percent, N_conc_mg_kg, .after = depth_cm)
 
 # Make sure no columns were dropped / added
 supportR::diff_check(old = names(tidy_v0), new = names(tidy_v1))
