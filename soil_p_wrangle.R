@@ -290,51 +290,77 @@ tidy_v4 %>%
 dplyr::glimpse(tidy_v4)
 
 ## ------------------------------------------ ##
-   # Data Wrangling - P Sum Preparation ----
+# Data Wrangling - P Sums ----
 ## ------------------------------------------ ##
 
-# Now we need to sum up different types of phosphorus
-tidy_v5 <- tidy_v4 %>%
-  ## Make sure "_P_" is in all phosphorus columns
-  # dplyr::rename() %>%
-  # Move P columns to the right of all other columns
-  dplyr::relocate(dplyr::contains("_P_"), dplyr::contains("_Po_"), dplyr::contains("_Pi_"),
-                  .after = dplyr::everything()) %>%
-  # Reshape data so we have all phosphorous values in a single column
-  tidyr::pivot_longer(cols = -dataset:-N_conc_percent,
-                      names_to = "name", values_to = "P_mg_kg") %>%
-  # Remove units from old column names so we can use other info more easily
-  dplyr::mutate(name = gsub(pattern = "_mg_kg", replacement = "", x = name)) %>%
-  # Break chemical from phosphorus types
-  tidyr::separate_wider_delim(cols = name, delim = "_",
-                              names = c("wash_agent", "P_type"),
-                              too_few = "error", too_many = "error")
-
-# Check what we are left with
-sort(unique(tidy_v5$wash_agent))
-sort(unique(tidy_v5$P_type))
-
-# Re-check structure
-dplyr::glimpse(tidy_v5)
-
-## ------------------------------------------ ##
-# Data Wrangling - P Sum Actual ----
-## ------------------------------------------ ##
-
-# With our separate columns we can now do conditional sums of P
-tidy_v6 <- tidy_v5 %>%
-  dplyr::mutate(slow_P = dplyr::case_when(
-    dataset == "Coweeta" ~ sum(P_mg_kg, na.rm = T)
-    
-    TRUE ~ 9999999))
-
-
-
-
-
+# Now we'll want to add together our various types of P (conditionally)
+p_sums <- tidy_v4 %>%
+  # First need to fill NAs with 0s to avoid making NA sums
+  ## Pivot longer
+  tidyr::pivot_longer(cols = -dataset:-C_conc_mg_kg,
+                      names_to = "names", values_to = "values") %>%
+  ## Fill NA with 0
+  dplyr::mutate(values = ifelse(test = is.na(values), yes = 0, no = values)) %>%
+  ## Pivot back to wide format
+  tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
+  # Calculate slow P conditionally
+  dplyr::mutate(slow_P_mg_kg = dplyr::case_when(
+    dataset == "Calhoun" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Coweeta" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Niwot_Liptzen2006" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Sevilletta_Cross1994" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    # dataset == "" ~ (),
+    TRUE ~ (HCl_P_mg_kg) )) %>%
+  # Also total P
+  dplyr::mutate(total_P_mg_kg = dplyr::case_when(
+    dataset == "Calhoun" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Coweeta" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Niwot_Liptzen2006" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                        NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                        ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                        HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg +
+                                        Residual_P_mg_kg + Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Sevilletta_Cross1994" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                           NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                           ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                           HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg +
+                                           Residual_P_mg_kg + Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    # dataset == "" ~ (),
+    TRUE ~ (HCl_P_mg_kg) )) %>%
+  # After summing, remove all columns where we changed NAs to 0s
+  dplyr::select(dataset:C_conc_mg_kg, slow_P_mg_kg, total_P_mg_kg) %>%
+  # Keep only unique rows
+  dplyr::distinct()
 
 # Check structure
-dplyr::glimpse(tidy_v6)
+dplyr::glimpse(p_sums)
+
+# Note we're doing this in a separate object because we coerced NAs into 0s for algebra reasons
+## They're not "real" 0s so we want to preserve the relevant information
+
+# Now we can attach our sums to the original tidy object
+tidy_v5 <- tidy_v4 %>%
+  dplyr::left_join(y = p_sums, by = dplyr::join_by(dataset, raw_filename, site, lat, lon, plot,
+                                                   block, core, treatment, depth_range_cm,
+                                                   depth_start_cm, depth_end_cm, 
+                                                   core_length_cm, bulk_density, 
+                                                   N_conc_percent, N_conc_mg_kg, 
+                                                   C_conc_percent, C_conc_mg_kg)) %>%
+  # Move our P sums to the left for more easy reference
+  dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density)
+
+# Check structure
+dplyr::glimpse(tidy_v5)
+
+
 
 
 
