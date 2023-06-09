@@ -377,11 +377,40 @@ tidy_v6 <- tidy_v5 %>%
 dplyr::glimpse(tidy_v6)
 
 ## ------------------------------------------ ##
+        # Data Wrangling - N & C ----
+## ------------------------------------------ ##
+
+# Convert N & C into percents
+tidy_v7 <- tidy_v6 %>%
+  # Do conditionally so we don't overwrite anything
+  ## Nitrogen first
+  dplyr::mutate(N_conc_percent = ifelse(is.na(N_conc_percent) & !is.na(N_conc_mg_kg),
+                                        yes = N_conc_mg_kg * 0.0001,
+                                        no = N_conc_percent),
+                ## Then Carbon
+                C_conc_percent = ifelse(is.na(C_conc_percent) & !is.na(C_conc_mg_kg),
+                                        yes = C_conc_mg_kg * 0.0001,
+                                        no = C_conc_percent)) %>%
+  # Drop the mg/kg versions of both chemicals
+  dplyr::select(-N_conc_mg_kg, -C_conc_mg_kg)
+
+# Check the number of NAs before/after (for Nitrogen)
+summary(tidy_v6$N_conc_percent)
+summary(tidy_v7$N_conc_percent)
+
+# Do the same check for Carbon
+summary(tidy_v6$C_conc_percent)
+summary(tidy_v7$C_conc_percent)
+
+# Check data structure again
+dplyr::glimpse(tidy_v7)
+
+## ------------------------------------------ ##
 # Export ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-final_tidy <- tidy_v6
+final_tidy <- tidy_v7
 
 # Check its structure
 dplyr::glimpse(final_tidy)
