@@ -260,7 +260,7 @@ psych::multi.hist(x = tidy_v3$core_length_cm)
 dplyr::glimpse(tidy_v3)
 
 ## ------------------------------------------ ##
-# Data Wrangling - Bulk Density ----
+      # Data Wrangling - Bulk Density ----
 ## ------------------------------------------ ##
 
 # We need soil bulk density to convert 'per sample' values to absolute totals of P/C/N
@@ -285,6 +285,56 @@ tidy_v4 %>%
 
 # Check structure
 dplyr::glimpse(tidy_v4)
+
+## ------------------------------------------ ##
+   # Data Wrangling - P Sum Preparation ----
+## ------------------------------------------ ##
+
+# Now we need to sum up different types of phosphorus
+tidy_v5 <- tidy_v4 %>%
+  ## Make sure "_P_" is in all phosphorus columns
+  # dplyr::rename() %>%
+  # Move P columns to the right of all other columns
+  dplyr::relocate(dplyr::contains("_P_"), dplyr::contains("_Po_"), dplyr::contains("_Pi_"),
+                  .after = dplyr::everything()) %>%
+  # Reshape data so we have all phosphorous values in a single column
+  tidyr::pivot_longer(cols = -dataset:-N_conc_percent,
+                      names_to = "name", values_to = "P_mg_kg") %>%
+  # Remove units from old column names so we can use other info more easily
+  dplyr::mutate(name = gsub(pattern = "_mg_kg", replacement = "", x = name)) %>%
+  # Break chemical from phosphorus types
+  tidyr::separate_wider_delim(cols = name, delim = "_",
+                              names = c("wash_agent", "P_type"),
+                              too_few = "error", too_many = "error")
+
+# Check what we are left with
+sort(unique(tidy_v5$wash_agent))
+sort(unique(tidy_v5$P_type))
+
+# Re-check structure
+dplyr::glimpse(tidy_v5)
+
+## ------------------------------------------ ##
+# Data Wrangling - P Sum Actual ----
+## ------------------------------------------ ##
+
+# With our separate columns we can now do conditional sums of P
+tidy_v6 <- tidy_v5 %>%
+  dplyr::mutate(slow_P = dplyr::case_when(
+    dataset == "Coweeta" ~ sum(P_mg_kg, na.rm = T)
+    
+    TRUE ~ 9999999))
+
+
+
+
+
+
+# Check structure
+dplyr::glimpse(tidy_v6)
+
+
+
 
 ## ------------------------------------------ ##
 # Export ----
