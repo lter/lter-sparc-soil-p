@@ -339,7 +339,9 @@ tidy_v3 <- tidy_v2 %>%
   dplyr::mutate(depth_start_cm = as.numeric(depth_start_cm),
                 depth_end_cm = as.numeric(depth_end_cm)) %>%
   # Assemble a new depth range (that excludes the month error in the 'raw' range)
-  dplyr::mutate(depth_range_cm = paste0(depth_start_cm, "-", depth_end_cm)) %>%
+  dplyr::mutate(depth_range_cm = ifelse(!is.na(depth_start_cm) & !is.na(depth_end_cm),
+                                        yes = paste0(depth_start_cm, "-", depth_end_cm),
+                                        no = NA)) %>%
   # Calculate the difference in depth (i.e., sampling length regardless of depth)
   dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm) %>%
   # Relocate the depth columns to the same place
