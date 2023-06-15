@@ -347,8 +347,8 @@ tidy_v3 <- tidy_v2 %>%
   # Relocate the depth columns to the same place
   dplyr::relocate(depth_range_cm, depth_start_cm, depth_end_cm, core_length_cm,
                   .after = treatment) %>%
-  # Throw away the original (un-tidied) depth column
-  dplyr::select(-depth_cm)
+  # Throw away intermediary (un/partially tidied) depth columns
+  dplyr::select(-depth_cm, -depth_1, -depth_2, -depth_range_raw)
 
 # Take a quick glance at each of the depth columns we just generated
 sort(unique(tidy_v3$depth_range_cm))
