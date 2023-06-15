@@ -60,6 +60,9 @@ key <- key_v0 %>%
                                           x = Raw_Column_Name)),
     # Leading number becomes X 
     !is.na(suppressWarnings(as.numeric(first_char))) ~ paste0("X", Raw_Column_Name),
+    # Some LUQ columns with specific issues
+    Dataset == "Luquillo_1" & Raw_Column_Name == "C (%)" ~ "C....",
+    Dataset == "Luquillo_1" & Raw_Column_Name == "N (%)" ~ "N....",
     # If conditions not specified, return column unmodified
     TRUE ~ Raw_Column_Name)) %>%
   ## Unconditional fixes
@@ -70,7 +73,7 @@ key <- key_v0 %>%
   dplyr::mutate(Raw_Column_Name = gsub(pattern = "\\%", replacement = "X", 
                                        x = Raw_Column_Name)) %>%
   # Drop unwanted column(s)
-  dplyr::select(-first_char, -Extraction_Method, -Notes)
+  dplyr::select(-first_char, -Extraction_Method, -Notes, -X)
 
 # Check structure of key
 dplyr::glimpse(key)
@@ -147,13 +150,7 @@ for(j in 1:length(raw_files)){
     # Drop row number column
     dplyr::select(-row_num) %>%
     # Drop non-unique rows (there shouldn't be any but better safe than sorry)
-    dplyr::distinct() %>%
-    # Make numeric columns actually be numeric (had to coerce to character earlier)
-    dplyr::mutate(dplyr::across(.cols = c(dplyr::starts_with("lat"), 
-                                          dplyr::starts_with("lon"),
-                                          dplyr::ends_with("_mg_kg"),
-                                          dplyr::ends_with("_percent")),
-                                .fns = as.numeric))
+    dplyr::distinct()
   
   # Add to list
   df_list[[focal_raw]] <- raw_df
