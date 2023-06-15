@@ -143,6 +143,12 @@ for(j in 1:length(raw_files)){
     # If units were already in the column name and the above step duplicate them, handle that
     dplyr::mutate(names_actual = gsub(pattern = "_mg_kg_mg_kg", replacement = "_mg_kg", 
                                       x = names_fix)) %>%
+    dplyr::mutate(names_actual = gsub(pattern = "_g_m2_g_m2", replacement = "_g_m2", 
+                                      x = names_actual)) %>%
+    dplyr::mutate(names_actual = gsub(pattern = "_ppm_ppm", replacement = "_ppm", 
+                                      x = names_actual)) %>%
+    dplyr::mutate(names_actual = gsub(pattern = "_cm_cm", replacement = "_cm", 
+                                      x = names_actual)) %>%
     # Pare down to only needed columns (implicitly removes unspecified columns)
     dplyr::select(row_num, Dataset, Raw_Filename, names_actual, values) %>%
     # Pivot back to wide format with revised column names
@@ -164,24 +170,71 @@ for(j in 1:length(raw_files)){
 tidy_v0 <- df_list %>%
   purrr::list_rbind()
 
+# Check that out
+dplyr::glimpse(tidy_v0)
+
+# Clean up environment
+rm(list = setdiff(ls(), "tidy_v0"))
+
+## ------------------------------------------ ##
+      # Data Wrangling - Re-Organizing  ----
+## ------------------------------------------ ##
+
+# Identify all columns that are ostensibly numeric
+num_cols <- tidy_v0 %>%
+  # Grab just those columns
+  dplyr::select(dplyr::starts_with("lat"), dplyr::starts_with("lon"),
+                bulk_density_g_cm3, soil_mass_g_m2, pH, 
+                dplyr::ends_with("_mg_kg"), dplyr::ends_with("_mg_g"),
+                dplyr::ends_with("_ppm"), dplyr::ends_with("_mg_m2"),
+                dplyr::ends_with("_percent")) %>%
+  # Keep a vector of their names
+  names()
+
+# Check some numeric columns to ensure that there is no weirdness with non-numbers
+supportR::multi_num_check(data = tidy_v0, col_vec = num_cols)
+
 # Process that object a little
-tidy_v1 <- tidy_v0 %>%
+tidy_v0.5 <- tidy_v0 %>%
+  # Fix places where non-numbers would be lost by coercing with `as.numeric`
+  dplyr::mutate(
+    ## Handle places where less than (<)/greater than (>) were included as number modifiers
+    P_conc_mg_kg = ifelse(test = P_conc_mg_kg == "< 0.5",
+                                      yes = "0.25", no = P_conc_mg_kg),
+   ## Remove % symbol where it was included
+   Coarse_Vol_percent = gsub(pattern = "\\%", replacement = "", x = Coarse_Vol_percent)
+  )
+  
+# Re-check to make sure we've fixed everything
+supportR::multi_num_check(data = tidy_v0.5, col_vec = num_cols)
+
+# Continue wrangling
+tidy_v1 <- tidy_v0.5 %>%
+  # Make numeric columns actually be numeric (had to coerce to character earlier)
+  dplyr::mutate(dplyr::across(.cols = c(dplyr::starts_with("lat"),
+                                        dplyr::starts_with("lon"),
+                                        dplyr::ends_with("_mg_kg"),
+                                        dplyr::ends_with("_percent")),
+                              .fns = as.numeric)) %>%
   # Reorder columns somewhat
   dplyr::select(Dataset, Raw_Filename, site, lat, lon, plot, block,
-                core, treatment, depth_cm, dplyr::ends_with("_mg_kg"),
+                core, treatment, treatment_years, horizon, depth_cm, 
+                bulk_density_g_cm3, soil_mass_g_m2,
+                `P Extraction Method`, `P Fraction`, pH,
+                dplyr::ends_with("_mg_kg"),
+                dplyr::ends_with("_mg_g"),
+                dplyr::ends_with("_ppm"),
+                dplyr::ends_with("_mg_m2"),
                 dplyr::ends_with("_percent")) %>%
   # Group C/N columns together
-  dplyr::relocate(C_conc_percent, C_conc_mg_kg, .after = depth_cm) %>%
-  dplyr::relocate(N_conc_percent, N_conc_mg_kg, .after = depth_cm)
+  dplyr::relocate(C_conc_percent, C_conc_mg_kg, C_conc_mg_g, .after = depth_cm) %>%
+  dplyr::relocate(N_conc_percent, N_conc_mg_kg, N_conc_mg_g,.after = depth_cm)
 
 # Make sure no columns were dropped / added
 supportR::diff_check(old = names(tidy_v0), new = names(tidy_v1))
 
 # Glimpse it
 dplyr::glimpse(tidy_v1)
-
-# Clean up environment
-rm(list = setdiff(ls(), "tidy_v1"))
 
 ## ------------------------------------------ ##
     # Data Wrangling - Site Info Checks ----
