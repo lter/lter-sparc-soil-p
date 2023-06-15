@@ -211,24 +211,26 @@ supportR::multi_num_check(data = tidy_v0.5, col_vec = num_cols)
 # Continue wrangling
 tidy_v1 <- tidy_v0.5 %>%
   # Make numeric columns actually be numeric (had to coerce to character earlier)
-  dplyr::mutate(dplyr::across(.cols = c(dplyr::starts_with("lat"),
-                                        dplyr::starts_with("lon"),
-                                        dplyr::ends_with("_mg_kg"),
+  dplyr::mutate(dplyr::across(.cols = c(dplyr::starts_with("lat"), dplyr::starts_with("lon"),
+                                        soil_mass_g_m2, pH, dplyr::ends_with("_mg_m2"),
+                                        dplyr::ends_with("_mg_kg"), dplyr::ends_with("_mg_g"),
                                         dplyr::ends_with("_percent")),
                               .fns = as.numeric)) %>%
   # Reorder columns somewhat
   dplyr::select(Dataset, Raw_Filename, site, lat, lon, plot, block,
                 core, treatment, treatment_years, horizon, depth_cm, 
                 bulk_density_g_cm3, soil_mass_g_m2,
-                `P Extraction Method`, `P Fraction`, pH,
+                `P Extraction Method`, `P Fraction`, Avail_P_ppm,
+                Coarse_Vol_percent, pH,
                 dplyr::ends_with("_mg_kg"),
                 dplyr::ends_with("_mg_g"),
-                dplyr::ends_with("_ppm"),
                 dplyr::ends_with("_mg_m2"),
                 dplyr::ends_with("_percent")) %>%
   # Group C/N columns together
-  dplyr::relocate(C_conc_percent, C_conc_mg_kg, C_conc_mg_g, .after = depth_cm) %>%
-  dplyr::relocate(N_conc_percent, N_conc_mg_kg, N_conc_mg_g,.after = depth_cm)
+  dplyr::relocate(C_conc_percent, C_conc_mg_kg, C_conc_mg_g, C_stock_mg_m2,
+                  .after = depth_cm) %>%
+  dplyr::relocate(N_conc_percent, N_conc_mg_kg, N_conc_mg_g, N_stock_mg_kg, 
+                  .after = depth_cm)
 
 # Make sure no columns were dropped / added
 supportR::diff_check(old = names(tidy_v0), new = names(tidy_v1))
@@ -411,7 +413,7 @@ dplyr::glimpse(tidy_v4)
 p_sums <- tidy_v4 %>%
   # First need to fill NAs with 0s to avoid making NA sums
   ## Pivot longer
-  tidyr::pivot_longer(cols = -dataset:-C_conc_mg_kg,
+  tidyr::pivot_longer(cols = -dataset:-pH,
                       names_to = "names", values_to = "values") %>%
   ## Fill NA with 0
   dplyr::mutate(values = ifelse(test = is.na(values), yes = 0, no = values)) %>%
@@ -465,9 +467,7 @@ tidy_v5 <- tidy_v4 %>%
   dplyr::left_join(y = p_sums, by = dplyr::join_by(dataset, raw_filename, site, lat, lon, plot,
                                                    block, core, treatment, depth_range_cm,
                                                    depth_start_cm, depth_end_cm, 
-                                                   core_length_cm, bulk_density, 
-                                                   N_conc_percent, N_conc_mg_kg, 
-                                                   C_conc_percent, C_conc_mg_kg)) %>%
+                                                   core_length_cm, bulk_density,)) %>%
   # Move our P sums to the left for more easy reference
   dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density)
 
