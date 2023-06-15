@@ -464,10 +464,8 @@ dplyr::glimpse(p_sums)
 
 # Now we can attach our sums to the original tidy object
 tidy_v5 <- tidy_v4 %>%
-  dplyr::left_join(y = p_sums, by = dplyr::join_by(dataset, raw_filename, site, lat, lon, plot,
-                                                   block, core, treatment, depth_range_cm,
-                                                   depth_start_cm, depth_end_cm, 
-                                                   core_length_cm, bulk_density,)) %>%
+  # By not specifying which columns to join by, all shared columns will be used
+  dplyr::left_join(y = p_sums) %>%
   # Move our P sums to the left for more easy reference
   dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density)
 
