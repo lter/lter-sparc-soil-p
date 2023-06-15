@@ -492,19 +492,37 @@ dplyr::glimpse(tidy_v6)
         # Data Wrangling - N & C ----
 ## ------------------------------------------ ##
 
+# Look at the most relevant bit for N/C tidying
+tidy_v6 %>%
+  dplyr::select(dataset, dplyr::starts_with("N_conc_"), dplyr::starts_with("C_conc_")) %>%
+  dplyr::glimpse()
+
 # Convert N & C into percents
 tidy_v7 <- tidy_v6 %>%
-  # Do conditionally so we don't overwrite anything
-  ## Nitrogen first
-  dplyr::mutate(N_conc_percent = ifelse(is.na(N_conc_percent) & !is.na(N_conc_mg_kg),
-                                        yes = N_conc_mg_kg * 0.0001,
-                                        no = N_conc_percent),
-                ## Then Carbon
-                C_conc_percent = ifelse(is.na(C_conc_percent) & !is.na(C_conc_mg_kg),
-                                        yes = C_conc_mg_kg * 0.0001,
-                                        no = C_conc_percent)) %>%
-  # Drop the mg/kg versions of both chemicals
-  dplyr::select(-N_conc_mg_kg, -C_conc_mg_kg)
+  # Multiple competing units we need to standardize
+  dplyr::mutate(N_conc_actual = dplyr::case_when(
+    # If % exists, use that
+    !is.na(N_conc_percent) ~ N_conc_percent,
+    # If % doesn't exist, but mg/kg does, use that (but convert to percent)
+    is.na(N_conc_percent) & !is.na(N_conc_mg_kg) ~ N_conc_mg_kg * 0.0001,
+    # If % and mg/kg don't exist, but mg/g exists, use that (but convert to mg/kg then %)
+    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
+      !is.na(N_conc_mg_g) ~ (N_conc_mg_g * 1000) * 0.0001,
+    # If nothing exists, use NA
+    TRUE ~ NA), .before = N_conc_percent) %>%
+  # Do the same for C
+  dplyr::mutate(C_conc_actual = dplyr::case_when(
+    !is.na(C_conc_percent) ~ C_conc_percent,
+    is.na(C_conc_percent) & !is.na(C_conc_mg_kg) ~ C_conc_mg_kg * 0.0001,
+    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
+      !is.na(C_conc_mg_g) ~ (C_conc_mg_g * 1000) * 0.0001,
+    TRUE ~ NA), .before = C_conc_percent) %>%
+  # Drop now-superseded columns
+  dplyr::select(-N_conc_percent, -N_conc_mg_kg, -N_conc_mg_g,
+                -C_conc_percent, -C_conc_mg_kg, -C_conc_mg_g) %>%
+  # Rename the fixed columns more simply
+  dplyr::rename(N_conc_percent = N_conc_actual,
+                C_conc_percent = C_conc_actual)
 
 # Check the number of NAs before/after (for Nitrogen)
 summary(tidy_v6$N_conc_percent)
@@ -518,7 +536,7 @@ summary(tidy_v7$C_conc_percent)
 dplyr::glimpse(tidy_v7)
 
 ## ------------------------------------------ ##
-# Export ----
+                  # Export ----
 ## ------------------------------------------ ##
 
 # Create a final data object
