@@ -275,25 +275,71 @@ dplyr::glimpse(tidy_v2)
 # Next, we need to handle the depth column
 sort(unique(tidy_v2$depth_cm))
 
-# Do wrangling
+# Check for depth values that aren't ranges (i.e., no hyphens)
+tidy_v2 %>%
+  dplyr::filter(stringr::str_detect(string = depth_cm, pattern = "-") != T) %>%
+  dplyr::select(dataset, depth_cm) %>%
+  dplyr::distinct()
+
+# Do depth wrangling
 tidy_v3 <- tidy_v2 %>%
   # Standardize range formatting
-  dplyr::mutate(depth_range_cm = gsub(pattern = "_", replacement = "-", x = depth_cm)) %>%
+  dplyr::mutate(depth_range_raw = gsub(pattern = "_", replacement = "-", x = depth_cm)) %>%
   # Remove any spaces in these values
-  dplyr::mutate(depth_range_cm = gsub(pattern = " ", replacement = "", x = depth_range_cm)) %>%
+  dplyr::mutate(depth_range_raw = gsub(pattern = " ", replacement = "", 
+                                       x = depth_range_raw)) %>%
   # Fix some non-ranges
-  dplyr::mutate(depth_range_cm = dplyr::case_when(
-    dataset == "Coweeta" & depth_range_cm == "10" ~ "10-30", # All other begin at 10 are 10-30
-    dataset == "Coweeta" & depth_range_cm == "30+" ~ "30-60", # End of range is a guess
-    # dataset == "" &  depth_range_cm == "" ~ "",
-    TRUE ~ depth_range_cm)) %>%
+  dplyr::mutate(depth_range_raw = dplyr::case_when(
+    ## Coweeta
+    dataset == "Coweeta" & depth_range_raw == "10" ~ "10-30", # All other begin at 10 are 10-30
+    dataset == "Coweeta" & depth_range_raw == "30+" ~ "30-60", # End of range is a guess
+    ## Hubbard Brook
+    dataset == "Hubbard Brook" & depth_range_raw == "30+" ~ "30-40",
+    dataset == "Hubbard Brook" & depth_range_raw == "50-C" ~ "50-60",
+    dataset == "Hubbard Brook" & depth_range_raw == "C+" ~ "", # no good guess
+    dataset == "Hubbard Brook" & depth_range_raw == "C0-25" ~ "0-25",
+    dataset == "Hubbard Brook" & depth_range_raw == "C25+" ~ "25-35",
+    dataset == "Hubbard Brook" & depth_range_raw == "C25-50" ~ "25-50",
+    dataset == "Hubbard Brook" & depth_range_raw == "C50+" ~ "50-75",
+    dataset == "Hubbard Brook" & depth_range_raw == "Oa" ~ "",
+    ## Bonanza
+    dataset == "Bonanza Creek" & depth_range_raw == "24" ~ "24-40",
+    dataset == "Bonanza Creek" & depth_range_raw == "36" ~ "36-50",
+    dataset == "Bonanza Creek" ~ gsub(pattern = "\\+", replacement = "", 
+                                      x = depth_range_raw),
+    ## Luquillo (no ranges so we'll just add a constant to every depth value to get the end of the range)
+    dataset == "Luquillo_1" & stringr::str_detect(string = depth_range_raw, pattern = "-") != T ~ paste0(depth_range_raw, "-", suppressWarnings(as.numeric(depth_range_raw)) + 10),
+    # dataset == "" &  depth_range_raw == "" ~ "",
+    TRUE ~ depth_range_raw)) %>%
   # Now that everything is a range, we can split based on the hyphen
-  tidyr::separate_wider_delim(cols = depth_range_cm, delim = "-", cols_remove = F,
-                              names = c("depth_start_cm", "depth_end_cm"),
-                              too_few = "error", too_many = "error") %>%
+  tidyr::separate_wider_delim(cols = depth_range_raw, delim = "-", cols_remove = F,
+                              names = c("depth_1", "depth_2"),
+                              too_few = "align_start", too_many = "error") %>%
+  # Some ranges are converted by Excel into dates automatically upon entry so we need to fix that for both depth 1 and 2
+  dplyr::mutate(
+    depth_1 = dplyr::case_when(
+      depth_1 == "Jan" ~ "1", depth_1 == "Feb" ~ "2", depth_1 == "Mar" ~ "3",
+      depth_1 == "Apr" ~ "4", depth_1 == "May" ~ "5", depth_1 == "Jun" ~ "6",
+      depth_1 == "Jul" ~ "7", depth_1 == "Aug" ~ "8", depth_1 == "Sep" ~ "9",
+      depth_1 == "Oct" ~ "10", depth_1 == "Nov" ~ "11", depth_1 == "Dec" ~ "12",
+      TRUE ~ depth_1),
+    depth_2 = dplyr::case_when(
+      depth_2 == "Jan" ~ "1", depth_2 == "Feb" ~ "2", depth_2 == "Mar" ~ "3",
+      depth_2 == "Apr" ~ "4", depth_2 == "May" ~ "5", depth_2 == "Jun" ~ "6",
+      depth_2 == "Jul" ~ "7", depth_2 == "Aug" ~ "8", depth_2 == "Sep" ~ "9",
+      depth_2 == "Oct" ~ "10", depth_2 == "Nov" ~ "11", depth_2 == "Dec" ~ "12",
+      TRUE ~ depth_2)) %>%
+  # Now that all depths are numbers we can figure out start and end depths
+  dplyr::mutate(
+    depth_start_cm = ifelse(depth_1 < depth_2,
+                            yes = depth_1, no = depth_2),
+    depth_end_cm = ifelse(depth_2 > depth_1,
+                            yes = depth_2, no = depth_1)) %>%
   # Make the resulting columns numeric
   dplyr::mutate(depth_start_cm = as.numeric(depth_start_cm),
                 depth_end_cm = as.numeric(depth_end_cm)) %>%
+  # Assemble a new depth range (that excludes the month error in the 'raw' range)
+  dplyr::mutate(depth_range_cm = paste0(depth_start_cm, "-", depth_end_cm)) %>%
   # Calculate the difference in depth (i.e., sampling length regardless of depth)
   dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm) %>%
   # Relocate the depth columns to the same place
@@ -315,18 +361,35 @@ dplyr::glimpse(tidy_v3)
       # Data Wrangling - Bulk Density ----
 ## ------------------------------------------ ##
 
+# Check the bulk density values included in the data for non-numbers
+supportR::num_check(data = tidy_v3, col = "bulk_density_g_cm3")
+
 # We need soil bulk density to convert 'per sample' values to absolute totals of P/C/N
 tidy_v4 <- tidy_v3 %>%
+  # Fix non-numbers in embedded bulk density info
+  dplyr::mutate(bulk_density_g_cm3 = dplyr::case_when(
+    bulk_density_g_cm3 == "M" ~ NA,
+    TRUE ~ bulk_density_g_cm3)) %>%
   # We're hard coding bulk density in here rather than typing manually
   ## Citations/justifications are included next to each bulk density value
   dplyr::mutate(bulk_density = dplyr::case_when(
+    # If bulk density was provided, use that instead of doing conditionals
+    !is.na(bulk_density_g_cm3) & 
+      nchar(bulk_density_g_cm3) != 0 ~ as.numeric(bulk_density_g_cm3),
     dataset == "Calhoun" ~ 0.9,
     dataset == "Coweeta" ~ 0.9,
     dataset == "Niwot_Liptzen2006" ~ 0.9,
     dataset == "Sevilletta_Cross1994" ~ 0.9,
+    dataset == "Bonanza Creek" ~ 0.9,
+    dataset == "Fernow" ~ 0.9,
+    dataset == "Luquillo_1" ~ 0.9,
+    dataset == "Hubbard Brook" ~ 0.9,
+    dataset == "Toolik" ~ 0.9,
     # dataset == "" ~ ,
     # If no bulk density is supplied by above conditions, fill with NA
-    TRUE ~ NA), .after = core_length_cm)
+    TRUE ~ NA), .after = core_length_cm) %>%
+  # Trash old bulk density column to avoid confusion
+  dplyr::select(-bulk_density_g_cm3)
 
 # Check whether we're missing any bulk density values
 ## If so, need to add another conditional to the above `case_when`
