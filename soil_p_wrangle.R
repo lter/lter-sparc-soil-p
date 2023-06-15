@@ -21,16 +21,10 @@ dir.create(path = file.path("raw_data"), showWarnings = F)
 # Identify raw data files
 raw_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/10igyNjNSEJDrz5mUtYyxgbUPDUO7bsuW"), type = "csv")
 
-# For each raw data file
-for(k in 1:nrow(raw_ids)){
-  
-  # Download file (but silence how chatty this function is)
-  googledrive::with_drive_quiet(
-    googledrive::drive_download(file = raw_ids[k, ]$id, overwrite = T,
-                                path = file.path("raw_data", raw_ids[k, ]$name)) )
-  
-  # Print success message
-  message("Downloaded file ", k, " of ", nrow(raw_ids)) }
+# Download each data file into the new 'raw_data' folder
+purrr::walk2(.x = raw_ids$id, .y = raw_ids$name,
+             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
+                                                path = file.path("raw_data", .y)))
 
 # Clear environment
 rm(list = ls())
