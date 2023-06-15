@@ -256,9 +256,14 @@ sort(unique(tidy_v1$treatment))
 
 # Fix any typos identified above
 tidy_v2 <- tidy_v1 %>%
-  # Rename the dataset & raw file columns to match naming convention of other columns
+  # Rename columns so that everything is in snake case except element abbreviations
+  ## snake case = "lower_lower_lower"
   dplyr::rename(dataset = Dataset,
-                raw_filename = Raw_Filename)
+                raw_filename = Raw_Filename,
+                P_extraction_method = `P Extraction Method`,
+                P_fraction = `P Fraction`,
+                available_P_ppm = Avail_P_ppm,
+                coarse_vol_percent = Coarse_Vol_percent)
 
 # Check structure
 dplyr::glimpse(tidy_v2)
