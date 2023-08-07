@@ -78,6 +78,12 @@ key <- key_v0 %>%
 # Check structure of key
 dplyr::glimpse(key)
 
+# Check whether any raw column names are duplicate within any data file
+key %>% 
+  dplyr::group_by(Raw_Filename, Raw_Column_Name) %>%
+  dplyr::summarize(ct = dplyr::n()) %>%
+  dplyr::filter(ct > 1)
+
 # Make an empty list (to store raw data in shortly)
 df_list <- list()
 
