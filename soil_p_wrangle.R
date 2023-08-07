@@ -72,6 +72,9 @@ key <- key_v0 %>%
   ## Percent symbols become Xs
   dplyr::mutate(Raw_Column_Name = gsub(pattern = "\\%", replacement = "X", 
                                        x = Raw_Column_Name)) %>%
+  # Make sure all synonymized column names avoid characters that are bad in column names
+  dplyr::mutate(Combined_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:", 
+                                            replacement = "_", x = Combined_Column_Name)) %>%
   # Drop unwanted column(s)
   dplyr::select(-first_char, -Extraction_Method, -Notes, -X)
 
@@ -216,6 +219,12 @@ tidy_v0.5 <- tidy_v0 %>%
     ## Handle places where less than (<)/greater than (>) were included as number modifiers
     P_conc_mg_kg = ifelse(test = P_conc_mg_kg == "< 0.5",
                                       yes = "0.25", no = P_conc_mg_kg),
+    ## Handle missing values
+    bulk_density_g_cm3 = ifelse(test = bulk_density_g_cm3 == "M",
+                                yes = NA, no = bulk_density_g_cm3),
+    Avail_P_ppm = ifelse(test = Avail_P_ppm == "M", yes = NA, no = Avail_P_ppm),
+    P_stock_Total_mg_m2 = ifelse(test = P_stock_Total_mg_m2 == "NA000", 
+                                 yes = NA, no = P_stock_Total_mg_m2),
    ## Remove % symbol where it was included
    Coarse_Vol_percent = gsub(pattern = "\\%", replacement = "", x = Coarse_Vol_percent)
   )
@@ -231,21 +240,9 @@ tidy_v1 <- tidy_v0.5 %>%
                                         dplyr::ends_with("_mg_kg"), dplyr::ends_with("_mg_g"),
                                         dplyr::ends_with("_percent")),
                               .fns = as.numeric)) %>%
-  # Reorder columns somewhat
-  dplyr::select(Dataset, Raw_Filename, site, lat, lon, plot, block,
-                core, treatment, treatment_years, horizon, depth_cm, 
-                bulk_density_g_cm3, soil_mass_g_m2,
-                `P Extraction Method`, `P Fraction`, Avail_P_ppm,
-                Coarse_Vol_percent, pH,
-                dplyr::ends_with("_mg_kg"),
-                dplyr::ends_with("_mg_g"),
-                dplyr::ends_with("_mg_m2"),
-                dplyr::ends_with("_percent")) %>%
   # Group C/N columns together
-  dplyr::relocate(C_conc_percent, C_conc_mg_kg, C_conc_mg_g, C_stock_mg_m2,
-                  .after = depth_cm) %>%
-  dplyr::relocate(N_conc_percent, N_conc_mg_kg, N_conc_mg_g, N_stock_mg_kg, 
-                  .after = depth_cm)
+  dplyr::relocate(dplyr::starts_with("C_conc"), .after = depth_cm) %>%
+  dplyr::relocate(dplyr::starts_with("N_conc"), .after = depth_cm)
 
 # Make sure no columns were dropped / added
 supportR::diff_check(old = names(tidy_v0), new = names(tidy_v1))
