@@ -44,7 +44,7 @@ key_v0 <- read.csv(file = file.path("LTER_P_DataKey.csv"))
 downloaded_files <- dir(path = file.path("raw_data"))
 
 # Compare the two to see if all file names in the key were in the Drive
-supportR::diff_check(old = raw_files, new = unique(key_v0$Raw_Filename))
+supportR::diff_check(old = downloaded_files, new = unique(key_v0$Raw_Filename))
 
 # Wrangle key object
 key <- key_v0 %>%
@@ -137,7 +137,7 @@ for(j in 1:length(raw_files)){
   if(exists("missing_cols") == T){ rm(list = "missing_cols") }
   
   # Integrate synonymized column names from key
-  raw_df <- raw_df_v2 %>%
+  raw_df_v3 <- raw_df_v2 %>%
     # Attach revised column names
     dplyr::left_join(key_sub, by = c("Raw_Filename", "Raw_Column_Name")) %>%
     # Drop any columns that don't have a synonymized equivalent
@@ -162,7 +162,10 @@ for(j in 1:length(raw_files)){
     dplyr::mutate(names_actual = gsub(pattern = "_cm_cm", replacement = "_cm", 
                                       x = names_actual)) %>%
     # Pare down to only needed columns (implicitly removes unspecified columns)
-    dplyr::select(row_num, Dataset, Raw_Filename, names_actual, values) %>%
+    dplyr::select(row_num, Dataset, Raw_Filename, names_actual, values)
+  
+  # As a separate object (for ease of maintenance we want the preceding work in its own object)
+  raw_df <- raw_df_v3 %>%
     # Pivot back to wide format with revised column names
     tidyr::pivot_wider(names_from = names_actual, values_from = values, values_fill = NA) %>%
     # Drop row number column
