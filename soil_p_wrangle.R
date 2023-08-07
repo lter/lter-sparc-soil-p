@@ -41,7 +41,7 @@ googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/fol
 key_v0 <- read.csv(file = file.path("LTER_P_DataKey.csv"))
 
 # Identify the downloaded raw files
-raw_files <- dir(path = file.path("raw_data"))
+downloaded_files <- dir(path = file.path("raw_data"))
 
 # Compare the two to see if all file names in the key were in the Drive
 supportR::diff_check(old = raw_files, new = unique(key_v0$Raw_Filename))
@@ -49,7 +49,7 @@ supportR::diff_check(old = raw_files, new = unique(key_v0$Raw_Filename))
 # Wrangle key object
 key <- key_v0 %>%
   # Subset to only files we downloaded
-  dplyr::filter(Raw_Filename %in% raw_files) %>%
+  dplyr::filter(Raw_Filename %in% downloaded_files) %>%
   # Tweak what the key expects raw file column names to be
   ## Identify what the first character is (some fixes depend on this)
   dplyr::mutate(first_char = stringr::str_sub(Raw_Column_Name, start = 1, end = 1)) %>%
@@ -83,6 +83,11 @@ key %>%
   dplyr::group_by(Raw_Filename, Raw_Column_Name) %>%
   dplyr::summarize(ct = dplyr::n()) %>%
   dplyr::filter(ct > 1)
+
+# Subset the downloaded files to only those in the data key
+raw_files <- data.frame("x" = downloaded_files) %>%
+  dplyr::filter(x %in% key$Raw_Filename) %>%
+  dplyr::pull(x)
 
 # Make an empty list (to store raw data in shortly)
 df_list <- list()
