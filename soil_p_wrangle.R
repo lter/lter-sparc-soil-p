@@ -67,7 +67,7 @@ key <- key_v0 %>%
     TRUE ~ Raw_Column_Name)) %>%
   ## Unconditional fixes
   ## Spaces & parentheses & slashes & hyphens in a CSV column name will be coerced to periods
-  dplyr::mutate(Raw_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-", replacement = ".", 
+  dplyr::mutate(Raw_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:", replacement = ".", 
                                        x = Raw_Column_Name)) %>%
   ## Percent symbols become Xs
   dplyr::mutate(Raw_Column_Name = gsub(pattern = "\\%", replacement = "X", 
@@ -92,7 +92,8 @@ for(j in 1:length(raw_files)){
     # Only this file's section
     dplyr::filter(Raw_Filename == focal_raw) %>%
     # And only columns that have a synonymized equivalent
-    dplyr::filter(!is.na(Combined_Column_Name) & nchar(Combined_Column_Name) != 0)
+    dplyr::filter(!is.na(Combined_Column_Name) & nchar(Combined_Column_Name) != 0) %>%
+    dplyr::filter(Combined_Column_Name != "NA") 
   
   # Load in that file
   raw_df_v1 <- read.csv(file = file.path("raw_data", focal_raw))
