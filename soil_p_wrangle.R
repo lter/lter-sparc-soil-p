@@ -274,10 +274,9 @@ tidy_v2 <- tidy_v1 %>%
   ## snake case = "lower_lower_lower"
   dplyr::rename(dataset = Dataset,
                 raw_filename = Raw_Filename,
-                P_extraction_method = `P Extraction Method`,
-                P_fraction = `P Fraction`,
                 available_P_ppm = Avail_P_ppm,
-                coarse_vol_percent = Coarse_Vol_percent)
+                coarse_vol_percent = Coarse_Vol_percent,
+                tot_P_kg_ha_0_10 = `0_10_tot_P_kg_ha`)
 
 # Check structure
 dplyr::glimpse(tidy_v2)
