@@ -283,15 +283,33 @@ tidy_v2 <- tidy_v1 %>%
                 topography = tolower(topography)) %>%
   # Rename columns so that everything is in snake case except element abbreviations
   ## snake case = "lower_lower_lower"
-  dplyr::rename(dataset = Dataset,
+  dplyr::rename(lter = LTER,
+                dataset = Dataset,
                 raw_filename = Raw_Filename,
                 available_P_ppm = Avail_P_ppm,
                 coarse_vol_percent = Coarse_Vol_percent,
                 tot_P_kg_ha_0_10 = `0_10_tot_P_kg_ha`) %>%
   # Relocate all spatial/site columns to the left of the dataframe
-  dplyr::relocate(dataset, raw_filename, LTER, site, lat, lon, plot, block, core,
+  dplyr::relocate(lter, dataset, raw_filename, site, lat, lon, plot, block, core,
                   sample_replicate, treatment_years, distance, topography, horizon,
-                  .before = dplyr::everything())
+                  .before = dplyr::everything()) %>%
+  # Create a better version of the LTER column
+  dplyr::mutate(lter = dplyr::coalesce(lter, dataset)) %>%
+  dplyr::mutate(lter = dplyr::case_when(
+    lter %in% c("Bonanza Creek_1", "Bonanza Creek_2") ~ "BNZ",
+    lter %in% c("Coweeta") ~ "CWT",
+    lter %in% c("FloridaCoastal") ~ "FCE",
+    lter %in% c() ~ "",
+    lter %in% c() ~ "",
+    # Non-LTER sites
+    lter %in% c("Brazil") ~ "Brazil",
+    lter %in% c("Calhoun") ~ "Calhoun",
+    lter %in% c("Fernow") ~ "Fernow",
+    # Otherwise retain whatever was in that column originally
+    T ~ lter))
+
+# Check out new LTER column
+sort(unique(tidy_v2$lter))
 
 # Check structure
 dplyr::glimpse(tidy_v2)
