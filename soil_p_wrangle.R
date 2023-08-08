@@ -299,8 +299,12 @@ tidy_v2 <- tidy_v1 %>%
     lter %in% c("Bonanza Creek_1", "Bonanza Creek_2") ~ "BNZ",
     lter %in% c("Coweeta") ~ "CWT",
     lter %in% c("FloridaCoastal") ~ "FCE",
-    lter %in% c() ~ "",
-    lter %in% c() ~ "",
+    lter %in% c("Hubbard Brook") ~ "HBR",
+    lter %in% c("Jornada") ~ "JRN",
+    lter %in% c("Luquillo_1", "Luquillo_2") ~ "LUQ",
+    lter %in% c("Niwot_1", "Niwot_2", "Niwot_3") ~ "NWT",
+    lter %in% c("Sevilleta_1", "Sevilleta_2") ~ "SEV",
+    lter %in% c("Toolik") ~ "ARC",
     # Non-LTER sites
     lter %in% c("Brazil") ~ "Brazil",
     lter %in% c("Calhoun") ~ "Calhoun",
@@ -345,7 +349,7 @@ tidy_v2b <- tidy_v2 %>%
   
 # Check structure of this
 tidy_v2b %>%
-  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
+  dplyr::select(lter:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
   dplyr::select(-dplyr::ends_with("_by_depth")) %>%
   dplyr::glimpse()
 
@@ -434,8 +438,60 @@ tidy_v2c %>%
   dplyr::select(-dplyr::ends_with("_by_depth")) %>%
   dplyr::glimpse()
 
-# Wrangle horizon information to get other desired facets of that variable
+# Separate the semi-tidied depth range into a start and end
 tidy_v2d <- tidy_v2c %>%
+  # Now that everything is a range, we can split based on the hyphen
+  tidyr::separate_wider_delim(cols = depth_range_raw, delim = "-", cols_remove = F,
+                              names = c("depth_1", "depth_2"),
+                              too_few = "align_start", too_many = "error") %>%
+  # Some ranges are converted by Excel into dates automatically upon entry so we need to fix that
+  dplyr::mutate(
+    depth_1 = dplyr::case_when(
+      depth_1 == "Jan" ~ "1", depth_1 == "Feb" ~ "2", depth_1 == "Mar" ~ "3",
+      depth_1 == "Apr" ~ "4", depth_1 == "May" ~ "5", depth_1 == "Jun" ~ "6",
+      depth_1 == "Jul" ~ "7", depth_1 == "Aug" ~ "8", depth_1 == "Sep" ~ "9",
+      depth_1 == "Oct" ~ "10", depth_1 == "Nov" ~ "11", depth_1 == "Dec" ~ "12",
+      TRUE ~ depth_1),
+    depth_2 = dplyr::case_when(
+      depth_2 == "Jan" ~ "1", depth_2 == "Feb" ~ "2", depth_2 == "Mar" ~ "3",
+      depth_2 == "Apr" ~ "4", depth_2 == "May" ~ "5", depth_2 == "Jun" ~ "6",
+      depth_2 == "Jul" ~ "7", depth_2 == "Aug" ~ "8", depth_2 == "Sep" ~ "9",
+      depth_2 == "Oct" ~ "10", depth_2 == "Nov" ~ "11", depth_2 == "Dec" ~ "12",
+      TRUE ~ depth_2))
+
+# Check for non-numbers
+supportR::multi_num_check(data = tidy_v2d, col_vec = c("depth_1", "depth_2"))
+
+# Now can do numeric wrangling of depth columns
+tidy_v2e <- tidy_v2d %>%
+  # Do any needed fixes of non-numbers
+  ## None needed currently
+  # Make the depth columns numeric
+  dplyr::mutate(depth_1 = as.numeric(depth_1),
+                depth_2 = as.numeric(depth_2)) %>%
+  # Now that all depths are numbers we can figure out start and end depths
+  dplyr::mutate(depth_start_cm = ifelse(depth_1 < depth_2, yes = depth_1, no = depth_2),
+                depth_end_cm = ifelse(depth_2 > depth_1, yes = depth_2, no = depth_1),
+                .after = depth_type) %>%
+  # Drop intermediary columns and old raw depth columns
+  dplyr::select(-depth_1, -depth_2, -depth_raw, -depth_range_raw) %>%
+  # Calculate length of core as well
+  dplyr::mutate(core_length = depth_end_cm - depth_start_cm,
+                .after = depth_end_cm)
+
+# Check distribution of the new depth columns we just extracted
+psych::multi.hist(x = tidy_v2e$depth_start_cm)
+psych::multi.hist(x = tidy_v2e$depth_end_cm)
+psych::multi.hist(x = tidy_v2e$core_length)
+
+# Check structure yet again
+tidy_v2e %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
+  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::glimpse()
+
+# Wrangle horizon information to get other desired facets of that variable
+tidy_v3 <- tidy_v2e %>%
   # Create a column that uses entered horizon, depth horizon info, and expert knowledge to increase coverage
   dplyr::mutate(horizon_actual = dplyr::case_when(
     # If horizon is in data, use that
@@ -495,68 +551,16 @@ tidy_v2d <- tidy_v2c %>%
   dplyr::rename(horizon = horizon_actual)
 
 # For which datasets is horizon info *absent* (that could be filled by expert knowledge)?
-tidy_v2d %>% 
+tidy_v3 %>% 
   dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>%
   dplyr::select(dataset, raw_filename, horizon) %>%
   dplyr::distinct()
 
 # Check contents of the specific horizon columns
-sort(unique(tidy_v2d$horizon_raw))
-sort(unique(tidy_v2d$horizon))
-sort(unique(tidy_v2d$horizon_source))
-sort(unique(tidy_v2d$horizon_binary))
-
-# Check structure yet again
-tidy_v2d %>%
-  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
-  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
-  dplyr::glimpse()
-
-# Separate the semi-tidied depth range into a start and end
-tidy_v2e <- tidy_v2d %>%
-  # Now that everything is a range, we can split based on the hyphen
-  tidyr::separate_wider_delim(cols = depth_range_raw, delim = "-", cols_remove = F,
-                              names = c("depth_1", "depth_2"),
-                              too_few = "align_start", too_many = "error") %>%
-  # Some ranges are converted by Excel into dates automatically upon entry so we need to fix that
-  dplyr::mutate(
-    depth_1 = dplyr::case_when(
-      depth_1 == "Jan" ~ "1", depth_1 == "Feb" ~ "2", depth_1 == "Mar" ~ "3",
-      depth_1 == "Apr" ~ "4", depth_1 == "May" ~ "5", depth_1 == "Jun" ~ "6",
-      depth_1 == "Jul" ~ "7", depth_1 == "Aug" ~ "8", depth_1 == "Sep" ~ "9",
-      depth_1 == "Oct" ~ "10", depth_1 == "Nov" ~ "11", depth_1 == "Dec" ~ "12",
-      TRUE ~ depth_1),
-    depth_2 = dplyr::case_when(
-      depth_2 == "Jan" ~ "1", depth_2 == "Feb" ~ "2", depth_2 == "Mar" ~ "3",
-      depth_2 == "Apr" ~ "4", depth_2 == "May" ~ "5", depth_2 == "Jun" ~ "6",
-      depth_2 == "Jul" ~ "7", depth_2 == "Aug" ~ "8", depth_2 == "Sep" ~ "9",
-      depth_2 == "Oct" ~ "10", depth_2 == "Nov" ~ "11", depth_2 == "Dec" ~ "12",
-      TRUE ~ depth_2))
-
-# Check for non-numbers
-supportR::multi_num_check(data = tidy_v2e, col_vec = c("depth_1", "depth_2"))
-
-# Now can do numeric wrangling of depth columns
-tidy_v3 <- tidy_v2e %>%
-  # Do any needed fixes of non-numbers
-  ## None needed currently
-  # Make the depth columns numeric
-  dplyr::mutate(depth_1 = as.numeric(depth_1),
-                depth_2 = as.numeric(depth_2)) %>%
-  # Now that all depths are numbers we can figure out start and end depths
-  dplyr::mutate(depth_start_cm = ifelse(depth_1 < depth_2, yes = depth_1, no = depth_2),
-                depth_end_cm = ifelse(depth_2 > depth_1, yes = depth_2, no = depth_1),
-                .after = depth_type) %>%
-  # Drop intermediary columns and old raw depth columns
-  dplyr::select(-depth_1, -depth_2, -depth_raw, -depth_range_raw) %>%
-  # Calculate length of core as well
-  dplyr::mutate(core_length = depth_end_cm - depth_start_cm,
-                .after = depth_end_cm)
-
-# Check distribution of the new depth columns we just extracted
-psych::multi.hist(x = tidy_v3$depth_start_cm)
-psych::multi.hist(x = tidy_v3$depth_end_cm)
-psych::multi.hist(x = tidy_v3$core_length)
+sort(unique(tidy_v3$horizon_raw))
+sort(unique(tidy_v3$horizon))
+sort(unique(tidy_v3$horizon_source))
+sort(unique(tidy_v3$horizon_binary))
 
 # Ad nauseam at this point but check structure
 tidy_v3 %>%
