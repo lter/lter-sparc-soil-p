@@ -304,14 +304,14 @@ dplyr::glimpse(tidy_v2)
 # Next, we need to handle the depth column
 sort(unique(tidy_v2$depth_cm))
 
-# Check for depth values that aren't ranges (i.e., no hyphens)
+# Check for depth values that *aren't* ranges (i.e., no hyphens)
 tidy_v2 %>%
   dplyr::filter(stringr::str_detect(string = depth_cm, pattern = "-") != T) %>%
   dplyr::select(dataset, depth_cm) %>%
   dplyr::distinct()
 
 # Do depth wrangling
-tidy_v3 <- tidy_v2 %>%
+tidy_v2.5 <- tidy_v2 %>%
   # Standardize range formatting
   dplyr::mutate(depth_range_raw = gsub(pattern = "_", replacement = "-", x = depth_cm)) %>%
   # Remove any spaces in these values
@@ -339,7 +339,16 @@ tidy_v3 <- tidy_v2 %>%
     ## Luquillo (no ranges so we'll just add a constant to every depth value to get the end of the range)
     dataset == "Luquillo_1" & stringr::str_detect(string = depth_range_raw, pattern = "-") != T ~ paste0(depth_range_raw, "-", suppressWarnings(as.numeric(depth_range_raw)) + 10),
     # dataset == "" &  depth_range_raw == "" ~ "",
-    TRUE ~ depth_range_raw)) %>%
+    TRUE ~ depth_range_raw))
+
+# Check to see no non-ranges exist in data
+tidy_v2.5 %>%
+  dplyr::filter(stringr::str_detect(string = depth_cm, pattern = "-") != T) %>%
+  dplyr::select(dataset, depth_cm) %>%
+  dplyr::distinct()
+
+# Finish wrangling now that all depths are tidied into actual ranges
+tidy_v3 <- tidy_v2.5 %>%
   # Now that everything is a range, we can split based on the hyphen
   tidyr::separate_wider_delim(cols = depth_range_raw, delim = "-", cols_remove = F,
                               names = c("depth_1", "depth_2"),
