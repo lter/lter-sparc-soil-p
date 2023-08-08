@@ -307,7 +307,7 @@ sort(unique(tidy_v2$depth_cm))
 # Check for depth values that *aren't* ranges (i.e., no hyphens)
 tidy_v2 %>%
   dplyr::filter(stringr::str_detect(string = depth_cm, pattern = "-") != T) %>%
-  dplyr::select(dataset, depth_cm) %>%
+  dplyr::select(dataset, raw_filename, depth_cm) %>%
   dplyr::distinct()
 
 # Do depth wrangling
@@ -331,20 +331,30 @@ tidy_v2.5 <- tidy_v2 %>%
     dataset == "Hubbard Brook" & depth_range_raw == "C25-50" ~ "25-50",
     dataset == "Hubbard Brook" & depth_range_raw == "C50+" ~ "50-75",
     dataset == "Hubbard Brook" & depth_range_raw == "Oa" ~ "",
-    ## Bonanza
-    dataset == "Bonanza Creek" & depth_range_raw == "24" ~ "24-40",
-    dataset == "Bonanza Creek" & depth_range_raw == "36" ~ "36-50",
-    dataset == "Bonanza Creek" ~ gsub(pattern = "\\+", replacement = "", 
+    ## Bonanza (1)
+    dataset == "Bonanza Creek_1" & depth_range_raw == "24" ~ "24-40",
+    dataset == "Bonanza Creek_1" & depth_range_raw == "36" ~ "36-50",
+    dataset == "Bonanza Creek_1" ~ gsub(pattern = "\\+", replacement = "", 
                                       x = depth_range_raw),
-    ## Luquillo (no ranges so we'll just add a constant to every depth value to get the end of the range)
+    ## Bonanza (2)
+    ### Starting depth listed in separate column
+    dataset == "Bonanza Creek_2" ~ paste0(org_depth_cm, "-", depth_range_raw),
+    ## Seviletta (2)
+    dataset == "Sevilleta_2" & depth_range_raw == "10" ~ "0-10",
+    dataset == "Sevilleta_2" & depth_range_raw == "20" ~ "11-20",
+    dataset == "Sevilleta_2" & depth_range_raw == "30" ~ "21-30",
+    ## Luquillo
+    ### No ranges so we'll just add a constant to every depth value to get the end of the range
     dataset == "Luquillo_1" & stringr::str_detect(string = depth_range_raw, pattern = "-") != T ~ paste0(depth_range_raw, "-", suppressWarnings(as.numeric(depth_range_raw)) + 10),
     # dataset == "" &  depth_range_raw == "" ~ "",
-    TRUE ~ depth_range_raw))
+    TRUE ~ depth_range_raw)) %>%
+  # Drop any superseded columns
+  dplyr::select(-org_depth_cm)
 
 # Check to see no non-ranges exist in data
 tidy_v2.5 %>%
-  dplyr::filter(stringr::str_detect(string = depth_cm, pattern = "-") != T) %>%
-  dplyr::select(dataset, depth_cm) %>%
+  dplyr::filter(stringr::str_detect(string = depth_range_raw, pattern = "-") != T) %>%
+  dplyr::select(dataset, raw_filename, depth_range_raw) %>%
   dplyr::distinct()
 
 # Finish wrangling now that all depths are tidied into actual ranges
