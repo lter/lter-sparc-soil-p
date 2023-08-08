@@ -185,8 +185,7 @@ for(j in 1:length(raw_files)){
 } # Close loop
 
 # Unlist the list we just generated
-tidy_v0 <- df_list %>%
-  purrr::list_rbind()
+tidy_v0 <- purrr::list_rbind(df_list)
 
 # Check that out
 dplyr::glimpse(tidy_v0)
@@ -205,9 +204,14 @@ num_cols <- tidy_v0 %>%
                 bulk_density_g_cm3, soil_mass_g_m2, pH, 
                 dplyr::ends_with("_mg_kg"), dplyr::ends_with("_mg_g"),
                 dplyr::ends_with("_ppm"), dplyr::ends_with("_mg_m2"),
-                dplyr::ends_with("_percent")) %>%
+                dplyr::ends_with("_kg_ha"), dplyr::ends_with("_ug_g"),
+                dplyr::ends_with("_mg_cm3"), dplyr::ends_with("_g_kg"),
+                dplyr::ends_with("_g_m2"), dplyr::ends_with("_percent")) %>%
   # Keep a vector of their names
   names()
+
+# Is that all of the columns that should be numeric?
+supportR::diff_check(old = names(tidy_v0), new = num_cols)
 
 # Check some numeric columns to ensure that there is no weirdness with non-numbers
 supportR::multi_num_check(data = tidy_v0, col_vec = num_cols)
@@ -225,8 +229,11 @@ tidy_v0.5 <- tidy_v0 %>%
     Avail_P_ppm = ifelse(test = Avail_P_ppm == "M", yes = NA, no = Avail_P_ppm),
     P_stock_Total_mg_m2 = ifelse(test = P_stock_Total_mg_m2 == "NA000", 
                                  yes = NA, no = P_stock_Total_mg_m2),
+    pH = gsub(pattern = "\\.", replacement = NA, x = pH),
    ## Remove % symbol where it was included
-   Coarse_Vol_percent = gsub(pattern = "\\%", replacement = "", x = Coarse_Vol_percent)
+   Coarse_Vol_percent = ifelse(nchar(Coarse_Vol_percent) != 0,
+                               yes = gsub(pattern = "\\%", replacement = "", 
+                                          x = Coarse_Vol_percent), no = NA)
   )
   
 # Re-check to make sure we've fixed everything
@@ -235,11 +242,7 @@ supportR::multi_num_check(data = tidy_v0.5, col_vec = num_cols)
 # Continue wrangling
 tidy_v1 <- tidy_v0.5 %>%
   # Make numeric columns actually be numeric (had to coerce to character earlier)
-  dplyr::mutate(dplyr::across(.cols = c(dplyr::starts_with("lat"), dplyr::starts_with("lon"),
-                                        soil_mass_g_m2, pH, dplyr::ends_with("_mg_m2"),
-                                        dplyr::ends_with("_mg_kg"), dplyr::ends_with("_mg_g"),
-                                        dplyr::ends_with("_percent")),
-                              .fns = as.numeric)) %>%
+  dplyr::mutate(dplyr::across(.cols = dplyr::all_of(num_cols), .fns = as.numeric)) %>%
   # Group C/N columns together
   dplyr::relocate(dplyr::starts_with("C_conc"), .after = depth_cm) %>%
   dplyr::relocate(dplyr::starts_with("N_conc"), .after = depth_cm)
