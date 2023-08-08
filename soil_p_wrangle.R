@@ -643,48 +643,66 @@ supportR::diff_check(old = names(tidy_v4), new = names(tidy_v5))
 dplyr::glimpse(tidy_v5)
 
 ## ------------------------------------------ ##
-          # Bulk Density Wrangling ----
+        # Bulk Density / Soil Fixes ----
 ## ------------------------------------------ ##
 
-# Check the bulk density values included in the data for non-numbers
-supportR::num_check(data = tidy_v3, col = "bulk_density_g_cm3")
-
-# We need soil bulk density to convert 'per sample' values to absolute totals of P/C/N
-tidy_v4 <- tidy_v3 %>%
-  # Fix non-numbers in embedded bulk density info
-  dplyr::mutate(bulk_density_g_cm3 = dplyr::case_when(
-    bulk_density_g_cm3 == "M" ~ NA,
-    TRUE ~ bulk_density_g_cm3)) %>%
-  # We're hard coding bulk density in here rather than typing manually
+# Wrangling for soil information
+tidy_v6 <- tidy_v5 %>%
+  # Relocate soil columns to the left
+  dplyr::relocate(dplyr::contains("bulk_density"), coarse_vol_percent, dplyr::contains("soil"),
+                  .after = pH) %>%
+  # Average across the two bulk density columns in the same units
+  dplyr::mutate(bulk_dens_avg_kg_ha = dplyr::case_when(
+    !is.na(bulk_density_kg_ha) & !is.na(bulk_density_value2_kg_ha) ~ (bulk_density_kg_ha + bulk_density_value2_kg_ha) / 2,
+    !is.na(bulk_density_kg_ha) & is.na(bulk_density_value2_kg_ha) ~ bulk_density_kg_ha,
+    is.na(bulk_density_kg_ha) & !is.na(bulk_density_value2_kg_ha) ~ bulk_density_value2_kg_ha,
+    T ~ NA), .after = bulk_density_g_cm3) %>%
+  # Drop those now-superseded columns
+  dplyr::select(-bulk_density_kg_ha, -bulk_density_value2_kg_ha) %>%
+  # Rename the bulk density columns
+  dplyr::rename(bulk_density_kg_ha = bulk_dens_avg_kg_ha,
+                bulk_density_g_cm3_raw = bulk_density_g_cm3) %>%
+  #  We're hard coding bulk density in here rather than typing manually
   ## Citations/justifications are included next to each bulk density value
   dplyr::mutate(bulk_density = dplyr::case_when(
-    # If bulk density was provided, use that instead of doing conditionals
-    !is.na(bulk_density_g_cm3) & 
-      nchar(bulk_density_g_cm3) != 0 ~ as.numeric(bulk_density_g_cm3),
+  # If bulk density was provided, use that instead of doing conditionals
+    !is.na(bulk_density_g_cm3_raw) & 
+      nchar(bulk_density_g_cm3_raw) != 0 ~ as.numeric(bulk_density_g_cm3_raw),
+    dataset == "Bonanza Creek_1" ~ 0.9,
+    dataset == "Bonanza Creek_2" ~ 0.9,
+    dataset == "Brazil" ~ 0.9,
     dataset == "Calhoun" ~ 0.9,
     dataset == "Coweeta" ~ 0.9,
-    dataset == "Niwot_Liptzen2006" ~ 0.9,
-    dataset == "Sevilletta_Cross1994" ~ 0.9,
-    dataset == "Bonanza Creek" ~ 0.9,
     dataset == "Fernow" ~ 0.9,
-    dataset == "Luquillo_1" ~ 0.9,
+    dataset == "FloridaCoastal" ~ 0.9,
+    dataset == "Jornada" ~ 0.9,
     dataset == "Hubbard Brook" ~ 0.9,
+    dataset == "Luquillo_1" ~ 0.9,
+    dataset == "Luquillo_2" ~ 0.9,
+    dataset == "Niwot_1" ~ 0.9,
+    dataset == "Niwot_2" ~ 0.9,
+    dataset == "Niwot_3" ~ 0.9,
+    dataset == "Niwot_Liptzen2006" ~ 0.9,
+    dataset == "Sevilleta_1" ~ 0.9,
+    dataset == "Sevilleta_2" ~ 0.9,
     dataset == "Toolik" ~ 0.9,
     # dataset == "" ~ ,
     # If no bulk density is supplied by above conditions, fill with NA
-    TRUE ~ NA), .after = core_length_cm) %>%
-  # Trash old bulk density column to avoid confusion
-  dplyr::select(-bulk_density_g_cm3)
+    TRUE ~ NA), .after = bulk_density_g_cm3_raw) %>%
+  # Drop old column and rename remaining one to avoid confusion
+  dplyr::select(-bulk_density_g_cm3_raw) %>%
+  dplyr::rename(bulk_density_g_cm3 = bulk_density)
 
 # Check whether we're missing any bulk density values
 ## If so, need to add another conditional to the above `case_when`
-tidy_v4 %>%
-  dplyr::filter(is.na(bulk_density)) %>%
-  dplyr::select(dataset, site, plot, block) %>%
+tidy_v6 %>%
+  dplyr::filter(is.na(bulk_density_g_cm3)) %>%
+  # dplyr::select(dataset, site, plot, block) %>%
+  dplyr::select(dataset) %>%
   dplyr::distinct()
 
 # Check structure
-dplyr::glimpse(tidy_v4)
+dplyr::glimpse(tidy_v6[1:30])
 
 ## ------------------------------------------ ##
             # Phosphorus Sums ----
