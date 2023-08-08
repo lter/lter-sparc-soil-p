@@ -185,73 +185,16 @@ for(j in 1:length(raw_files)){
 } # Close loop
 
 # Unlist the list we just generated
-tidy_v0 <- df_list %>%
-  purrr::list_rbind()
+tidy_v1 <- purrr::list_rbind(df_list)
 
 # Check that out
-dplyr::glimpse(tidy_v0)
-
-# Clean up environment
-rm(list = setdiff(ls(), "tidy_v0"))
-
-## ------------------------------------------ ##
-      # Data Wrangling - Re-Organizing  ----
-## ------------------------------------------ ##
-
-# Identify all columns that are ostensibly numeric
-num_cols <- tidy_v0 %>%
-  # Grab just those columns
-  dplyr::select(dplyr::starts_with("lat"), dplyr::starts_with("lon"),
-                bulk_density_g_cm3, soil_mass_g_m2, pH, 
-                dplyr::ends_with("_mg_kg"), dplyr::ends_with("_mg_g"),
-                dplyr::ends_with("_ppm"), dplyr::ends_with("_mg_m2"),
-                dplyr::ends_with("_percent")) %>%
-  # Keep a vector of their names
-  names()
-
-# Check some numeric columns to ensure that there is no weirdness with non-numbers
-supportR::multi_num_check(data = tidy_v0, col_vec = num_cols)
-
-# Process that object a little
-tidy_v0.5 <- tidy_v0 %>%
-  # Fix places where non-numbers would be lost by coercing with `as.numeric`
-  dplyr::mutate(
-    ## Handle places where less than (<)/greater than (>) were included as number modifiers
-    P_conc_mg_kg = ifelse(test = P_conc_mg_kg == "< 0.5",
-                                      yes = "0.25", no = P_conc_mg_kg),
-    ## Handle missing values
-    bulk_density_g_cm3 = ifelse(test = bulk_density_g_cm3 == "M",
-                                yes = NA, no = bulk_density_g_cm3),
-    Avail_P_ppm = ifelse(test = Avail_P_ppm == "M", yes = NA, no = Avail_P_ppm),
-    P_stock_Total_mg_m2 = ifelse(test = P_stock_Total_mg_m2 == "NA000", 
-                                 yes = NA, no = P_stock_Total_mg_m2),
-   ## Remove % symbol where it was included
-   Coarse_Vol_percent = gsub(pattern = "\\%", replacement = "", x = Coarse_Vol_percent)
-  )
-  
-# Re-check to make sure we've fixed everything
-supportR::multi_num_check(data = tidy_v0.5, col_vec = num_cols)
-
-# Continue wrangling
-tidy_v1 <- tidy_v0.5 %>%
-  # Make numeric columns actually be numeric (had to coerce to character earlier)
-  dplyr::mutate(dplyr::across(.cols = c(dplyr::starts_with("lat"), dplyr::starts_with("lon"),
-                                        soil_mass_g_m2, pH, dplyr::ends_with("_mg_m2"),
-                                        dplyr::ends_with("_mg_kg"), dplyr::ends_with("_mg_g"),
-                                        dplyr::ends_with("_percent")),
-                              .fns = as.numeric)) %>%
-  # Group C/N columns together
-  dplyr::relocate(dplyr::starts_with("C_conc"), .after = depth_cm) %>%
-  dplyr::relocate(dplyr::starts_with("N_conc"), .after = depth_cm)
-
-# Make sure no columns were dropped / added
-supportR::diff_check(old = names(tidy_v0), new = names(tidy_v1))
-
-# Glimpse it
 dplyr::glimpse(tidy_v1)
 
+# Clean up environment
+rm(list = setdiff(ls(), "tidy_v1"))
+
 ## ------------------------------------------ ##
-    # Data Wrangling - Site Info Checks ----
+             # Site Info Checks ----
 ## ------------------------------------------ ##
 
 # Re-check data structure
@@ -260,6 +203,7 @@ dplyr::glimpse(tidy_v1)
 # Check for typos in the site/sample information columns
 sort(unique(tidy_v1$Dataset))
 sort(unique(tidy_v1$Raw_Filename))
+sort(unique(tidy_v1$LTER))
 sort(unique(tidy_v1$site))
 sort(unique(tidy_v1$lat))
 sort(unique(tidy_v1$lon))
@@ -267,68 +211,183 @@ sort(unique(tidy_v1$plot))
 sort(unique(tidy_v1$block))
 sort(unique(tidy_v1$core))
 sort(unique(tidy_v1$treatment))
+sort(unique(tidy_v1$treatment_years))
+sort(unique(tidy_v1$distance))
+sort(unique(tidy_v1$topography))
 
 # Fix any typos identified above
 tidy_v2 <- tidy_v1 %>%
+  # Fix some of the spatial/site columns
+  dplyr::mutate(lat = as.numeric(lat),
+                lon = as.numeric(lon),
+                distance = as.numeric(distance),
+                treatment_years = as.numeric(treatment_years),
+                topography = tolower(topography)) %>%
   # Rename columns so that everything is in snake case except element abbreviations
   ## snake case = "lower_lower_lower"
-  dplyr::rename(dataset = Dataset,
+  dplyr::rename(lter = LTER,
+                dataset = Dataset,
                 raw_filename = Raw_Filename,
                 available_P_ppm = Avail_P_ppm,
                 coarse_vol_percent = Coarse_Vol_percent,
-                tot_P_kg_ha_0_10 = `0_10_tot_P_kg_ha`)
+                tot_P_kg_ha_0_10 = `0_10_tot_P_kg_ha`) %>%
+  # Relocate all spatial/site columns to the left of the dataframe
+  dplyr::relocate(lter, dataset, raw_filename, site, lat, lon, plot, block, core,
+                  sample_replicate, treatment, treatment_years, distance, topography, 
+                  horizon, depth_cm, org_depth_cm, pH,
+                  .before = dplyr::everything()) %>%
+  # Create a better version of the LTER column
+  dplyr::mutate(lter = dplyr::coalesce(lter, dataset)) %>%
+  dplyr::mutate(lter = dplyr::case_when(
+    lter %in% c("Bonanza Creek_1", "Bonanza Creek_2") ~ "BNZ",
+    lter %in% c("Coweeta") ~ "CWT",
+    lter %in% c("FloridaCoastal") ~ "FCE",
+    lter %in% c("Hubbard Brook") ~ "HBR",
+    lter %in% c("Jornada") ~ "JRN",
+    lter %in% c("Luquillo_1", "Luquillo_2") ~ "LUQ",
+    lter %in% c("Niwot_1", "Niwot_2", "Niwot_3") ~ "NWT",
+    lter %in% c("Sevilleta_1", "Sevilleta_2") ~ "SEV",
+    lter %in% c("Toolik") ~ "ARC",
+    # Non-LTER sites
+    lter %in% c("Brazil") ~ "Brazil",
+    lter %in% c("Calhoun") ~ "Calhoun",
+    lter %in% c("Fernow") ~ "Fernow",
+    # Otherwise retain whatever was in that column originally
+    T ~ lter))
+
+# Check out new LTER column
+sort(unique(tidy_v2$lter))
 
 # Check structure
 dplyr::glimpse(tidy_v2)
 
 ## ------------------------------------------ ##
-        # Data Wrangling - Depth ----
+          # Depth & Horizon Fixes ----
 ## ------------------------------------------ ##
 
-# Next, we need to handle the depth column
+# Next we need to wrangle depth and horizon information
+## Need to do concurrently because each column can help inform the other
+
+# Check horizon column and depth column
+sort(unique(tidy_v2$horizon))
 sort(unique(tidy_v2$depth_cm))
 
-# Check for depth values that aren't ranges (i.e., no hyphens)
-tidy_v2 %>%
-  dplyr::filter(stringr::str_detect(string = depth_cm, pattern = "-") != T) %>%
-  dplyr::select(dataset, depth_cm) %>%
+# Do easy unconditional wrangling steps
+tidy_v2b <- tidy_v2 %>%
+  # Tidy and rename the starting horizon column
+  dplyr::mutate(horizon_raw = dplyr::case_when(
+    tolower(horizon) %in% c("upper organic") ~ "Oe",
+    tolower(horizon) %in% c("lower organic") ~ "Oa",
+    tolower(horizon) %in% c("mineral") ~ "mineral",
+    T ~ horizon), .after = horizon) %>%
+  # Standardize range formatting
+  dplyr::mutate(depth_raw = gsub(pattern = "_", replacement = "-", x = depth_cm)) %>%
+  # Remove any spaces in these values
+  dplyr::mutate(depth_raw = gsub(pattern = " ", replacement = "", x = depth_raw)) %>%
+  # Create a version of the depth column that only includes any embedded horizon info
+  dplyr::mutate(depth_horizon = gsub(pattern = "0|1|2|3|4|5|6|7|8|9|_|-|\\+| |\\.|Apr|Aug|Dec|hurricane_sediment|Jul|Jun|Mar|May|Nov|Oct|Sep",
+                                     replacement = "", x = depth_cm)) %>%
+  # Drop original columns
+  dplyr::select(-horizon, -depth_cm)
+  
+# Check structure of this
+tidy_v2b %>%
+  dplyr::select(lter:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
+  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::glimpse()
+
+# Check for depth values that *aren't* ranges (i.e., no hyphens)
+tidy_v2b %>%
+  dplyr::filter(stringr::str_detect(string = depth_raw, pattern = "-") != T) %>%
+  dplyr::select(dataset, raw_filename, depth_raw) %>%
   dplyr::distinct()
 
-# Do depth wrangling
-tidy_v3 <- tidy_v2 %>%
-  # Standardize range formatting
-  dplyr::mutate(depth_range_raw = gsub(pattern = "_", replacement = "-", x = depth_cm)) %>%
-  # Remove any spaces in these values
-  dplyr::mutate(depth_range_raw = gsub(pattern = " ", replacement = "", 
-                                       x = depth_range_raw)) %>%
-  # Fix some non-ranges
+# Also need to identify values that have more than one hyphen
+tidy_v2b %>%
+  dplyr::filter(stringr::str_count(string = depth_raw, pattern = "-") > 1) %>%
+  dplyr::select(dataset, raw_filename, depth_raw) %>%
+  dplyr::distinct()
+
+# Wrangle depth into actual numbers
+tidy_v2c <- tidy_v2b %>%
   dplyr::mutate(depth_range_raw = dplyr::case_when(
+    ## Bonanza (1)
+    dataset == "Bonanza Creek_1" & depth_raw == "24" ~ "24-40",
+    dataset == "Bonanza Creek_1" & depth_raw == "36" ~ "36-50",
+    dataset == "Bonanza Creek_1" ~ gsub(pattern = "\\+", replacement = "", x = depth_raw),
+    ## Bonanza (2)
+    ### Starting depth listed in separate column
+    dataset == "Bonanza Creek_2" ~ paste0(org_depth_cm, "-", depth_raw),
+    ## Brazil
+    dataset == "Brazil" & depth_raw == "0--10" ~ "0-10",
+    dataset == "Brazil" & depth_raw == "10--30" ~ "10-30",
     ## Coweeta
-    dataset == "Coweeta" & depth_range_raw == "10" ~ "10-30", # All other begin at 10 are 10-30
-    dataset == "Coweeta" & depth_range_raw == "30+" ~ "30-60", # End of range is a guess
+    dataset == "Coweeta" & depth_raw == "10" ~ "10-30", # All other begin at 10 are 10-30
+    dataset == "Coweeta" & depth_raw == "30+" ~ "30-60", # End of range is a guess
+    ## Florida
+    dataset == "FloridaCoastal" & depth_raw == "hurricane-sediment" ~ "",
     ## Hubbard Brook
-    dataset == "Hubbard Brook" & depth_range_raw == "30+" ~ "30-40",
-    dataset == "Hubbard Brook" & depth_range_raw == "50-C" ~ "50-60",
-    dataset == "Hubbard Brook" & depth_range_raw == "C+" ~ "", # no good guess
-    dataset == "Hubbard Brook" & depth_range_raw == "C0-25" ~ "0-25",
-    dataset == "Hubbard Brook" & depth_range_raw == "C25+" ~ "25-35",
-    dataset == "Hubbard Brook" & depth_range_raw == "C25-50" ~ "25-50",
-    dataset == "Hubbard Brook" & depth_range_raw == "C50+" ~ "50-75",
-    dataset == "Hubbard Brook" & depth_range_raw == "Oa" ~ "",
-    ## Bonanza
-    dataset == "Bonanza Creek" & depth_range_raw == "24" ~ "24-40",
-    dataset == "Bonanza Creek" & depth_range_raw == "36" ~ "36-50",
-    dataset == "Bonanza Creek" ~ gsub(pattern = "\\+", replacement = "", 
-                                      x = depth_range_raw),
-    ## Luquillo (no ranges so we'll just add a constant to every depth value to get the end of the range)
-    dataset == "Luquillo_1" & stringr::str_detect(string = depth_range_raw, pattern = "-") != T ~ paste0(depth_range_raw, "-", suppressWarnings(as.numeric(depth_range_raw)) + 10),
-    # dataset == "" &  depth_range_raw == "" ~ "",
-    TRUE ~ depth_range_raw)) %>%
+    dataset == "Hubbard Brook" & depth_raw == "30+" ~ "30-40",
+    dataset == "Hubbard Brook" & depth_raw == "C25+" ~ "25-35",
+    dataset == "Hubbard Brook" & depth_raw == "C50+" ~ "50-75",
+    dataset == "Hubbard Brook" & depth_raw == "C+" ~ "", # guess needed
+    dataset == "Hubbard Brook" & depth_raw == "Oa" ~ "", # guess needed
+    dataset == "Hubbard Brook" & depth_raw == "50-C" ~ "50",
+    dataset == "Hubbard Brook" & depth_raw == "C0-25" ~ "0-25",
+    dataset == "Hubbard Brook" & depth_raw == "C25+" ~ "25",
+    dataset == "Hubbard Brook" & depth_raw == "C25-50" ~ "25-50",
+    dataset == "Hubbard Brook" & depth_raw == "C50+" ~ "50",
+    ## Luquillo (1)
+    ### No ranges so we'll just add a constant to every depth value to get the end of the range
+    dataset == "Luquillo_1" & stringr::str_detect(string = depth_raw, pattern = "-") != T ~ paste0(depth_raw, "-", suppressWarnings(as.numeric(depth_raw)) + 10),
+    ## Luquillo (2)
+    dataset == "Luquillo_2" & depth_raw == "1" ~ "1", # guess needed
+    dataset == "Luquillo_2" & depth_raw == "2" ~ "2", # guess needed
+    ## Niwot (3)
+    dataset == "Niwot_3" & depth_raw == "10" ~ "10", # guess needed
+    dataset == "Niwot_3" & depth_raw == "20" ~ "20", # guess needed
+    ## Seviletta (2)
+    dataset == "Sevilleta_2" & depth_raw == "10" ~ "10", # guess needed
+    dataset == "Sevilleta_2" & depth_raw == "20" ~ "20", # guess needed
+    dataset == "Sevilleta_2" & depth_raw == "30" ~ "30", # guess needed
+    ## Otherwise raw depth assumed to be a functioning range
+    TRUE ~ depth_raw), .after = depth_raw) %>%
+  # Drop now-unneeded BNZ depth column
+  dplyr::select(-org_depth_cm) %>%
+  # If depth included horizon information we probably can assume that it was *relative* depth
+  dplyr::mutate(depth_type = dplyr::case_when(
+    # Relative depth within horizon layer
+    dataset == "Hubbard Brook" & depth_raw %in% c("30+", "C+", "C25+", "C50+", "Oa") ~ "relative",
+    # No depth info means no depth type
+    is.na(depth_raw) | nchar(depth_raw) == 0 ~ NA,
+    # Otherwise depth info is assumed to be objective depth
+    T ~ "objective"), .after = depth_range_raw)
+
+# Re-check for malformed depth ranges
+tidy_v2c %>%
+  dplyr::filter(stringr::str_detect(string = depth_range_raw, pattern = "-") != T) %>%
+  dplyr::select(dataset, raw_filename, depth_raw, depth_range_raw, horizon_raw, depth_type) %>%
+  dplyr::distinct()
+
+# And too many hyphens
+tidy_v2c %>%
+  dplyr::filter(stringr::str_count(string = depth_range_raw, pattern = "-") > 1) %>%
+  dplyr::select(dataset, raw_filename, depth_raw, depth_range_raw, horizon_raw, depth_type) %>%
+  dplyr::distinct()
+
+# Check structure again
+tidy_v2c %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
+  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::glimpse()
+
+# Separate the semi-tidied depth range into a start and end
+tidy_v2d <- tidy_v2c %>%
   # Now that everything is a range, we can split based on the hyphen
   tidyr::separate_wider_delim(cols = depth_range_raw, delim = "-", cols_remove = F,
                               names = c("depth_1", "depth_2"),
                               too_few = "align_start", too_many = "error") %>%
-  # Some ranges are converted by Excel into dates automatically upon entry so we need to fix that for both depth 1 and 2
+  # Some ranges are converted by Excel into dates automatically upon entry so we need to fix that
   dplyr::mutate(
     depth_1 = dplyr::case_when(
       depth_1 == "Jan" ~ "1", depth_1 == "Feb" ~ "2", depth_1 == "Mar" ~ "3",
@@ -341,105 +400,469 @@ tidy_v3 <- tidy_v2 %>%
       depth_2 == "Apr" ~ "4", depth_2 == "May" ~ "5", depth_2 == "Jun" ~ "6",
       depth_2 == "Jul" ~ "7", depth_2 == "Aug" ~ "8", depth_2 == "Sep" ~ "9",
       depth_2 == "Oct" ~ "10", depth_2 == "Nov" ~ "11", depth_2 == "Dec" ~ "12",
-      TRUE ~ depth_2)) %>%
+      TRUE ~ depth_2))
+
+# Check for non-numbers
+supportR::multi_num_check(data = tidy_v2d, col_vec = c("depth_1", "depth_2"))
+
+# Now can do numeric wrangling of depth columns
+tidy_v2e <- tidy_v2d %>%
+  # Do any needed fixes of non-numbers
+  ## None needed currently
+  # Make the depth columns numeric
+  dplyr::mutate(depth_1 = as.numeric(depth_1),
+                depth_2 = as.numeric(depth_2)) %>%
   # Now that all depths are numbers we can figure out start and end depths
-  dplyr::mutate(
-    depth_start_cm = ifelse(depth_1 < depth_2,
-                            yes = depth_1, no = depth_2),
-    depth_end_cm = ifelse(depth_2 > depth_1,
-                            yes = depth_2, no = depth_1)) %>%
-  # Make the resulting columns numeric
-  dplyr::mutate(depth_start_cm = as.numeric(depth_start_cm),
-                depth_end_cm = as.numeric(depth_end_cm)) %>%
-  # Assemble a new depth range (that excludes the month error in the 'raw' range)
-  dplyr::mutate(depth_range_cm = ifelse(!is.na(depth_start_cm) & !is.na(depth_end_cm),
-                                        yes = paste0(depth_start_cm, "-", depth_end_cm),
-                                        no = NA)) %>%
-  # Calculate the difference in depth (i.e., sampling length regardless of depth)
-  dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm) %>%
-  # Relocate the depth columns to the same place
-  dplyr::relocate(depth_range_cm, depth_start_cm, depth_end_cm, core_length_cm,
-                  .after = treatment) %>%
-  # Throw away intermediary (un/partially tidied) depth columns
-  dplyr::select(-depth_cm, -depth_1, -depth_2, -depth_range_raw)
+  dplyr::mutate(depth_start_cm = ifelse(depth_1 < depth_2, yes = depth_1, no = depth_2),
+                depth_end_cm = ifelse(depth_2 > depth_1, yes = depth_2, no = depth_1),
+                .after = depth_type) %>%
+  # Drop intermediary columns and old raw depth columns
+  dplyr::select(-depth_1, -depth_2, -depth_raw, -depth_range_raw) %>%
+  # Calculate length of core as well
+  dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm,
+                .after = depth_end_cm) %>%
+  # Move these columns to the left
+  dplyr::relocate(depth_type, depth_start_cm, depth_end_cm, core_length_cm, .after = horizon_raw)
 
-# Take a quick glance at each of the depth columns we just generated
-sort(unique(tidy_v3$depth_range_cm))
-psych::multi.hist(x = tidy_v3$depth_start_cm)
-psych::multi.hist(x = tidy_v3$depth_end_cm)
-psych::multi.hist(x = tidy_v3$core_length_cm)
+# Check distribution of the new depth columns we just extracted
+psych::multi.hist(x = tidy_v2e$depth_start_cm)
+psych::multi.hist(x = tidy_v2e$depth_end_cm)
+psych::multi.hist(x = tidy_v2e$core_length_cm)
 
-# Re-check structure
-dplyr::glimpse(tidy_v3)
+# Check structure yet again
+tidy_v2e %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
+  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::glimpse()
 
-## ------------------------------------------ ##
-      # Data Wrangling - Bulk Density ----
-## ------------------------------------------ ##
+# Wrangle horizon information to get other desired facets of that variable
+tidy_v3 <- tidy_v2e %>%
+  # Create a column that uses entered horizon, depth horizon info, and expert knowledge to increase coverage
+  dplyr::mutate(horizon_actual = dplyr::case_when(
+    # If horizon is in data, use that
+    !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ horizon_raw,
+    !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ depth_horizon,
+    # If not in data, use expert knowledge to fill conditionally
+    # dataset == "Bonanza Creek_1" ~ "",
+    # dataset == "Bonanza Creek_2" ~ "",
+    # dataset == "Brazil" ~ "",
+    # dataset == "Calhoun" ~ "",
+    # dataset == "Coweeta" ~ "",
+    # dataset == "Jornada" ~ "",
+    # dataset == "Kellog_Biological_Station" ~ "",
+    # dataset == "Luquillo_1" ~ "",
+    # dataset == "Luquillo_2" ~ "",
+    # dataset == "Niwot_1" ~ "",
+    # dataset == "Niwot_2" ~ "",
+    # dataset == "Niwot_3" ~ "",
+    # dataset == "Sevilleta_1" ~ "",
+    # dataset == "Sevilleta_2" ~ "",
+    # If not in data and not known, fill with NA
+    T ~ NA), .after = horizon_raw) %>%
+  # Identify the source of this information
+  dplyr::mutate(horizon_source = dplyr::case_when(
+    # If in data say that
+    !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ "in data",
+    !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ "in data",
+    # If filled conditionally, enter that 
+    # dataset == "Bonanza Creek_1" ~ "expert knowledge",
+    # dataset == "Bonanza Creek_2" ~ "expert knowledge",
+    # dataset == "Brazil" ~ "expert knowledge",
+    # dataset == "Calhoun" ~ "expert knowledge",
+    # dataset == "Coweeta" ~ "expert knowledge",
+    # dataset == "Jornada" ~ "expert knowledge",
+    # dataset == "Kellog_Biological_Station" ~ "expert knowledge",
+    # dataset == "Luquillo_1" ~ "expert knowledge",
+    # dataset == "Luquillo_2" ~ "expert knowledge",
+    # dataset == "Niwot_1" ~ "expert knowledge",
+    # dataset == "Niwot_2" ~ "expert knowledge",
+    # dataset == "Niwot_3" ~ "expert knowledge",
+    # dataset == "Sevilleta_1" ~ "expert knowledge",
+    # dataset == "Sevilleta_2" ~ "expert knowledge",
+    # If no horizon information in this column, the source is NA
+    is.na(horizon_actual) ~ NA,
+    # Otherwise fill with NA
+    T ~ NA), .after = horizon_actual) %>%
+  # Create a 'mineral vs. organic' horizon column
+  dplyr::mutate(horizon_binary = dplyr::case_when(
+    horizon_actual %in% c("organic", "O", "Oi", "Oe", "Oa") ~ "organic",
+    horizon_actual %in% c("mineral", "A", "B", "C", "AEB") ~ "mineral",
+    # Placeholder until I figure out what a T horizon is
+    horizon_actual == "T" ~ "UNKNOWN",
+    T ~ NA), .after = horizon_source) %>%
+  # Drop depth horizon column and original (un-tidied) horizon column
+  dplyr::select(-depth_horizon) %>%
+  # Rename tidied horizon column
+  dplyr::rename(horizon = horizon_actual)
 
-# Check the bulk density values included in the data for non-numbers
-supportR::num_check(data = tidy_v3, col = "bulk_density_g_cm3")
-
-# We need soil bulk density to convert 'per sample' values to absolute totals of P/C/N
-tidy_v4 <- tidy_v3 %>%
-  # Fix non-numbers in embedded bulk density info
-  dplyr::mutate(bulk_density_g_cm3 = dplyr::case_when(
-    bulk_density_g_cm3 == "M" ~ NA,
-    TRUE ~ bulk_density_g_cm3)) %>%
-  # We're hard coding bulk density in here rather than typing manually
-  ## Citations/justifications are included next to each bulk density value
-  dplyr::mutate(bulk_density = dplyr::case_when(
-    # If bulk density was provided, use that instead of doing conditionals
-    !is.na(bulk_density_g_cm3) & 
-      nchar(bulk_density_g_cm3) != 0 ~ as.numeric(bulk_density_g_cm3),
-    dataset == "Calhoun" ~ 0.9,
-    dataset == "Coweeta" ~ 0.9,
-    dataset == "Niwot_Liptzen2006" ~ 0.9,
-    dataset == "Sevilletta_Cross1994" ~ 0.9,
-    dataset == "Bonanza Creek" ~ 0.9,
-    dataset == "Fernow" ~ 0.9,
-    dataset == "Luquillo_1" ~ 0.9,
-    dataset == "Hubbard Brook" ~ 0.9,
-    dataset == "Toolik" ~ 0.9,
-    # dataset == "" ~ ,
-    # If no bulk density is supplied by above conditions, fill with NA
-    TRUE ~ NA), .after = core_length_cm) %>%
-  # Trash old bulk density column to avoid confusion
-  dplyr::select(-bulk_density_g_cm3)
-
-# Check whether we're missing any bulk density values
-## If so, need to add another conditional to the above `case_when`
-tidy_v4 %>%
-  dplyr::filter(is.na(bulk_density)) %>%
-  dplyr::select(dataset, site, plot, block) %>%
+# For which datasets is horizon info *absent* (that could be filled by expert knowledge)?
+tidy_v3 %>% 
+  dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>%
+  dplyr::select(dataset, raw_filename, horizon) %>%
   dplyr::distinct()
 
+# Check contents of the specific horizon columns
+sort(unique(tidy_v3$horizon_raw))
+sort(unique(tidy_v3$horizon))
+sort(unique(tidy_v3$horizon_source))
+sort(unique(tidy_v3$horizon_binary))
+
+# Ad nauseam at this point but check structure
+tidy_v3 %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth"), core_length_cm) %>%
+  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::glimpse()
+
+# Check again for column order
+dplyr::glimpse(tidy_v3[1:21])
+
+## ------------------------------------------ ##
+      # Relative Depth Wrangling ----
+## ------------------------------------------ ##
+
+# Some depths are relative to their soil horizon
+## Need to calculate their objective depths
+
+# Split data into whether or not depth was relative
+rel_v1 <- dplyr::filter(tidy_v3, depth_type == "relative")
+tidy_v3_nonrelative <- dplyr::filter(tidy_v3, depth_type == "objective" | is.na(depth_type))
+
+# Check to make sure no rows were lost
+nrow(rel_v1) + nrow(tidy_v3_nonrelative) == nrow(tidy_v3)
+
+# What horizon layers are in this subset of the data?
+unique(rel_v1$horizon)
+
+# Generate a horizon order
+horizon_order <- c("O", "AEB", "C")
+
+# Wrangle relative depth data object
+rel_v2 <- rel_v1 %>%
+  # Keep only columns with at least one value
+  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == "")))) %>%
+  # Make horizon a factor
+  dplyr::mutate(horizon = factor(horizon, levels = horizon_order))
+
+# UNFINISHED!!!
+## Need to figure out how to conditionally add each horizon's depth to the previous
+## Complicated by HBR lacking depths for all O and some C cores (so can't add from either direction)
+
 # Check structure
+dplyr::glimpse(rel_v2)
+
+# Finish up the depth/horizon wrangling
+tidy_v4 <- tidy_v3_nonrelative %>%
+  # Bind the rows of the wrangled relative data object back onto the dataframe
+  dplyr::bind_rows(rel_v2) %>%
+  # Drop depth type column
+  dplyr::select(-depth_type) %>%
+  # Assemble a new depth range column that uses the tidied, objective depths
+  dplyr::mutate(depth_range_cm = ifelse(!is.na(depth_start_cm) & !is.na(depth_end_cm),
+                                        yes = paste0(depth_start_cm, "-", depth_end_cm),
+                                        no = NA),
+                .after = depth_end_cm)
+
+# Re-check structure
 dplyr::glimpse(tidy_v4)
 
 ## ------------------------------------------ ##
-        # Data Wrangling - P Sums ----
+# Numeric Column Checks ----
 ## ------------------------------------------ ##
 
+# Before we can continue, we need to make all columns that should be numeric actually be numeric
+## Can also handle the 'sample replicate' rows once our response values are numbers
+
+# Reshape into long format to make a single column to check for non-numbers
+tidy_v4b <- tidy_v4 %>%
+  tidyr::pivot_longer(cols = -lter:-core_length_cm,
+                      names_to = "variable",
+                      values_to = "value_raw") %>%
+  # Ditch empty rows too
+  dplyr::filter(!is.na(value_raw))
+
+# Check for non-numbers in the response value column
+supportR::num_check(data = tidy_v4b, col = "value_raw")
+
+# Resolve all non-numbers
+tidy_v4c <- tidy_v4b %>%
+  # Remove % symbols
+  dplyr::mutate(value_clean = gsub(pattern = "\\%", replacement = "", x = value_raw)) %>%
+  # Conditionally handle remaining issues
+  dplyr::mutate(value_actual = dplyr::case_when(
+    ## Missing values should be NA
+    value_clean %in% c("M", ".", "NaN", "NA000") ~ NA,
+    nchar(value_clean) == 0 ~ NA,
+    ## Handle 'less than' indications
+    value_clean == "< 0.5" ~ "0.25",
+    ## Otherwise keep the value as it is
+    T ~ value_clean))
+
+# Make sure all numbers are 'good' numbers
+supportR::num_check(data = tidy_v4c, col = "value_actual")
+
+# Identify names of all columns except for sample replicate / old values columns
+(keeps <- setdiff(x = names(tidy_v4c), y = c("sample_replicate", "value_raw", 
+                                            "value_clean", "value_actual")))
+
+# Finish wrangling this object!
+tidy_v4d <- tidy_v4c %>%
+  # Make the value column numeric
+  dplyr::mutate(values = as.numeric(value_actual)) %>%
+  # Drop intermediary value columns
+  dplyr::select(-value_raw, -value_clean, -value_actual) %>%
+  # Group by all keep columns and average across values (removes sample replicate column)
+  dplyr::group_by(dplyr::across(dplyr::all_of(keeps))) %>%
+  dplyr::summarize(value = mean(values, na.rm = T)) %>%
+  dplyr::ungroup()
+
+# How many rows were lost (i.e., how much replication at finer scale than of interest for us)?
+nrow(tidy_v4c) - nrow(tidy_v4d)
+
+# Glimpse structure
+dplyr::glimpse(tidy_v4d)
+
+# Final processing of this object
+tidy_v5 <- tidy_v4d %>%
+  # Drop any empty rows (created by cleaning up non-numbers)
+  dplyr::filter(nchar(value) != 0 & !is.na(value)) %>%
+  # Pivot back to wide format
+  tidyr::pivot_wider(names_from = variable, values_from = value) %>%
+  # Relocate pH column
+  dplyr::relocate(pH, .after = core_length_cm) %>%
+  # Group C/N columns together
+  dplyr::relocate(dplyr::starts_with("C_conc"), .after = pH) %>%
+  dplyr::relocate(dplyr::starts_with("N_conc"), .after = pH)
+
+# Re-check structure
+dplyr::glimpse(tidy_v5)
+
+# Check to see if any columns were lost/gained (should only be 'sample_replicate' lost)
+supportR::diff_check(old = names(tidy_v4), new = names(tidy_v5))
+
+# Glimpse it
+dplyr::glimpse(tidy_v5)
+
+## ------------------------------------------ ##
+        # Bulk Density / Soil Fixes ----
+## ------------------------------------------ ##
+
+# Wrangling for soil information
+tidy_v6 <- tidy_v5 %>%
+  # Relocate soil columns to the left
+  dplyr::relocate(dplyr::contains("bulk_density"), coarse_vol_percent, dplyr::contains("soil"),
+                  .after = pH) %>%
+  # Average across the two bulk density columns in the same units
+  dplyr::mutate(bulk_dens_avg_kg_ha = dplyr::case_when(
+    !is.na(bulk_density_kg_ha) & !is.na(bulk_density_value2_kg_ha) ~ (bulk_density_kg_ha + bulk_density_value2_kg_ha) / 2,
+    !is.na(bulk_density_kg_ha) & is.na(bulk_density_value2_kg_ha) ~ bulk_density_kg_ha,
+    is.na(bulk_density_kg_ha) & !is.na(bulk_density_value2_kg_ha) ~ bulk_density_value2_kg_ha,
+    T ~ NA), .after = bulk_density_g_cm3) %>%
+  # Drop those now-superseded columns
+  dplyr::select(-bulk_density_kg_ha, -bulk_density_value2_kg_ha) %>%
+  # Rename the bulk density columns
+  dplyr::rename(bulk_density_kg_ha = bulk_dens_avg_kg_ha,
+                bulk_density_g_cm3_raw = bulk_density_g_cm3) %>%
+  #  We're hard coding bulk density in here rather than typing manually
+  ## Citations/justifications are included next to each bulk density value
+  dplyr::mutate(bulk_density = dplyr::case_when(
+  # If bulk density was provided, use that instead of doing conditionals
+    !is.na(bulk_density_g_cm3_raw) & 
+      nchar(bulk_density_g_cm3_raw) != 0 ~ as.numeric(bulk_density_g_cm3_raw),
+    dataset == "Bonanza Creek_1" ~ 0.9,
+    dataset == "Bonanza Creek_2" ~ 0.9,
+    dataset == "Brazil" ~ 0.9,
+    dataset == "Calhoun" ~ 0.9,
+    dataset == "Coweeta" ~ 0.9,
+    dataset == "Fernow" ~ 0.9,
+    dataset == "FloridaCoastal" ~ 0.9,
+    dataset == "Jornada" ~ 0.9,
+    dataset == "Hubbard Brook" ~ 0.9,
+    dataset == "Luquillo_1" ~ 0.9,
+    dataset == "Luquillo_2" ~ 0.9,
+    dataset == "Niwot_1" ~ 0.9,
+    dataset == "Niwot_2" ~ 0.9,
+    dataset == "Niwot_3" ~ 0.9,
+    dataset == "Niwot_Liptzen2006" ~ 0.9,
+    dataset == "Sevilleta_1" ~ 0.9,
+    dataset == "Sevilleta_2" ~ 0.9,
+    dataset == "Toolik" ~ 0.9,
+    # dataset == "" ~ ,
+    # If no bulk density is supplied by above conditions, fill with NA
+    TRUE ~ NA), .after = bulk_density_g_cm3_raw) %>%
+  # Drop old column and rename remaining one to avoid confusion
+  dplyr::select(-bulk_density_g_cm3_raw) %>%
+  dplyr::rename(bulk_density_g_cm3 = bulk_density)
+
+# Check whether we're missing any bulk density values
+## If so, need to add another conditional to the above `case_when`
+tidy_v6 %>%
+  dplyr::filter(is.na(bulk_density_g_cm3)) %>%
+  # dplyr::select(dataset, site, plot, block) %>%
+  dplyr::select(dataset) %>%
+  dplyr::distinct()
+
+# Check structure
+dplyr::glimpse(tidy_v6[1:30])
+
+## ------------------------------------------ ##
+            # Nitrogen & Carbon ----
+## ------------------------------------------ ##
+
+# Look at the most relevant bit for N/C tidying
+tidy_v6 %>%
+  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
+  dplyr::glimpse()
+
+# Convert N & C into percents
+tidy_v6b <- tidy_v6 %>%
+  # Standardize Nitrogen concentration units (conditions are from most to least preferred unit)
+  dplyr::mutate(N_conc_actual = dplyr::case_when(
+    !is.na(N_conc_percent) ~ N_conc_percent,
+    is.na(N_conc_percent) & !is.na(N_conc_mg_kg) ~ N_conc_mg_kg * 0.0001,
+    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
+      !is.na(N_conc_mg_g) ~ (N_conc_mg_g * 10^3) * 0.0001,
+    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
+      is.na(N_conc_mg_g) & !is.na(N_conc_ug_g) ~ (N_conc_ug_g * 10^6) * 0.0001,
+    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
+      is.na(N_conc_mg_g) & is.na(N_conc_ug_g) &
+      !is.na(N_conc_g_kg) ~ (N_conc_g_kg / 10^3) * 0.0001,
+    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
+      is.na(N_conc_mg_g) & is.na(N_conc_ug_g) &
+      is.na(N_conc_g_kg) & !is.na(mean_N_percent) ~ mean_N_percent,
+    # If nothing exists, fill with NA
+    TRUE ~ NA), .before = N_conc_percent) %>%
+  # Do the same for Carbon
+  dplyr::mutate(C_conc_actual = dplyr::case_when(
+    !is.na(C_conc_percent) ~ C_conc_percent,
+    is.na(C_conc_percent) & !is.na(C_conc_mg_kg) ~ C_conc_mg_kg * 0.0001,
+    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
+      !is.na(C_conc_mg_g) ~ (C_conc_mg_g * 10^3) * 0.0001,
+    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
+      is.na(C_conc_mg_g) & !is.na(C_conc_ug_g) ~ (C_conc_ug_g * 10^6) * 0.0001,
+    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
+      is.na(C_conc_mg_g) & is.na(C_conc_ug_g) &
+      !is.na(C_conc_g_kg) ~ (C_conc_g_kg / 10^3) * 0.0001,
+    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
+      is.na(C_conc_mg_g) & is.na(C_conc_ug_g) &
+      is.na(C_conc_g_kg) & !is.na(mean_C_percent) ~ mean_C_percent,
+    TRUE ~ NA), .before = C_conc_percent) %>%
+  # Drop now-superseded columns
+  dplyr::select(-N_conc_percent, -N_conc_mg_kg, -N_conc_mg_g, 
+                -N_conc_ug_g, -N_conc_g_kg, -mean_N_percent,
+                -C_conc_percent, -C_conc_mg_kg, -C_conc_mg_g, 
+                -C_conc_ug_g, -C_conc_g_kg, -mean_C_percent) %>%
+  # Rename combined columns for clarity and to maintain snake_case
+  dplyr::rename(N_conc_percent = N_conc_actual,
+                C_conc_percent = C_conc_actual,
+                C_conc_inorg_percent = C_conc_Inorg_percent,
+                C_conc_org_percent = C_conc_Org_percent)
+
+# How many NAs did we fill for Nitrogran?
+summary(tidy_v6$N_conc_percent); summary(tidy_v6b$N_conc_percent)
+
+# Check Carbon in the same way
+summary(tidy_v6$C_conc_percent); summary(tidy_v6b$C_conc_percent)
+
+# Check remaining columns
+tidy_v6b %>%
+  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
+  dplyr::glimpse()
+
+# Now let's handle different units for stock
+tidy_v7 <- tidy_v6b %>%
+  # Convert Nitrogen stock into one unit (mg/m2)
+  dplyr::mutate(N_stock_actual = dplyr::case_when(
+    !is.na(N_stock_mg_m2) ~ N_stock_mg_m2,
+    is.na(N_stock_mg_m2) & !is.na(N_stock_g_m2) ~ (N_stock_g_m2 / 10^3),
+    is.na(N_stock_mg_m2) & is.na(N_stock_g_m2) &
+      !is.na(N_kg_ha) ~ (N_kg_ha * 100),
+    T ~ NA), .after = N_conc_percent) %>%
+  # Convert Carbon stocks too
+  dplyr::mutate(C_stock_actual = dplyr::case_when(
+    !is.na(C_stock_mg_m2) ~ C_stock_mg_m2,
+    is.na(C_stock_mg_m2) & !is.na(C_stock_g_m2) ~ (C_stock_g_m2 / 10^3),
+    is.na(C_stock_mg_m2) & is.na(C_stock_g_m2) &
+      !is.na(C_kg_ha) ~ (C_kg_ha * 100),
+    T ~ NA), .after = C_conc_percent) %>%
+  # Drop now-superseded columns
+  dplyr::select(-N_stock_mg_m2, -N_stock_g_m2, -N_kg_ha,
+                -C_stock_mg_m2, -C_stock_g_m2, -C_kg_ha) %>%
+  # Rename remaining columns for clarity
+  dplyr::rename(N_stock_mg_m2 = N_stock_actual,
+                C_stock_mg_m2 = C_stock_actual) %>%
+  # Relocate N/C 'by depth' columns to be near these others
+  dplyr::relocate(N_by_depth, .after = N_stock_mg_m2) %>%
+  dplyr::relocate(C_by_depth, .after = C_stock_mg_m2)
+
+# How many NAs did we fill for Nitrogran?
+summary(tidy_v6b$N_stock_mg_m2); summary(tidy_v7$N_stock_mg_m2)
+
+# Check Carbon in the same way
+summary(tidy_v6b$C_stock_mg_m2); summary(tidy_v7$C_stock_mg_m2)
+
+# Check remaining columns' structure again
+tidy_v7 %>%
+  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
+  dplyr::glimpse()
+
+# Check structure of more columns
+dplyr::glimpse(tidy_v7[c(1:10, 25:35)])
+
+## ------------------------------------------ ##
+            # Phosphorus Sums ----
+## ------------------------------------------ ##
+
+# Glimpse the entire dataset
+dplyr::glimpse(tidy_v7)
+
 # Now we'll want to add together our various types of P (conditionally)
-p_sums <- tidy_v4 %>%
+p_sums <- tidy_v7 %>%
   # First need to fill NAs with 0s to avoid making NA sums
   ## Pivot longer
-  tidyr::pivot_longer(cols = -dataset:-pH,
+  tidyr::pivot_longer(cols = -lter:-C_conc_org_percent,
                       names_to = "names", values_to = "values") %>%
-  ## Fill NA with 0
-  dplyr::mutate(values = ifelse(test = is.na(values), yes = 0, no = values)) %>%
-  ## Pivot back to wide format
+  ## Remove NA / missing values
+  dplyr::filter(!is.na(values) & nchar(values) != 0) %>%
+  ## Pivot back to wide format and fill empty cells with 0
   tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
   # Calculate slow P conditionally
   dplyr::mutate(slow_P_mg_kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Bonanza Creek_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Brazil" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Calhoun" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Coweeta" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Niwot_Liptzen2006" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Sevilletta_Cross1994" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Fernow" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "FloridaCoastal" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Hubbard Brook" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Jornada" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Luquillo_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Luquillo_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Niwot_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Niwot_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Niwot_3" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Sevilleta_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Sevilleta_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Toolik" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     # dataset == "" ~ (),
-    TRUE ~ (HCl_P_mg_kg) )) %>%
+    TRUE ~ NA )) %>%
   # Also total P
   dplyr::mutate(total_P_mg_kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                      NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                      ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                      HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                      Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Bonanza Creek_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                      NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                      ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                      HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                      Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Brazil" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
     dataset == "Calhoun" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
                               NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
                               ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
@@ -450,108 +873,117 @@ p_sums <- tidy_v4 %>%
                               ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
                               HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
                               Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Niwot_Liptzen2006" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                        NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                        ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                        HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg +
-                                        Residual_P_mg_kg + Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Sevilletta_Cross1994" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                           NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                           ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                           HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg +
-                                           Residual_P_mg_kg + Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Fernow" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "FloridaCoastal" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                     NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                     ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                     HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                     Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Hubbard Brook" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                    NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                    ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                    HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                    Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Jornada" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Luquillo_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                 NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                 ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                 HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                 Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Luquillo_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                 NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                 ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                 HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                 Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Niwot_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Niwot_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Niwot_3" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Sevilleta_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                  NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                  ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                  HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                  Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Sevilleta_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                  NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                  ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                  HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                  Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Toolik" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
     # dataset == "" ~ (),
-    TRUE ~ (HCl_P_mg_kg) )) %>%
+    TRUE ~ NA )) %>%
   # After summing, remove all columns where we changed NAs to 0s
-  dplyr::select(dataset:C_conc_mg_kg, slow_P_mg_kg, total_P_mg_kg) %>%
+  dplyr::select(lter:C_conc_org_percent, slow_P_mg_kg, total_P_mg_kg) %>%
   # Keep only unique rows
   dplyr::distinct()
+
+# Any datasets missing?
+p_sums %>%
+  dplyr::filter(is.na(slow_P_mg_kg) | is.na(total_P_mg_kg)) %>%
+  dplyr::pull(dataset) %>%
+  unique()
 
 # Check structure
 dplyr::glimpse(p_sums)
 
 # Note we're doing this in a separate object because we coerced NAs into 0s for algebra reasons
-## They're not "real" 0s so we want to preserve the relevant information
+## They're not "real" 0s so we want to preserve the real 0s while still easily getting sums
 
 # Now we can attach our sums to the original tidy object
-tidy_v5 <- tidy_v4 %>%
+tidy_v8 <- tidy_v7 %>%
   # By not specifying which columns to join by, all shared columns will be used
   dplyr::left_join(y = p_sums) %>%
   # Move our P sums to the left for more easy reference
-  dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density)
+  dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density_kg_ha)
 
 # Check structure
-dplyr::glimpse(tidy_v5)
+dplyr::glimpse(tidy_v8)
 
 ## ------------------------------------------ ##
-      # Data Wrangling - Absolute P ----
+              # Absolute P ----
 ## ------------------------------------------ ##
 
 # Calculate absolute P totals (rather than portions of each core)
-tidy_v6 <- tidy_v5 %>%
+tidy_v9 <- tidy_v8 %>%
   # Due to our earlier depth/bulk density prep this is easy!
-  dplyr::mutate(slow_P_absolute = slow_P_mg_kg * core_length_cm * bulk_density,
+  dplyr::mutate(slow_P_absolute = slow_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = slow_P_mg_kg) %>%
-  dplyr::mutate(total_P_absolute = total_P_mg_kg * core_length_cm * bulk_density,
+  dplyr::mutate(total_P_absolute = total_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = total_P_mg_kg)
 ## Units of absolute sums are ____?
   
 # Re-check structure
-dplyr::glimpse(tidy_v6)
-
-## ------------------------------------------ ##
-        # Data Wrangling - N & C ----
-## ------------------------------------------ ##
-
-# Look at the most relevant bit for N/C tidying
-tidy_v6 %>%
-  dplyr::select(dataset, dplyr::starts_with("N_conc_"), dplyr::starts_with("C_conc_")) %>%
-  dplyr::glimpse()
-
-# Convert N & C into percents
-tidy_v7 <- tidy_v6 %>%
-  # Multiple competing units we need to standardize
-  dplyr::mutate(N_conc_actual = dplyr::case_when(
-    # If % exists, use that
-    !is.na(N_conc_percent) ~ N_conc_percent,
-    # If % doesn't exist, but mg/kg does, use that (but convert to percent)
-    is.na(N_conc_percent) & !is.na(N_conc_mg_kg) ~ N_conc_mg_kg * 0.0001,
-    # If % and mg/kg don't exist, but mg/g exists, use that (but convert to mg/kg then %)
-    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
-      !is.na(N_conc_mg_g) ~ (N_conc_mg_g * 1000) * 0.0001,
-    # If nothing exists, use NA
-    TRUE ~ NA), .before = N_conc_percent) %>%
-  # Do the same for C
-  dplyr::mutate(C_conc_actual = dplyr::case_when(
-    !is.na(C_conc_percent) ~ C_conc_percent,
-    is.na(C_conc_percent) & !is.na(C_conc_mg_kg) ~ C_conc_mg_kg * 0.0001,
-    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
-      !is.na(C_conc_mg_g) ~ (C_conc_mg_g * 1000) * 0.0001,
-    TRUE ~ NA), .before = C_conc_percent) %>%
-  # Drop now-superseded columns
-  dplyr::select(-N_conc_percent, -N_conc_mg_kg, -N_conc_mg_g,
-                -C_conc_percent, -C_conc_mg_kg, -C_conc_mg_g) %>%
-  # Rename the fixed columns more simply
-  dplyr::rename(N_conc_percent = N_conc_actual,
-                C_conc_percent = C_conc_actual)
-
-# Check the number of NAs before/after (for Nitrogen)
-summary(tidy_v6$N_conc_percent)
-summary(tidy_v7$N_conc_percent)
-
-# Do the same check for Carbon
-summary(tidy_v6$C_conc_percent)
-summary(tidy_v7$C_conc_percent)
-
-# Check data structure again
-dplyr::glimpse(tidy_v7)
+dplyr::glimpse(tidy_v9)
 
 ## ------------------------------------------ ##
                   # Export ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-final_tidy <- tidy_v7
+final_tidy <- tidy_v9
 
 # Check its structure
 dplyr::glimpse(final_tidy)
