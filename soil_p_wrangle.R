@@ -298,6 +298,101 @@ tidy_v2 <- tidy_v1 %>%
 dplyr::glimpse(tidy_v2)
 
 ## ------------------------------------------ ##
+# Data Wrangling - Horizon ----
+## ------------------------------------------ ##
+
+# Check horizon column and depth column for horizon info
+sort(unique(tidy_v2$horizon))
+sort(unique(tidy_v2$depth_cm))
+
+# Handle horizon information
+tidy_v3 <- tidy_v2 %>%
+  # Tidy and rename the starting horizon column
+  dplyr::mutate(horizon_raw = dplyr::case_when(
+    tolower(horizon) %in% c("upper organic") ~ "Oe",
+    tolower(horizon) %in% c("lower organic") ~ "Oa",
+    tolower(horizon) %in% c("mineral") ~ "mineral",
+    T ~ horizon), .after = horizon) %>%
+  # Create a version of the depth column that only includes any embedded horizon info
+  dplyr::mutate(depth_horizon = gsub(pattern = "0|1|2|3|4|5|6|7|8|9|_|-|\\+| |\\.|Apr|Aug|Dec|hurricane_sediment|Jul|Jun|Mar|May|Nov|Oct|Sep",
+                                     replacement = "", x = depth_cm)) %>%
+  # Create a column that uses entered horizon, depth horizon info, and expert knowledge to increase coverage
+  dplyr::mutate(horizon_actual = dplyr::case_when(
+    # If horizon is in data, use that
+    !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ horizon_raw,
+    !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ depth_horizon,
+    # If not in data, use expert knowledge to fill conditionally
+    # dataset == "Bonanza Creek_1" ~ "",
+    # dataset == "Bonanza Creek_2" ~ "",
+    # dataset == "Brazil" ~ "",
+    # dataset == "Calhoun" ~ "",
+    # dataset == "Coweeta" ~ "",
+    # dataset == "Jornada" ~ "",
+    # dataset == "Kellog_Biological_Station" ~ "",
+    # dataset == "Luquillo_1" ~ "",
+    # dataset == "Luquillo_2" ~ "",
+    # dataset == "Niwot_1" ~ "",
+    # dataset == "Niwot_2" ~ "",
+    # dataset == "Niwot_3" ~ "",
+    # dataset == "Sevilleta_1" ~ "",
+    # dataset == "Sevilleta_2" ~ "",
+    # If not in data and not known, fill with NA
+    T ~ NA), .after = horizon_raw) %>%
+  # Identify the source of this information
+  dplyr::mutate(horizon_source = dplyr::case_when(
+    # If in data say that
+    !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ "in data",
+    !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ "in data",
+    # If filled conditionally, enter that 
+    # dataset == "Bonanza Creek_1" ~ "expert knowledge",
+    # dataset == "Bonanza Creek_2" ~ "expert knowledge",
+    # dataset == "Brazil" ~ "expert knowledge",
+    # dataset == "Calhoun" ~ "expert knowledge",
+    # dataset == "Coweeta" ~ "expert knowledge",
+    # dataset == "Jornada" ~ "expert knowledge",
+    # dataset == "Kellog_Biological_Station" ~ "expert knowledge",
+    # dataset == "Luquillo_1" ~ "expert knowledge",
+    # dataset == "Luquillo_2" ~ "expert knowledge",
+    # dataset == "Niwot_1" ~ "expert knowledge",
+    # dataset == "Niwot_2" ~ "expert knowledge",
+    # dataset == "Niwot_3" ~ "expert knowledge",
+    # dataset == "Sevilleta_1" ~ "expert knowledge",
+    # dataset == "Sevilleta_2" ~ "expert knowledge",
+    # If no horizon information in this column, the source is NA
+    is.na(horizon_actual) ~ NA,
+    # Otherwise fill with NA
+    T ~ NA), .after = horizon_actual) %>%
+  # Create a 'mineral vs. organic' horizon column
+  dplyr::mutate(horizon_binary = dplyr::case_when(
+    horizon_actual %in% c("organic", "O", "Oi", "Oe", "Oa") ~ "organic",
+    horizon_actual %in% c("mineral", "A", "B", "C", "AEB") ~ "mineral",
+    horizon_actual == "T" ~ "UNKNOWN",
+    T ~ NA), .after = horizon_source) %>%
+  # Drop depth horizon column and original (un-tidied) horizon column
+  dplyr::select(-depth_horizon, -horizon) %>%
+  # Rename tidied horizon column
+  dplyr::rename(horizon = horizon_actual)
+
+# For which datasets is horizon info missing that could be filled by expert knowledge?
+tidy_v3 %>% 
+  dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>%
+  dplyr::select(dataset, raw_filename, horizon) %>%
+  dplyr::distinct()
+
+# How many NAs were filled by expert knowledge + extracting depth info?
+tidy_v2 %>% dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>% nrow()
+tidy_v3 %>% dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>% nrow()
+
+# Re-check
+sort(unique(tidy_v3$horizon_raw))
+sort(unique(tidy_v3$horizon))
+sort(unique(tidy_v3$horizon_source))
+sort(unique(tidy_v3$horizon_binary))
+
+# Check overall structure
+dplyr::glimpse(tidy_v3[1:18])
+
+## ------------------------------------------ ##
         # Data Wrangling - Depth ----
 ## ------------------------------------------ ##
 
