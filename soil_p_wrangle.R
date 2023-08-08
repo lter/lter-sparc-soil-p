@@ -340,49 +340,49 @@ tidy_v2b %>%
 # Wrangle depth into actual numbers
 tidy_v2c <- tidy_v2b %>%
   dplyr::mutate(depth_range_raw = dplyr::case_when(
-    ## Coweeta
+    ## Bonanza (1)
+    dataset == "Bonanza Creek_1" & depth_raw == "24" ~ "24-40",
+    dataset == "Bonanza Creek_1" & depth_raw == "36" ~ "36-50",
+    dataset == "Bonanza Creek_1" ~ gsub(pattern = "\\+", replacement = "", x = depth_raw),
+    ## Bonanza (2)
+    ### Starting depth listed in separate column
+    dataset == "Bonanza Creek_2" ~ paste0(org_depth_cm, "-", depth_raw),## Coweeta
     dataset == "Coweeta" & depth_raw == "10" ~ "10-30", # All other begin at 10 are 10-30
     dataset == "Coweeta" & depth_raw == "30+" ~ "30-60", # End of range is a guess
     ## Hubbard Brook
     dataset == "Hubbard Brook" & depth_raw == "30+" ~ "30-40",
-    dataset == "Hubbard Brook" & depth_raw == "50-C" ~ "50-60",
-    dataset == "Hubbard Brook" & depth_raw == "C+" ~ "", # no good guess
-    dataset == "Hubbard Brook" & depth_raw == "C0-25" ~ "0-25",
     dataset == "Hubbard Brook" & depth_raw == "C25+" ~ "25-35",
-    dataset == "Hubbard Brook" & depth_raw == "C25-50" ~ "25-50",
     dataset == "Hubbard Brook" & depth_raw == "C50+" ~ "50-75",
-    dataset == "Hubbard Brook" & depth_raw == "Oa" ~ "", # also no good guess
-    ## Bonanza (1)
-    dataset == "Bonanza Creek_1" & depth_raw == "24" ~ "24-40",
-    dataset == "Bonanza Creek_1" & depth_raw == "36" ~ "36-50",
-    dataset == "Bonanza Creek_1" ~ gsub(pattern = "\\+", replacement = "", 
-                                        x = depth_raw),
-    ## Bonanza (2)
-    ### Starting depth listed in separate column
-    dataset == "Bonanza Creek_2" ~ paste0(org_depth_cm, "-", depth_raw),
-    ## Seviletta (2)
-    dataset == "Sevilleta_2" & depth_raw == "10" ~ "0-10",
-    dataset == "Sevilleta_2" & depth_raw == "20" ~ "11-20",
-    dataset == "Sevilleta_2" & depth_raw == "30" ~ "21-30",
-    ## Luquillo
+    dataset == "Hubbard Brook" & depth_raw == "C+" ~ "", # guess needed
+    dataset == "Hubbard Brook" & depth_raw == "Oa" ~ "", # guess needed
+    ## Luquillo (1)
     ### No ranges so we'll just add a constant to every depth value to get the end of the range
     dataset == "Luquillo_1" & stringr::str_detect(string = depth_raw, pattern = "-") != T ~ paste0(depth_raw, "-", suppressWarnings(as.numeric(depth_raw)) + 10),
-    # dataset == "" &  depth_raw == "" ~ "",
+    ## Luquillo (2)
+    dataset == "Luquillo_2" & depth_raw == "1" ~ "1", # guess needed
+    dataset == "Luquillo_2" & depth_raw == "2" ~ "2", # guess needed
+    ## Niwot (3)
+    dataset == "Niwot_3" & depth_raw == "10" ~ "10", # guess needed
+    dataset == "Niwot_3" & depth_raw == "20" ~ "20", # guess needed
+    ## Seviletta (2)
+    dataset == "Sevilleta_2" & depth_raw == "10" ~ "10", # guess needed
+    dataset == "Sevilleta_2" & depth_raw == "20" ~ "20", # guess needed
+    dataset == "Sevilleta_2" & depth_raw == "30" ~ "30", # guess needed
+    ## Otherwise raw depth assumed to be a functioning range
     TRUE ~ depth_raw), .after = depth_raw) %>%
   # If depth included horizon information we probably can assume that it was *relative* depth
   dplyr::mutate(depth_type = dplyr::case_when(
     # Relative depth within horizon layer
-    depth_raw %in% c() ~ "relative",
+    dataset == "Hubbard Brook" & depth_raw %in% c("30+", "C+", "C25+", "C50+", "Oa") ~ "relative",
     # No depth info means no depth type
-    is.na(depth_raw) | nchar(depth_raw) == 0 ~ NA
+    is.na(depth_raw) | nchar(depth_raw) == 0 ~ NA,
     # Otherwise depth info is assumed to be objective depth
     T ~ "objective"), .after = depth_range_raw)
-
 
 # Re-check for malformed depth ranges
 tidy_v2c %>%
   dplyr::filter(stringr::str_detect(string = depth_range_raw, pattern = "-") != T) %>%
-  dplyr::select(dataset, raw_filename, depth_raw, depth_range_raw) %>%
+  dplyr::select(dataset, raw_filename, depth_raw, depth_range_raw, horizon_raw, depth_type) %>%
   dplyr::distinct()
 
 
