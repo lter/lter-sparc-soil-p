@@ -194,7 +194,7 @@ dplyr::glimpse(tidy_v0)
 rm(list = setdiff(ls(), "tidy_v0"))
 
 ## ------------------------------------------ ##
-      # Data Wrangling - Re-Organizing  ----
+         # Column Re-Organizing  ----
 ## ------------------------------------------ ##
 
 # Identify all columns that are ostensibly numeric
@@ -254,7 +254,7 @@ supportR::diff_check(old = names(tidy_v0), new = names(tidy_v1))
 dplyr::glimpse(tidy_v1)
 
 ## ------------------------------------------ ##
-    # Data Wrangling - Site Info Checks ----
+             # Site Info Checks ----
 ## ------------------------------------------ ##
 
 # Re-check data structure
@@ -291,7 +291,8 @@ tidy_v2 <- tidy_v1 %>%
                 tot_P_kg_ha_0_10 = `0_10_tot_P_kg_ha`) %>%
   # Relocate all spatial/site columns to the left of the dataframe
   dplyr::relocate(lter, dataset, raw_filename, site, lat, lon, plot, block, core,
-                  sample_replicate, treatment_years, distance, topography, horizon,
+                  sample_replicate, treatment, treatment_years, distance, topography, 
+                  horizon, depth_cm, org_depth_cm, pH,
                   .before = dplyr::everything()) %>%
   # Create a better version of the LTER column
   dplyr::mutate(lter = dplyr::coalesce(lter, dataset)) %>%
@@ -319,7 +320,7 @@ sort(unique(tidy_v2$lter))
 dplyr::glimpse(tidy_v2)
 
 ## ------------------------------------------ ##
-    # Data Wrangling - Depth & Horizon ----
+          # Depth & Horizon Fixes ----
 ## ------------------------------------------ ##
 
 # Next we need to wrangle depth and horizon information
@@ -477,7 +478,9 @@ tidy_v2e <- tidy_v2d %>%
   dplyr::select(-depth_1, -depth_2, -depth_raw, -depth_range_raw) %>%
   # Calculate length of core as well
   dplyr::mutate(core_length = depth_end_cm - depth_start_cm,
-                .after = depth_end_cm)
+                .after = depth_end_cm) %>%
+  # Move these columns to the left
+  dplyr::relocate(depth_type, depth_start_cm, depth_end_cm, core_length, .after = horizon_raw)
 
 # Check distribution of the new depth columns we just extracted
 psych::multi.hist(x = tidy_v2e$depth_start_cm)
@@ -568,25 +571,58 @@ tidy_v3 %>%
   dplyr::select(-dplyr::ends_with("_by_depth")) %>%
   dplyr::glimpse()
 
+# Check again for column order
+dplyr::glimpse(tidy_v3[1:21])
+
 ## ------------------------------------------ ##
-# Relative Depth Wrangling ----
+      # Relative Depth Wrangling ----
 ## ------------------------------------------ ##
 
 # Some depths are relative to their soil horizon
 ## Need to calculate their objective depths
 
-# Needed wrangling
-tidy_v4 <- tidy_v3 %>%
-  # Assemble a new depth range column that uses the tidied depths
+# Split data into whether or not depth was relative
+rel_v1 <- dplyr::filter(tidy_v3, depth_type == "relative")
+tidy_v3_nonrelative <- dplyr::filter(tidy_v3, depth_type == "objective" | is.na(depth_type))
+
+# Check to make sure no rows were lost
+nrow(rel_v1) + nrow(tidy_v3_nonrelative) == nrow(tidy_v3)
+
+# What horizon layers are in this subset of the data?
+unique(rel_v1$horizon)
+
+# Generate a horizon order
+horizon_order <- c("O", "AEB", "C")
+
+# Wrangle relative depth data object
+rel_v2 <- rel_v1 %>%
+  # Keep only columns with at least one value
+  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == "")))) %>%
+  # Make horizon a factor
+  dplyr::mutate(horizon = factor(horizon, levels = horizon_order))
+
+# UNFINISHED!!!
+## Need to figure out how to conditionally add each horizon's depth to the previous
+## Complicated by HBR lacking depths for all O and some C cores (so can't add from either direction)
+
+# Check structure
+dplyr::glimpse(rel_v2)
+
+# Finish up the depth/horizon wrangling
+tidy_v4 <- tidy_v3_nonrelative %>%
+  # Bind the rows of the wrangled relative data object back onto the dataframe
+  dplyr::bind_rows(rel_v2) %>%
+  # Assemble a new depth range column that uses the tidied, objective depths
   dplyr::mutate(depth_range_cm = ifelse(!is.na(depth_start_cm) & !is.na(depth_end_cm),
                                         yes = paste0(depth_start_cm, "-", depth_end_cm),
-                                        no = NA))
+                                        no = NA),
+                .after = depth_end_cm)
 
 # Re-check structure
 dplyr::glimpse(tidy_v4)
 
 ## ------------------------------------------ ##
-      # Data Wrangling - Bulk Density ----
+          # Bulk Density Wrangling ----
 ## ------------------------------------------ ##
 
 # Check the bulk density values included in the data for non-numbers
@@ -630,7 +666,7 @@ tidy_v4 %>%
 dplyr::glimpse(tidy_v4)
 
 ## ------------------------------------------ ##
-        # Data Wrangling - P Sums ----
+            # Phosphorus Sums ----
 ## ------------------------------------------ ##
 
 # Now we'll want to add together our various types of P (conditionally)
@@ -697,7 +733,7 @@ tidy_v5 <- tidy_v4 %>%
 dplyr::glimpse(tidy_v5)
 
 ## ------------------------------------------ ##
-      # Data Wrangling - Absolute P ----
+              # Absolute P ----
 ## ------------------------------------------ ##
 
 # Calculate absolute P totals (rather than portions of each core)
@@ -713,7 +749,7 @@ tidy_v6 <- tidy_v5 %>%
 dplyr::glimpse(tidy_v6)
 
 ## ------------------------------------------ ##
-        # Data Wrangling - N & C ----
+            # Nitrogen & Carbon ----
 ## ------------------------------------------ ##
 
 # Look at the most relevant bit for N/C tidying
