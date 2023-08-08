@@ -263,6 +263,7 @@ dplyr::glimpse(tidy_v1)
 # Check for typos in the site/sample information columns
 sort(unique(tidy_v1$Dataset))
 sort(unique(tidy_v1$Raw_Filename))
+sort(unique(tidy_v1$LTER))
 sort(unique(tidy_v1$site))
 sort(unique(tidy_v1$lat))
 sort(unique(tidy_v1$lon))
@@ -270,16 +271,28 @@ sort(unique(tidy_v1$plot))
 sort(unique(tidy_v1$block))
 sort(unique(tidy_v1$core))
 sort(unique(tidy_v1$treatment))
+sort(unique(tidy_v1$treatment_years))
+sort(unique(tidy_v1$distance))
+sort(unique(tidy_v1$topography))
+sort(unique(tidy_v1$horizon))
 
 # Fix any typos identified above
 tidy_v2 <- tidy_v1 %>%
+  # Fix some of the spatial/site columns
+  dplyr::mutate(distance = as.numeric(distance),
+                treatment_years = as.numeric(treatment_years),
+                topography = tolower(topography)) %>%
   # Rename columns so that everything is in snake case except element abbreviations
   ## snake case = "lower_lower_lower"
   dplyr::rename(dataset = Dataset,
                 raw_filename = Raw_Filename,
                 available_P_ppm = Avail_P_ppm,
                 coarse_vol_percent = Coarse_Vol_percent,
-                tot_P_kg_ha_0_10 = `0_10_tot_P_kg_ha`)
+                tot_P_kg_ha_0_10 = `0_10_tot_P_kg_ha`) %>%
+  # Relocate all spatial/site columns to the left of the dataframe
+  dplyr::relocate(dataset, raw_filename, LTER, site, lat, lon, plot, block, core,
+                  sample_replicate, treatment_years, distance, topography, horizon,
+                  .before = dplyr::everything())
 
 # Check structure
 dplyr::glimpse(tidy_v2)
