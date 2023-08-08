@@ -185,73 +185,13 @@ for(j in 1:length(raw_files)){
 } # Close loop
 
 # Unlist the list we just generated
-tidy_v0 <- purrr::list_rbind(df_list)
+tidy_v1 <- purrr::list_rbind(df_list)
 
 # Check that out
-dplyr::glimpse(tidy_v0)
+dplyr::glimpse(tidy_v1)
 
 # Clean up environment
-rm(list = setdiff(ls(), "tidy_v0"))
-
-## ------------------------------------------ ##
-         # Column Re-Organizing  ----
-## ------------------------------------------ ##
-
-# Identify all columns that are ostensibly numeric
-num_cols <- tidy_v0 %>%
-  # Grab just those columns
-  dplyr::select(dplyr::starts_with("lat"), dplyr::starts_with("lon"),
-                bulk_density_g_cm3, soil_mass_g_m2, pH, 
-                dplyr::ends_with("_mg_kg"), dplyr::ends_with("_mg_g"),
-                dplyr::ends_with("_ppm"), dplyr::ends_with("_mg_m2"),
-                dplyr::ends_with("_kg_ha"), dplyr::ends_with("_ug_g"),
-                dplyr::ends_with("_mg_cm3"), dplyr::ends_with("_g_kg"),
-                dplyr::ends_with("_g_m2"), dplyr::ends_with("_percent")) %>%
-  # Keep a vector of their names
-  names()
-
-# Is that all of the columns that should be numeric?
-supportR::diff_check(old = names(tidy_v0), new = num_cols)
-
-# Check some numeric columns to ensure that there is no weirdness with non-numbers
-supportR::multi_num_check(data = tidy_v0, col_vec = num_cols)
-
-# Process that object a little
-tidy_v0.5 <- tidy_v0 %>%
-  # Fix places where non-numbers would be lost by coercing with `as.numeric`
-  dplyr::mutate(
-    ## Handle places where less than (<)/greater than (>) were included as number modifiers
-    P_conc_mg_kg = ifelse(test = P_conc_mg_kg == "< 0.5",
-                                      yes = "0.25", no = P_conc_mg_kg),
-    ## Handle missing values
-    bulk_density_g_cm3 = ifelse(test = bulk_density_g_cm3 == "M",
-                                yes = NA, no = bulk_density_g_cm3),
-    Avail_P_ppm = ifelse(test = Avail_P_ppm == "M", yes = NA, no = Avail_P_ppm),
-    P_stock_Total_mg_m2 = ifelse(test = P_stock_Total_mg_m2 == "NA000", 
-                                 yes = NA, no = P_stock_Total_mg_m2),
-    pH = gsub(pattern = "\\.", replacement = NA, x = pH),
-   ## Remove % symbol where it was included
-   Coarse_Vol_percent = ifelse(nchar(Coarse_Vol_percent) != 0,
-                               yes = gsub(pattern = "\\%", replacement = "", 
-                                          x = Coarse_Vol_percent), no = NA)
-  )
-  
-# Re-check to make sure we've fixed everything
-supportR::multi_num_check(data = tidy_v0.5, col_vec = num_cols)
-
-# Continue wrangling
-tidy_v1 <- tidy_v0.5 %>%
-  # Make numeric columns actually be numeric (had to coerce to character earlier)
-  dplyr::mutate(dplyr::across(.cols = dplyr::all_of(num_cols), .fns = as.numeric)) %>%
-  # Group C/N columns together
-  dplyr::relocate(dplyr::starts_with("C_conc"), .after = depth_cm) %>%
-  dplyr::relocate(dplyr::starts_with("N_conc"), .after = depth_cm)
-
-# Make sure no columns were dropped / added
-supportR::diff_check(old = names(tidy_v0), new = names(tidy_v1))
-
-# Glimpse it
-dplyr::glimpse(tidy_v1)
+rm(list = setdiff(ls(), "tidy_v1"))
 
 ## ------------------------------------------ ##
              # Site Info Checks ----
@@ -278,7 +218,9 @@ sort(unique(tidy_v1$topography))
 # Fix any typos identified above
 tidy_v2 <- tidy_v1 %>%
   # Fix some of the spatial/site columns
-  dplyr::mutate(distance = as.numeric(distance),
+  dplyr::mutate(lat = as.numeric(lat),
+                lon = as.numeric(lon),
+                distance = as.numeric(distance),
                 treatment_years = as.numeric(treatment_years),
                 topography = tolower(topography)) %>%
   # Rename columns so that everything is in snake case except element abbreviations
@@ -612,6 +554,8 @@ dplyr::glimpse(rel_v2)
 tidy_v4 <- tidy_v3_nonrelative %>%
   # Bind the rows of the wrangled relative data object back onto the dataframe
   dplyr::bind_rows(rel_v2) %>%
+  # Drop depth type column
+  dplyr::select(-depth_type) %>%
   # Assemble a new depth range column that uses the tidied, objective depths
   dplyr::mutate(depth_range_cm = ifelse(!is.na(depth_start_cm) & !is.na(depth_end_cm),
                                         yes = paste0(depth_start_cm, "-", depth_end_cm),
@@ -620,6 +564,83 @@ tidy_v4 <- tidy_v3_nonrelative %>%
 
 # Re-check structure
 dplyr::glimpse(tidy_v4)
+
+## ------------------------------------------ ##
+# Numeric Column Checks ----
+## ------------------------------------------ ##
+
+# Before we can continue, we need to make all columns that should be numeric actually be numeric
+## Can also handle the 'sample replicate' rows once our response values are numbers
+
+# Reshape into long format to make a single column to check for non-numbers
+tidy_v4b <- tidy_v4 %>%
+  tidyr::pivot_longer(cols = -lter:-core_length,
+                      names_to = "variable",
+                      values_to = "value_raw") %>%
+  # Ditch empty rows too
+  dplyr::filter(!is.na(value_raw))
+
+# Check for non-numbers in the response value column
+supportR::num_check(data = tidy_v4b, col = "value_raw")
+
+# Resolve all non-numbers
+tidy_v4c <- tidy_v4b %>%
+  # Remove % symbols
+  dplyr::mutate(value_clean = gsub(pattern = "\\%", replacement = "", x = value_raw)) %>%
+  # Conditionally handle remaining issues
+  dplyr::mutate(value_actual = dplyr::case_when(
+    ## Missing values should be NA
+    value_clean %in% c("M", ".", "NaN", "NA000") ~ NA,
+    nchar(value_clean) == 0 ~ NA,
+    ## Handle 'less than' indications
+    value_clean == "< 0.5" ~ "0.25",
+    ## Otherwise keep the value as it is
+    T ~ value_clean))
+
+# Make sure all numbers are 'good' numbers
+supportR::num_check(data = tidy_v4c, col = "value_actual")
+
+# Identify names of all columns except for sample replicate / old values columns
+(keeps <- setdiff(x = names(tidy_v4c), y = c("sample_replicate", "value_raw", 
+                                            "value_clean", "value_actual")))
+
+# Finish wrangling this object!
+tidy_v4d <- tidy_v4c %>%
+  # Make the value column numeric
+  dplyr::mutate(values = as.numeric(value_actual)) %>%
+  # Drop intermediary value columns
+  dplyr::select(-value_raw, -value_clean, -value_actual) %>%
+  # Group by all keep columns and average across values (removes sample replicate column)
+  dplyr::group_by(dplyr::across(dplyr::all_of(keeps))) %>%
+  dplyr::summarize(value = mean(values, na.rm = T)) %>%
+  dplyr::ungroup()
+
+# How many rows were lost (i.e., how much replication at finer scale than of interest for us)?
+nrow(tidy_v4c) - nrow(tidy_v4d)
+
+# Glimpse structure
+dplyr::glimpse(tidy_v4d)
+
+# Final processing of this object
+tidy_v5 <- tidy_v4d %>%
+  # Drop any empty rows (created by cleaning up non-numbers)
+  dplyr::filter(nchar(value) != 0 & !is.na(value)) %>%
+  # Pivot back to wide format
+  tidyr::pivot_wider(names_from = variable, values_from = value) %>%
+  # Relocate pH column
+  dplyr::relocate(pH, .after = core_length) %>%
+  # Group C/N columns together
+  dplyr::relocate(dplyr::starts_with("C_conc"), .after = pH) %>%
+  dplyr::relocate(dplyr::starts_with("N_conc"), .after = pH)
+
+# Re-check structure
+dplyr::glimpse(tidy_v5)
+
+# Check to see if any columns were lost/gained (should only be 'sample_replicate' lost)
+supportR::diff_check(old = names(tidy_v4), new = names(tidy_v5))
+
+# Glimpse it
+dplyr::glimpse(tidy_v5)
 
 ## ------------------------------------------ ##
           # Bulk Density Wrangling ----
