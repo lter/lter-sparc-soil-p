@@ -419,15 +419,15 @@ tidy_v2e <- tidy_v2d %>%
   # Drop intermediary columns and old raw depth columns
   dplyr::select(-depth_1, -depth_2, -depth_raw, -depth_range_raw) %>%
   # Calculate length of core as well
-  dplyr::mutate(core_length = depth_end_cm - depth_start_cm,
+  dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm,
                 .after = depth_end_cm) %>%
   # Move these columns to the left
-  dplyr::relocate(depth_type, depth_start_cm, depth_end_cm, core_length, .after = horizon_raw)
+  dplyr::relocate(depth_type, depth_start_cm, depth_end_cm, core_length_cm, .after = horizon_raw)
 
 # Check distribution of the new depth columns we just extracted
 psych::multi.hist(x = tidy_v2e$depth_start_cm)
 psych::multi.hist(x = tidy_v2e$depth_end_cm)
-psych::multi.hist(x = tidy_v2e$core_length)
+psych::multi.hist(x = tidy_v2e$core_length_cm)
 
 # Check structure yet again
 tidy_v2e %>%
@@ -509,7 +509,7 @@ sort(unique(tidy_v3$horizon_binary))
 
 # Ad nauseam at this point but check structure
 tidy_v3 %>%
-  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth"), core_length) %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth"), core_length_cm) %>%
   dplyr::select(-dplyr::ends_with("_by_depth")) %>%
   dplyr::glimpse()
 
@@ -574,7 +574,7 @@ dplyr::glimpse(tidy_v4)
 
 # Reshape into long format to make a single column to check for non-numbers
 tidy_v4b <- tidy_v4 %>%
-  tidyr::pivot_longer(cols = -lter:-core_length,
+  tidyr::pivot_longer(cols = -lter:-core_length_cm,
                       names_to = "variable",
                       values_to = "value_raw") %>%
   # Ditch empty rows too
@@ -628,7 +628,7 @@ tidy_v5 <- tidy_v4d %>%
   # Pivot back to wide format
   tidyr::pivot_wider(names_from = variable, values_from = value) %>%
   # Relocate pH column
-  dplyr::relocate(pH, .after = core_length) %>%
+  dplyr::relocate(pH, .after = core_length_cm) %>%
   # Group C/N columns together
   dplyr::relocate(dplyr::starts_with("C_conc"), .after = pH) %>%
   dplyr::relocate(dplyr::starts_with("N_conc"), .after = pH)
@@ -726,6 +726,9 @@ tidy_v6b <- tidy_v6 %>%
     is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
       is.na(N_conc_mg_g) & is.na(N_conc_ug_g) &
       !is.na(N_conc_g_kg) ~ (N_conc_g_kg / 10^3) * 0.0001,
+    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
+      is.na(N_conc_mg_g) & is.na(N_conc_ug_g) &
+      is.na(N_conc_g_kg) & !is.na(mean_N_percent) ~ mean_N_percent,
     # If nothing exists, fill with NA
     TRUE ~ NA), .before = N_conc_percent) %>%
   # Do the same for Carbon
@@ -739,12 +742,15 @@ tidy_v6b <- tidy_v6 %>%
     is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
       is.na(C_conc_mg_g) & is.na(C_conc_ug_g) &
       !is.na(C_conc_g_kg) ~ (C_conc_g_kg / 10^3) * 0.0001,
+    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
+      is.na(C_conc_mg_g) & is.na(C_conc_ug_g) &
+      is.na(C_conc_g_kg) & !is.na(mean_C_percent) ~ mean_C_percent,
     TRUE ~ NA), .before = C_conc_percent) %>%
   # Drop now-superseded columns
   dplyr::select(-N_conc_percent, -N_conc_mg_kg, -N_conc_mg_g, 
-                -N_conc_ug_g, -N_conc_g_kg,
+                -N_conc_ug_g, -N_conc_g_kg, -mean_N_percent,
                 -C_conc_percent, -C_conc_mg_kg, -C_conc_mg_g, 
-                -C_conc_ug_g, -C_conc_g_kg) %>%
+                -C_conc_ug_g, -C_conc_g_kg, -mean_C_percent) %>%
   # Rename combined columns for clarity and to maintain snake_case
   dplyr::rename(N_conc_percent = N_conc_actual,
                 C_conc_percent = C_conc_actual,
@@ -783,7 +789,10 @@ tidy_v7 <- tidy_v6b %>%
                 -C_stock_mg_m2, -C_stock_g_m2, -C_kg_ha) %>%
   # Rename remaining columns for clarity
   dplyr::rename(N_stock_mg_m2 = N_stock_actual,
-                C_stock_mg_m2 = C_stock_actual)
+                C_stock_mg_m2 = C_stock_actual) %>%
+  # Relocate N/C 'by depth' columns to be near these others
+  dplyr::relocate(N_by_depth, .after = N_stock_mg_m2) %>%
+  dplyr::relocate(C_by_depth, .after = C_stock_mg_m2)
 
 # How many NAs did we fill for Nitrogran?
 summary(tidy_v6b$N_stock_mg_m2); summary(tidy_v7$N_stock_mg_m2)
@@ -803,26 +812,57 @@ dplyr::glimpse(tidy_v7[c(1:10, 25:35)])
             # Phosphorus Sums ----
 ## ------------------------------------------ ##
 
+# Glimpse the entire dataset
+dplyr::glimpse(tidy_v7)
+
 # Now we'll want to add together our various types of P (conditionally)
-p_sums <- tidy_v4 %>%
+p_sums <- tidy_v7 %>%
   # First need to fill NAs with 0s to avoid making NA sums
   ## Pivot longer
-  tidyr::pivot_longer(cols = -dataset:-pH,
+  tidyr::pivot_longer(cols = -lter:-C_conc_org_percent,
                       names_to = "names", values_to = "values") %>%
-  ## Fill NA with 0
-  dplyr::mutate(values = ifelse(test = is.na(values), yes = 0, no = values)) %>%
-  ## Pivot back to wide format
+  ## Remove NA / missing values
+  dplyr::filter(!is.na(values) & nchar(values) != 0) %>%
+  ## Pivot back to wide format and fill empty cells with 0
   tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
   # Calculate slow P conditionally
   dplyr::mutate(slow_P_mg_kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Bonanza Creek_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Brazil" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Calhoun" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Coweeta" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Niwot_Liptzen2006" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Sevilletta_Cross1994" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Fernow" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "FloridaCoastal" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Hubbard Brook" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Jornada" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Luquillo_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Luquillo_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Niwot_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Niwot_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Niwot_3" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Sevilleta_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Sevilleta_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Toolik" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     # dataset == "" ~ (),
-    TRUE ~ (HCl_P_mg_kg) )) %>%
+    TRUE ~ NA )) %>%
   # Also total P
   dplyr::mutate(total_P_mg_kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                      NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                      ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                      HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                      Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Bonanza Creek_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                      NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                      ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                      HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                      Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Brazil" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
     dataset == "Calhoun" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
                               NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
                               ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
@@ -833,61 +873,117 @@ p_sums <- tidy_v4 %>%
                               ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
                               HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
                               Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Niwot_Liptzen2006" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                        NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                        ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                        HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg +
-                                        Residual_P_mg_kg + Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Sevilletta_Cross1994" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                           NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                           ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                           HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg +
-                                           Residual_P_mg_kg + Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Fernow" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "FloridaCoastal" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                     NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                     ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                     HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                     Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Hubbard Brook" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                    NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                    ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                    HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                    Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Jornada" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Luquillo_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                 NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                 ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                 HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                 Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Luquillo_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                 NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                 ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                 HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                 Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Niwot_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Niwot_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Niwot_3" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Sevilleta_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                  NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                  ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                  HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                  Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Sevilleta_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                  NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                  ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                  HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                  Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Toolik" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
     # dataset == "" ~ (),
-    TRUE ~ (HCl_P_mg_kg) )) %>%
+    TRUE ~ NA )) %>%
   # After summing, remove all columns where we changed NAs to 0s
-  dplyr::select(dataset:C_conc_mg_kg, slow_P_mg_kg, total_P_mg_kg) %>%
+  dplyr::select(lter:C_conc_org_percent, slow_P_mg_kg, total_P_mg_kg) %>%
   # Keep only unique rows
   dplyr::distinct()
+
+# Any datasets missing?
+p_sums %>%
+  dplyr::filter(is.na(slow_P_mg_kg) | is.na(total_P_mg_kg)) %>%
+  dplyr::pull(dataset) %>%
+  unique()
 
 # Check structure
 dplyr::glimpse(p_sums)
 
 # Note we're doing this in a separate object because we coerced NAs into 0s for algebra reasons
-## They're not "real" 0s so we want to preserve the relevant information
+## They're not "real" 0s so we want to preserve the real 0s while still easily getting sums
 
 # Now we can attach our sums to the original tidy object
-tidy_v5 <- tidy_v4 %>%
+tidy_v8 <- tidy_v7 %>%
   # By not specifying which columns to join by, all shared columns will be used
   dplyr::left_join(y = p_sums) %>%
   # Move our P sums to the left for more easy reference
-  dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density)
+  dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density_kg_ha)
 
 # Check structure
-dplyr::glimpse(tidy_v5)
+dplyr::glimpse(tidy_v8)
 
 ## ------------------------------------------ ##
               # Absolute P ----
 ## ------------------------------------------ ##
 
 # Calculate absolute P totals (rather than portions of each core)
-tidy_v6 <- tidy_v5 %>%
+tidy_v9 <- tidy_v8 %>%
   # Due to our earlier depth/bulk density prep this is easy!
-  dplyr::mutate(slow_P_absolute = slow_P_mg_kg * core_length_cm * bulk_density,
+  dplyr::mutate(slow_P_absolute = slow_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = slow_P_mg_kg) %>%
-  dplyr::mutate(total_P_absolute = total_P_mg_kg * core_length_cm * bulk_density,
+  dplyr::mutate(total_P_absolute = total_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = total_P_mg_kg)
 ## Units of absolute sums are ____?
   
 # Re-check structure
-dplyr::glimpse(tidy_v6)
+dplyr::glimpse(tidy_v9)
 
 ## ------------------------------------------ ##
                   # Export ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-final_tidy <- tidy_v7
+final_tidy <- tidy_v9
 
 # Check its structure
 dplyr::glimpse(final_tidy)
