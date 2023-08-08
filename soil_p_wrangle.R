@@ -337,6 +337,12 @@ tidy_v2b %>%
   dplyr::select(dataset, raw_filename, depth_raw) %>%
   dplyr::distinct()
 
+# Also need to identify values that have more than one hyphen
+tidy_v2b %>%
+  dplyr::filter(stringr::str_count(string = depth_raw, pattern = "-") > 1) %>%
+  dplyr::select(dataset, raw_filename, depth_raw) %>%
+  dplyr::distinct()
+
 # Wrangle depth into actual numbers
 tidy_v2c <- tidy_v2b %>%
   dplyr::mutate(depth_range_raw = dplyr::case_when(
@@ -346,15 +352,26 @@ tidy_v2c <- tidy_v2b %>%
     dataset == "Bonanza Creek_1" ~ gsub(pattern = "\\+", replacement = "", x = depth_raw),
     ## Bonanza (2)
     ### Starting depth listed in separate column
-    dataset == "Bonanza Creek_2" ~ paste0(org_depth_cm, "-", depth_raw),## Coweeta
+    dataset == "Bonanza Creek_2" ~ paste0(org_depth_cm, "-", depth_raw),
+    ## Brazil
+    dataset == "Brazil" & depth_raw == "0--10" ~ "0-10",
+    dataset == "Brazil" & depth_raw == "10--30" ~ "10-30",
+    ## Coweeta
     dataset == "Coweeta" & depth_raw == "10" ~ "10-30", # All other begin at 10 are 10-30
     dataset == "Coweeta" & depth_raw == "30+" ~ "30-60", # End of range is a guess
+    ## Florida
+    dataset == "FloridaCoastal" & depth_raw == "hurricane-sediment" ~ "",
     ## Hubbard Brook
     dataset == "Hubbard Brook" & depth_raw == "30+" ~ "30-40",
     dataset == "Hubbard Brook" & depth_raw == "C25+" ~ "25-35",
     dataset == "Hubbard Brook" & depth_raw == "C50+" ~ "50-75",
     dataset == "Hubbard Brook" & depth_raw == "C+" ~ "", # guess needed
     dataset == "Hubbard Brook" & depth_raw == "Oa" ~ "", # guess needed
+    dataset == "Hubbard Brook" & depth_raw == "50-C" ~ "50",
+    dataset == "Hubbard Brook" & depth_raw == "C0-25" ~ "0-25",
+    dataset == "Hubbard Brook" & depth_raw == "C25+" ~ "25",
+    dataset == "Hubbard Brook" & depth_raw == "C25-50" ~ "25-50",
+    dataset == "Hubbard Brook" & depth_raw == "C50+" ~ "50",
     ## Luquillo (1)
     ### No ranges so we'll just add a constant to every depth value to get the end of the range
     dataset == "Luquillo_1" & stringr::str_detect(string = depth_raw, pattern = "-") != T ~ paste0(depth_raw, "-", suppressWarnings(as.numeric(depth_raw)) + 10),
@@ -370,6 +387,8 @@ tidy_v2c <- tidy_v2b %>%
     dataset == "Sevilleta_2" & depth_raw == "30" ~ "30", # guess needed
     ## Otherwise raw depth assumed to be a functioning range
     TRUE ~ depth_raw), .after = depth_raw) %>%
+  # Drop now-unneeded BNZ depth column
+  dplyr::select(-org_depth_cm) %>%
   # If depth included horizon information we probably can assume that it was *relative* depth
   dplyr::mutate(depth_type = dplyr::case_when(
     # Relative depth within horizon layer
@@ -385,19 +404,20 @@ tidy_v2c %>%
   dplyr::select(dataset, raw_filename, depth_raw, depth_range_raw, horizon_raw, depth_type) %>%
   dplyr::distinct()
 
+# And too many hyphens
+tidy_v2c %>%
+  dplyr::filter(stringr::str_count(string = depth_range_raw, pattern = "-") > 1) %>%
+  dplyr::select(dataset, raw_filename, depth_raw, depth_range_raw, horizon_raw, depth_type) %>%
+  dplyr::distinct()
 
+# Check structure again
+tidy_v2c %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
+  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::glimpse()
 
-
-
-
-
-
-
-
-
-
-# Perform coarse wrangling horizon information
-tidy_v3 <- tidy_v2 %>%
+# Wrangle horizon information to get other desired facets of that variable
+tidy_v2d <- tidy_v2c %>%
   # Create a column that uses entered horizon, depth horizon info, and expert knowledge to increase coverage
   dplyr::mutate(horizon_actual = dplyr::case_when(
     # If horizon is in data, use that
@@ -448,61 +468,39 @@ tidy_v3 <- tidy_v2 %>%
   dplyr::mutate(horizon_binary = dplyr::case_when(
     horizon_actual %in% c("organic", "O", "Oi", "Oe", "Oa") ~ "organic",
     horizon_actual %in% c("mineral", "A", "B", "C", "AEB") ~ "mineral",
+    # Placeholder until I figure out what a T horizon is
     horizon_actual == "T" ~ "UNKNOWN",
     T ~ NA), .after = horizon_source) %>%
   # Drop depth horizon column and original (un-tidied) horizon column
-  dplyr::select(-depth_horizon, -horizon) %>%
+  dplyr::select(-depth_horizon) %>%
   # Rename tidied horizon column
   dplyr::rename(horizon = horizon_actual)
 
-# For which datasets is horizon info missing that could be filled by expert knowledge?
-tidy_v3 %>% 
+# For which datasets is horizon info *absent* (that could be filled by expert knowledge)?
+tidy_v2d %>% 
   dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>%
   dplyr::select(dataset, raw_filename, horizon) %>%
   dplyr::distinct()
 
-# How many NAs were filled by expert knowledge + extracting depth info?
-tidy_v2 %>% dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>% nrow()
-tidy_v3 %>% dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>% nrow()
+# Check contents of the specific horizon columns
+sort(unique(tidy_v2d$horizon_raw))
+sort(unique(tidy_v2d$horizon))
+sort(unique(tidy_v2d$horizon_source))
+sort(unique(tidy_v2d$horizon_binary))
 
-# Re-check
-sort(unique(tidy_v3$horizon_raw))
-sort(unique(tidy_v3$horizon))
-sort(unique(tidy_v3$horizon_source))
-sort(unique(tidy_v3$horizon_binary))
+# Check structure yet again
+tidy_v2d %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
+  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::glimpse()
 
-# Check overall structure
-dplyr::glimpse(tidy_v3[1:18])
-
-## ------------------------------------------ ##
-# Data Wrangling - Depth
-## ------------------------------------------ ##
-
-# Next, we need to handle the depth column
-sort(unique(tidy_v2$depth_cm))
-
-
-
-# Do depth wrangling
-tidy_v2.5 <- tidy_v2 %>%
-  # Fix some non-ranges
-   # %>%
-  # Drop any superseded columns
-  dplyr::select(-org_depth_cm)
-
-# Check to see no non-ranges exist in data
-tidy_v2.5 %>%
-  dplyr::filter(stringr::str_detect(string = depth_range_raw, pattern = "-") != T) %>%
-  dplyr::select(dataset, raw_filename, depth_range_raw) %>%
-  dplyr::distinct()
-
-# Finish wrangling now that all depths are tidied into actual ranges
-tidy_v3 <- tidy_v2.5 %>%
+# Separate the semi-tidied depth range into a start and end
+tidy_v2e <- tidy_v2d %>%
   # Now that everything is a range, we can split based on the hyphen
   tidyr::separate_wider_delim(cols = depth_range_raw, delim = "-", cols_remove = F,
                               names = c("depth_1", "depth_2"),
                               too_few = "align_start", too_many = "error") %>%
-  # Some ranges are converted by Excel into dates automatically upon entry so we need to fix that for both depth 1 and 2
+  # Some ranges are converted by Excel into dates automatically upon entry so we need to fix that
   dplyr::mutate(
     depth_1 = dplyr::case_when(
       depth_1 == "Jan" ~ "1", depth_1 == "Feb" ~ "2", depth_1 == "Mar" ~ "3",
@@ -515,33 +513,55 @@ tidy_v3 <- tidy_v2.5 %>%
       depth_2 == "Apr" ~ "4", depth_2 == "May" ~ "5", depth_2 == "Jun" ~ "6",
       depth_2 == "Jul" ~ "7", depth_2 == "Aug" ~ "8", depth_2 == "Sep" ~ "9",
       depth_2 == "Oct" ~ "10", depth_2 == "Nov" ~ "11", depth_2 == "Dec" ~ "12",
-      TRUE ~ depth_2)) %>%
+      TRUE ~ depth_2))
+
+# Check for non-numbers
+supportR::multi_num_check(data = tidy_v2e, col_vec = c("depth_1", "depth_2"))
+
+# Now can do numeric wrangling of depth columns
+tidy_v3 <- tidy_v2e %>%
+  # Do any needed fixes of non-numbers
+  ## None needed currently
+  # Make the depth columns numeric
+  dplyr::mutate(depth_1 = as.numeric(depth_1),
+                depth_2 = as.numeric(depth_2)) %>%
   # Now that all depths are numbers we can figure out start and end depths
-  dplyr::mutate(
-    depth_start_cm = ifelse(depth_1 < depth_2,
-                            yes = depth_1, no = depth_2),
-    depth_end_cm = ifelse(depth_2 > depth_1,
-                          yes = depth_2, no = depth_1)) %>%
-  # Make the resulting columns numeric
-  dplyr::mutate(depth_start_cm = as.numeric(depth_start_cm),
-                depth_end_cm = as.numeric(depth_end_cm)) %>%
+  dplyr::mutate(depth_start_cm = ifelse(depth_1 < depth_2, yes = depth_1, no = depth_2),
+                depth_end_cm = ifelse(depth_2 > depth_1, yes = depth_2, no = depth_1),
+                .after = depth_type) %>%
+  # Drop intermediary columns and old raw depth columns
+  dplyr::select(-depth_1, -depth_2, -depth_raw, -depth_range_raw) %>%
+  # Calculate length of core as well
+  dplyr::mutate(core_length = depth_end_cm - depth_start_cm,
+                .after = depth_end_cm)
+
+# Check distribution of the new depth columns we just extracted
+psych::multi.hist(x = tidy_v3$depth_start_cm)
+psych::multi.hist(x = tidy_v3$depth_end_cm)
+psych::multi.hist(x = tidy_v3$core_length)
+
+# Ad nauseam at this point but check structure
+tidy_v3 %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth"), core_length) %>%
+  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::glimpse()
+
+## ------------------------------------------ ##
+# Relative Depth Wrangling ----
+## ------------------------------------------ ##
+
+# 
+
+
+# Finish wrangling now that all depths are tidied into actual ranges
+tidy_v3 <- tidy_v2.5 %>%
   # Assemble a new depth range (that excludes the month error in the 'raw' range)
   dplyr::mutate(depth_range_cm = ifelse(!is.na(depth_start_cm) & !is.na(depth_end_cm),
                                         yes = paste0(depth_start_cm, "-", depth_end_cm),
-                                        no = NA)) %>%
-  # Calculate the difference in depth (i.e., sampling length regardless of depth)
-  dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm) %>%
-  # Relocate the depth columns to the same place
-  dplyr::relocate(depth_range_cm, depth_start_cm, depth_end_cm, core_length_cm,
-                  .after = treatment) %>%
-  # Throw away intermediary (un/partially tidied) depth columns
-  dplyr::select(-depth_cm, -depth_1, -depth_2, -depth_range_raw)
+                                        no = NA))
 
 # Take a quick glance at each of the depth columns we just generated
 sort(unique(tidy_v3$depth_range_cm))
-psych::multi.hist(x = tidy_v3$depth_start_cm)
-psych::multi.hist(x = tidy_v3$depth_end_cm)
-psych::multi.hist(x = tidy_v3$core_length_cm)
 
 # Re-check structure
 dplyr::glimpse(tidy_v3)
