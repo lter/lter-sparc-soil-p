@@ -993,41 +993,54 @@ rel_v3 <- rel_v2 %>%
     dataset == "Hubbard Brook" & is.na(temp_C_start) & !is.na(temp_AEB_end) ~ temp_AEB_end,
     T ~ temp_C_start))
 
-
-
-
-glimpse(rel_v3)
+# Check structure
+dplyr::glimpse(rel_v3)
 ## view(rel_v3)
 
+# Need to get back into original format
+rel_v4 <- rel_v3 %>%
+  # Flip to long format
+  tidyr::pivot_longer(cols = dplyr::starts_with("temp_")) %>%
+  # Break column names back into their component parts
+  tidyr::separate_wider_delim(cols = name, delim = "_",
+                              names = c("junk", "horizon", "start_end")) %>%
+  # Drop junk column
+  dplyr::select(-junk) %>%
+  # Reformat start/end column
+  dplyr::mutate(start_end = paste0("depth_", start_end, "_cm")) %>%
+  # Get separate depth columns
+  tidyr::pivot_wider(names_from = start_end, values_from = value)
 
-# Make horizon a factor
-# dplyr::mutate(horizon = factor(horizon, levels = horizon_order)) %>%
+# Check structure
+dplyr::glimpse(rel_v4)
 
-# UNFINISHED!!!
-## Need to figure out how to conditionally add each horizon's depth to the previous
-## Complicated by HBR lacking depths for all O and some C cores (so can't add from either direction)
+# Identify columns shared with first version of relative depth data (except depth cols)
+(rel_shares <- setdiff(x = intersect(x = names(rel_v1), y = names(rel_v4)),
+                      y = c("depth_start_cm", "depth_end_cm")) )
 
-# Possible solve:
-## Pivot to wide format where each horizons' start/end becomes a new column
-## Then much easier (maybe) to do the fix with inconsistent / partial information
+# Re-attach deduced depths to original dataset
+rel_v5 <- rel_v1 %>%
+  dplyr::left_join(y = rel_v4, by = rel_shares) %>%
+  # Combine old and new depth columns keeping non-NAs where they occur
+  dplyr::mutate(depth_start_cm = dplyr::coalesce(depth_start_cm.x, depth_start_cm.y),
+                depth_end_cm = dplyr::coalesce(depth_end_cm.x, depth_end_cm.y),
+                .after = depth_start_cm.x) %>%
+  # Drop .x and .y depth columns left over from that join
+  dplyr::select(-dplyr::ends_with(".x"), -dplyr::ends_with(".y"))
 
+# Check structure
+dplyr::glimpse(rel_v5)
 
-
-
-
-
-
-# After finished with tidying, need to re-attach horizon columns
-## (dropped in change from rel_v1 to rel_v2)
-
-
-
-
+# How many NAs does this whole operation solve?
+summary(rel_v1$depth_start_cm); summary(rel_v5$depth_start_cm)
+summary(rel_v1$depth_end_cm); summary(rel_v5$depth_end_cm)
+## Fixes more starts than ends (likely because of 'start of O is 0' assumption)
 
 # Finish up the depth/horizon wrangling
 tidy_v9 <- tidy_v8_nonrelative %>%
   # Bind the rows of the wrangled relative data object back onto the dataframe
-  dplyr::bind_rows(rel_v2) %>%
+  dplyr::bind_rows(rel_v5) %>% # Comfortable with assumptions? Use this
+  # dplyr::bind_rows(rel_v1) %>% # Don't want to make assumptions? Use this
   # Drop depth type column
   dplyr::select(-depth_type) %>%
   # Assemble a new depth range column that uses the tidied, objective depths
@@ -1039,12 +1052,15 @@ tidy_v9 <- tidy_v8_nonrelative %>%
 # Re-check structure
 dplyr::glimpse(tidy_v9)
 
+# Retained all rows?
+nrow(tidy_v9) == nrow(tidy_v8)
+
 ## ------------------------------------------ ##
                   # Export ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-final_tidy <- tidy_v8
+final_tidy <- tidy_v9
 
 # Check its structure
 dplyr::glimpse(final_tidy)
