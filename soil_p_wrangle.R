@@ -523,25 +523,70 @@ dplyr::glimpse(tidy_v3[1:21])
 # Some depths are relative to their soil horizon
 ## Need to calculate their objective depths
 
-# Split data into whether or not depth was relative
-rel_v1 <- dplyr::filter(tidy_v3, depth_type == "relative")
+# Split off only relative data
+rel_v1 <- dplyr::filter(tidy_v3, depth_type == "relative") %>%
+  # Keep only columns with at least one value
+  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
+
+# Split off non-relative data (to avoid accidentally tweaking it)
 tidy_v3_nonrelative <- dplyr::filter(tidy_v3, depth_type == "objective" | is.na(depth_type))
 
 # Check to make sure no rows were lost
 nrow(rel_v1) + nrow(tidy_v3_nonrelative) == nrow(tidy_v3)
 
 # What horizon layers are in this subset of the data?
-unique(rel_v1$horizon)
-
-# Generate a horizon order
-horizon_order <- c("O", "AEB", "C")
+rel_v1 %>%
+  dplyr::select(dataset, horizon) %>%
+  dplyr::distinct()
 
 # Wrangle relative depth data object
 rel_v2 <- rel_v1 %>%
-  # Keep only columns with at least one value
-  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == "")))) %>%
-  # Make horizon a factor
-  dplyr::mutate(horizon = factor(horizon, levels = horizon_order))
+  # Pivot longer to have depth start/end as a column
+  tidyr::pivot_longer(cols = depth_start_cm:depth_end_cm,
+                      names_to = "start_end", values_to = "depth_cm") %>%
+  # Clean up start/end column
+  dplyr::mutate(start_end = gsub(pattern = "depth_|_cm", replacement = "", x = start_end)) %>%
+  # Paste together with horizon
+  dplyr::mutate(temp_horizon = paste0(paste0("temp_", horizon), "_", start_end)) %>%
+  # Dump unwanted columns (plus all horizon columns except new 'temporary horizon')
+  dplyr::select(-start_end, -horizon_raw, -horizon, -horizon_source, -horizon_binary) %>%
+  # Pivot wider with new 'temp horizon' (horizon + start/end) as columns
+  tidyr::pivot_wider(names_from = temp_horizon, values_from = depth_cm) %>%
+  # Reorder based on horizon order
+  dplyr::relocate(dplyr::starts_with("temp_O"), 
+                  dplyr::starts_with("temp_AEB"), 
+                  dplyr::starts_with("temp_C"), 
+                  .after = dplyr::everything())
+
+# Check structure
+dplyr::glimpse(rel_v2)
+
+# Can begin fixing the relative depths now
+## Doing all of these as `case_when`s to allow for future differences in horizon inclusion
+rel_v3 <- rel_v2 %>%
+  # If O start is empty, assume it's 0
+  dplyr::mutate(temp_O_start = dplyr::case_when(
+    dataset == "Hubbard Brook" & is.na(temp_O_start) ~ 0,
+    T ~ temp_O_start)) %>%
+  # If O end is empty but next horizon isn't empty, replace with that
+  ## Doing as `case_when` to allow for future below O horizons (currently only "AEB")
+  dplyr::mutate(temp_O_end = dplyr::case_when(
+    dataset == "Hubbard Brook" & is.na(temp_O_end) & !is.na(temp_AEB_start) ~ temp_AEB_start,
+    T ~ temp_O_end)) %>%
+  # If start of C horizon is empty, add in end of preceding horizon
+  dplyr::mutate(temp_C_start = dplyr::case_when(
+    dataset == "Hubbard Brook" & is.na(temp_C_start) & !is.na(temp_AEB_end) ~ temp_AEB_end,
+    T ~ temp_C_start))
+
+
+
+
+glimpse(rel_v3)
+## view(rel_v3)
+
+
+# Make horizon a factor
+# dplyr::mutate(horizon = factor(horizon, levels = horizon_order)) %>%
 
 # UNFINISHED!!!
 ## Need to figure out how to conditionally add each horizon's depth to the previous
@@ -552,8 +597,17 @@ rel_v2 <- rel_v1 %>%
 ## Then much easier (maybe) to do the fix with inconsistent / partial information
 
 
-# Check structure
-dplyr::glimpse(rel_v2)
+
+
+
+
+
+# After finished with tidying, need to re-attach horizon columns
+## (dropped in change from rel_v1 to rel_v2)
+
+
+
+
 
 # Finish up the depth/horizon wrangling
 tidy_v4 <- tidy_v3_nonrelative %>%
