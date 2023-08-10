@@ -60,7 +60,7 @@ for (a_site in unique(megadata$dataset)){
   
   # Creating the exploratory plot
   # Edit the x and y values as needed
-  example_plot <- ggplot(data = example_site, aes(x = total_P_mg_kg, y = N_conc_percent, color = treatment)) +
+  example_plot <- ggplot(data = example_site, aes(x = slow_P_mg_kg, y = N_conc_percent, color = treatment)) +
     geom_point(show.legend = T) +
     facet_grid(site ~ ., scales = "free") 
   
