@@ -547,6 +547,11 @@ rel_v2 <- rel_v1 %>%
 ## Need to figure out how to conditionally add each horizon's depth to the previous
 ## Complicated by HBR lacking depths for all O and some C cores (so can't add from either direction)
 
+# Possible solve:
+## Pivot to wide format where each horizons' start/end becomes a new column
+## Then much easier (maybe) to do the fix with inconsistent / partial information
+
+
 # Check structure
 dplyr::glimpse(rel_v2)
 
@@ -566,7 +571,7 @@ tidy_v4 <- tidy_v3_nonrelative %>%
 dplyr::glimpse(tidy_v4)
 
 ## ------------------------------------------ ##
-# Numeric Column Checks ----
+          # Numeric Column Checks ----
 ## ------------------------------------------ ##
 
 # Before we can continue, we need to make all columns that should be numeric actually be numeric
