@@ -517,63 +517,14 @@ tidy_v3 %>%
 dplyr::glimpse(tidy_v3[1:21])
 
 ## ------------------------------------------ ##
-      # Relative Depth Wrangling ----
-## ------------------------------------------ ##
-
-# Some depths are relative to their soil horizon
-## Need to calculate their objective depths
-
-# Split data into whether or not depth was relative
-rel_v1 <- dplyr::filter(tidy_v3, depth_type == "relative")
-tidy_v3_nonrelative <- dplyr::filter(tidy_v3, depth_type == "objective" | is.na(depth_type))
-
-# Check to make sure no rows were lost
-nrow(rel_v1) + nrow(tidy_v3_nonrelative) == nrow(tidy_v3)
-
-# What horizon layers are in this subset of the data?
-unique(rel_v1$horizon)
-
-# Generate a horizon order
-horizon_order <- c("O", "AEB", "C")
-
-# Wrangle relative depth data object
-rel_v2 <- rel_v1 %>%
-  # Keep only columns with at least one value
-  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == "")))) %>%
-  # Make horizon a factor
-  dplyr::mutate(horizon = factor(horizon, levels = horizon_order))
-
-# UNFINISHED!!!
-## Need to figure out how to conditionally add each horizon's depth to the previous
-## Complicated by HBR lacking depths for all O and some C cores (so can't add from either direction)
-
-# Check structure
-dplyr::glimpse(rel_v2)
-
-# Finish up the depth/horizon wrangling
-tidy_v4 <- tidy_v3_nonrelative %>%
-  # Bind the rows of the wrangled relative data object back onto the dataframe
-  dplyr::bind_rows(rel_v2) %>%
-  # Drop depth type column
-  dplyr::select(-depth_type) %>%
-  # Assemble a new depth range column that uses the tidied, objective depths
-  dplyr::mutate(depth_range_cm = ifelse(!is.na(depth_start_cm) & !is.na(depth_end_cm),
-                                        yes = paste0(depth_start_cm, "-", depth_end_cm),
-                                        no = NA),
-                .after = depth_end_cm)
-
-# Re-check structure
-dplyr::glimpse(tidy_v4)
-
-## ------------------------------------------ ##
-# Numeric Column Checks ----
+          # Numeric Column Checks ----
 ## ------------------------------------------ ##
 
 # Before we can continue, we need to make all columns that should be numeric actually be numeric
 ## Can also handle the 'sample replicate' rows once our response values are numbers
 
 # Reshape into long format to make a single column to check for non-numbers
-tidy_v4b <- tidy_v4 %>%
+tidy_v3b <- tidy_v3 %>%
   tidyr::pivot_longer(cols = -lter:-core_length_cm,
                       names_to = "variable",
                       values_to = "value_raw") %>%
@@ -581,10 +532,10 @@ tidy_v4b <- tidy_v4 %>%
   dplyr::filter(!is.na(value_raw))
 
 # Check for non-numbers in the response value column
-supportR::num_check(data = tidy_v4b, col = "value_raw")
+supportR::num_check(data = tidy_v3b, col = "value_raw")
 
 # Resolve all non-numbers
-tidy_v4c <- tidy_v4b %>%
+tidy_v3c <- tidy_v3b %>%
   # Remove % symbols
   dplyr::mutate(value_clean = gsub(pattern = "\\%", replacement = "", x = value_raw)) %>%
   # Conditionally handle remaining issues
@@ -598,14 +549,14 @@ tidy_v4c <- tidy_v4b %>%
     T ~ value_clean))
 
 # Make sure all numbers are 'good' numbers
-supportR::num_check(data = tidy_v4c, col = "value_actual")
+supportR::num_check(data = tidy_v3c, col = "value_actual")
 
 # Identify names of all columns except for sample replicate / old values columns
-(keeps <- setdiff(x = names(tidy_v4c), y = c("sample_replicate", "value_raw", 
+(keeps <- setdiff(x = names(tidy_v3c), y = c("sample_replicate", "value_raw", 
                                             "value_clean", "value_actual")))
 
 # Finish wrangling this object!
-tidy_v4d <- tidy_v4c %>%
+tidy_v3d <- tidy_v3c %>%
   # Make the value column numeric
   dplyr::mutate(values = as.numeric(value_actual)) %>%
   # Drop intermediary value columns
@@ -616,13 +567,13 @@ tidy_v4d <- tidy_v4c %>%
   dplyr::ungroup()
 
 # How many rows were lost (i.e., how much replication at finer scale than of interest for us)?
-nrow(tidy_v4c) - nrow(tidy_v4d)
+nrow(tidy_v3c) - nrow(tidy_v3d)
 
 # Glimpse structure
-dplyr::glimpse(tidy_v4d)
+dplyr::glimpse(tidy_v3d)
 
 # Final processing of this object
-tidy_v5 <- tidy_v4d %>%
+tidy_v4 <- tidy_v3d %>%
   # Drop any empty rows (created by cleaning up non-numbers)
   dplyr::filter(nchar(value) != 0 & !is.na(value)) %>%
   # Pivot back to wide format
@@ -634,20 +585,17 @@ tidy_v5 <- tidy_v4d %>%
   dplyr::relocate(dplyr::starts_with("N_conc"), .after = pH)
 
 # Re-check structure
-dplyr::glimpse(tidy_v5)
+dplyr::glimpse(tidy_v4)
 
 # Check to see if any columns were lost/gained (should only be 'sample_replicate' lost)
-supportR::diff_check(old = names(tidy_v4), new = names(tidy_v5))
-
-# Glimpse it
-dplyr::glimpse(tidy_v5)
+supportR::diff_check(old = names(tidy_v3), new = names(tidy_v4))
 
 ## ------------------------------------------ ##
         # Bulk Density / Soil Fixes ----
 ## ------------------------------------------ ##
 
 # Wrangling for soil information
-tidy_v6 <- tidy_v5 %>%
+tidy_v5 <- tidy_v4 %>%
   # Relocate soil columns to the left
   dplyr::relocate(dplyr::contains("bulk_density"), coarse_vol_percent, dplyr::contains("soil"),
                   .after = pH) %>%
@@ -695,26 +643,26 @@ tidy_v6 <- tidy_v5 %>%
 
 # Check whether we're missing any bulk density values
 ## If so, need to add another conditional to the above `case_when`
-tidy_v6 %>%
+tidy_v5 %>%
   dplyr::filter(is.na(bulk_density_g_cm3)) %>%
   # dplyr::select(dataset, site, plot, block) %>%
   dplyr::select(dataset) %>%
   dplyr::distinct()
 
 # Check structure
-dplyr::glimpse(tidy_v6[1:30])
+dplyr::glimpse(tidy_v5[1:30])
 
 ## ------------------------------------------ ##
             # Nitrogen & Carbon ----
 ## ------------------------------------------ ##
 
 # Look at the most relevant bit for N/C tidying
-tidy_v6 %>%
+tidy_v5 %>%
   dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
   dplyr::glimpse()
 
 # Convert N & C into percents
-tidy_v6b <- tidy_v6 %>%
+tidy_v5b <- tidy_v5 %>%
   # Standardize Nitrogen concentration units (conditions are from most to least preferred unit)
   dplyr::mutate(N_conc_actual = dplyr::case_when(
     !is.na(N_conc_percent) ~ N_conc_percent,
@@ -758,18 +706,18 @@ tidy_v6b <- tidy_v6 %>%
                 C_conc_org_percent = C_conc_Org_percent)
 
 # How many NAs did we fill for Nitrogran?
-summary(tidy_v6$N_conc_percent); summary(tidy_v6b$N_conc_percent)
+summary(tidy_v5$N_conc_percent); summary(tidy_v5b$N_conc_percent)
 
 # Check Carbon in the same way
-summary(tidy_v6$C_conc_percent); summary(tidy_v6b$C_conc_percent)
+summary(tidy_v5$C_conc_percent); summary(tidy_v5b$C_conc_percent)
 
 # Check remaining columns
-tidy_v6b %>%
+tidy_v5b %>%
   dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
   dplyr::glimpse()
 
 # Now let's handle different units for stock
-tidy_v7 <- tidy_v6b %>%
+tidy_v6 <- tidy_v5b %>%
   # Convert Nitrogen stock into one unit (mg/m2)
   dplyr::mutate(N_stock_actual = dplyr::case_when(
     !is.na(N_stock_mg_m2) ~ N_stock_mg_m2,
@@ -795,28 +743,28 @@ tidy_v7 <- tidy_v6b %>%
   dplyr::relocate(C_by_depth, .after = C_stock_mg_m2)
 
 # How many NAs did we fill for Nitrogran?
-summary(tidy_v6b$N_stock_mg_m2); summary(tidy_v7$N_stock_mg_m2)
+summary(tidy_v5b$N_stock_mg_m2); summary(tidy_v6$N_stock_mg_m2)
 
 # Check Carbon in the same way
-summary(tidy_v6b$C_stock_mg_m2); summary(tidy_v7$C_stock_mg_m2)
+summary(tidy_v5b$C_stock_mg_m2); summary(tidy_v6$C_stock_mg_m2)
 
 # Check remaining columns' structure again
-tidy_v7 %>%
+tidy_v6 %>%
   dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
   dplyr::glimpse()
 
 # Check structure of more columns
-dplyr::glimpse(tidy_v7[c(1:10, 25:35)])
+dplyr::glimpse(tidy_v6[c(1:10, 25:35)])
 
 ## ------------------------------------------ ##
             # Phosphorus Sums ----
 ## ------------------------------------------ ##
 
 # Glimpse the entire dataset
-dplyr::glimpse(tidy_v7)
+dplyr::glimpse(tidy_v6)
 
 # Now we'll want to add together our various types of P (conditionally)
-p_sums <- tidy_v7 %>%
+p_sums <- tidy_v6 %>%
   # First need to fill NAs with 0s to avoid making NA sums
   ## Pivot longer
   tidyr::pivot_longer(cols = -lter:-C_conc_org_percent,
@@ -953,21 +901,21 @@ dplyr::glimpse(p_sums)
 ## They're not "real" 0s so we want to preserve the real 0s while still easily getting sums
 
 # Now we can attach our sums to the original tidy object
-tidy_v8 <- tidy_v7 %>%
+tidy_v7 <- tidy_v6 %>%
   # By not specifying which columns to join by, all shared columns will be used
   dplyr::left_join(y = p_sums) %>%
   # Move our P sums to the left for more easy reference
   dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density_kg_ha)
 
 # Check structure
-dplyr::glimpse(tidy_v8)
+dplyr::glimpse(tidy_v7)
 
 ## ------------------------------------------ ##
               # Absolute P ----
 ## ------------------------------------------ ##
 
 # Calculate absolute P totals (rather than portions of each core)
-tidy_v9 <- tidy_v8 %>%
+tidy_v8 <- tidy_v7 %>%
   # Due to our earlier depth/bulk density prep this is easy!
   dplyr::mutate(slow_P_absolute = slow_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = slow_P_mg_kg) %>%
@@ -976,7 +924,136 @@ tidy_v9 <- tidy_v8 %>%
 ## Units of absolute sums are ____?
   
 # Re-check structure
+dplyr::glimpse(tidy_v8)
+
+## ------------------------------------------ ##
+      # Relative Depth Wrangling ----
+## ------------------------------------------ ##
+
+# Some depths are relative to their soil horizon
+## Need to calculate their objective depths
+
+# Split off only relative data
+rel_v1 <- dplyr::filter(tidy_v8, depth_type == "relative") %>%
+  # Keep only columns with at least one value
+  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
+
+# Split off non-relative data (to avoid accidentally tweaking it)
+tidy_v8_nonrelative <- dplyr::filter(tidy_v8, depth_type == "objective" | is.na(depth_type))
+
+# Check to make sure no rows were lost
+nrow(rel_v1) + nrow(tidy_v8_nonrelative) == nrow(tidy_v8)
+
+# What horizon layers are in this subset of the data?
+rel_v1 %>%
+  dplyr::select(dataset, horizon) %>%
+  dplyr::distinct()
+
+# Check structure
+dplyr::glimpse(rel_v1)
+
+# Wrangle relative depth data object
+rel_v2 <- rel_v1 %>%
+  # Pare down to only the necessary columns for depth / re-attaching with core data later
+  dplyr::select(lter:treatment_years, horizon, depth_start_cm, depth_end_cm) %>%
+  # Pivot longer to have depth start/end as a column
+  tidyr::pivot_longer(cols = depth_start_cm:depth_end_cm,
+                      names_to = "start_end", values_to = "depth_cm") %>%
+  # Clean up start/end column
+  dplyr::mutate(start_end = gsub(pattern = "depth_|_cm", replacement = "", x = start_end)) %>%
+  # Paste together with horizon
+  dplyr::mutate(temp_horizon = paste0(paste0("temp_", horizon), "_", start_end)) %>%
+  # Dump unwanted columns (plus all horizon columns except new 'temporary horizon')
+  dplyr::select(-start_end, -horizon) %>%
+  # Pivot wider with new 'temp horizon' (horizon + start/end) as columns
+  tidyr::pivot_wider(names_from = temp_horizon, values_from = depth_cm) %>%
+  # Reorder based on horizon order
+  dplyr::relocate(dplyr::starts_with("temp_O"), 
+                  dplyr::starts_with("temp_AEB"), 
+                  dplyr::starts_with("temp_C"), 
+                  .after = dplyr::everything())
+
+# Check structure
+dplyr::glimpse(rel_v2)
+
+# Can begin fixing the relative depths now
+## Doing all of these as `case_when`s to allow for future differences in horizon inclusion
+rel_v3 <- rel_v2 %>%
+  # If O start is empty, assume it's 0
+  dplyr::mutate(temp_O_start = dplyr::case_when(
+    dataset == "Hubbard Brook" & is.na(temp_O_start) ~ 0,
+    T ~ temp_O_start)) %>%
+  # If O end is empty but next horizon isn't empty, replace with that
+  ## Doing as `case_when` to allow for future below O horizons (currently only "AEB")
+  dplyr::mutate(temp_O_end = dplyr::case_when(
+    dataset == "Hubbard Brook" & is.na(temp_O_end) & !is.na(temp_AEB_start) ~ temp_AEB_start,
+    T ~ temp_O_end)) %>%
+  # If start of C horizon is empty, add in end of preceding horizon
+  dplyr::mutate(temp_C_start = dplyr::case_when(
+    dataset == "Hubbard Brook" & is.na(temp_C_start) & !is.na(temp_AEB_end) ~ temp_AEB_end,
+    T ~ temp_C_start))
+
+# Check structure
+dplyr::glimpse(rel_v3)
+## view(rel_v3)
+
+# Need to get back into original format
+rel_v4 <- rel_v3 %>%
+  # Flip to long format
+  tidyr::pivot_longer(cols = dplyr::starts_with("temp_")) %>%
+  # Break column names back into their component parts
+  tidyr::separate_wider_delim(cols = name, delim = "_",
+                              names = c("junk", "horizon", "start_end")) %>%
+  # Drop junk column
+  dplyr::select(-junk) %>%
+  # Reformat start/end column
+  dplyr::mutate(start_end = paste0("depth_", start_end, "_cm")) %>%
+  # Get separate depth columns
+  tidyr::pivot_wider(names_from = start_end, values_from = value)
+
+# Check structure
+dplyr::glimpse(rel_v4)
+
+# Identify columns shared with first version of relative depth data (except depth cols)
+(rel_shares <- setdiff(x = intersect(x = names(rel_v1), y = names(rel_v4)),
+                      y = c("depth_start_cm", "depth_end_cm")) )
+
+# Re-attach deduced depths to original dataset
+rel_v5 <- rel_v1 %>%
+  dplyr::left_join(y = rel_v4, by = rel_shares) %>%
+  # Combine old and new depth columns keeping non-NAs where they occur
+  dplyr::mutate(depth_start_cm = dplyr::coalesce(depth_start_cm.x, depth_start_cm.y),
+                depth_end_cm = dplyr::coalesce(depth_end_cm.x, depth_end_cm.y),
+                .after = depth_start_cm.x) %>%
+  # Drop .x and .y depth columns left over from that join
+  dplyr::select(-dplyr::ends_with(".x"), -dplyr::ends_with(".y"))
+
+# Check structure
+dplyr::glimpse(rel_v5)
+
+# How many NAs does this whole operation solve?
+summary(rel_v1$depth_start_cm); summary(rel_v5$depth_start_cm)
+summary(rel_v1$depth_end_cm); summary(rel_v5$depth_end_cm)
+## Fixes more starts than ends (likely because of 'start of O is 0' assumption)
+
+# Finish up the depth/horizon wrangling
+tidy_v9 <- tidy_v8_nonrelative %>%
+  # Bind the rows of the wrangled relative data object back onto the dataframe
+  dplyr::bind_rows(rel_v5) %>% # Comfortable with assumptions? Use this
+  # dplyr::bind_rows(rel_v1) %>% # Don't want to make assumptions? Use this
+  # Drop depth type column
+  dplyr::select(-depth_type) %>%
+  # Assemble a new depth range column that uses the tidied, objective depths
+  dplyr::mutate(depth_range_cm = ifelse(!is.na(depth_start_cm) & !is.na(depth_end_cm),
+                                        yes = paste0(depth_start_cm, "-", depth_end_cm),
+                                        no = NA),
+                .after = depth_end_cm)
+
+# Re-check structure
 dplyr::glimpse(tidy_v9)
+
+# Retained all rows?
+nrow(tidy_v9) == nrow(tidy_v8)
 
 ## ------------------------------------------ ##
                   # Export ----
