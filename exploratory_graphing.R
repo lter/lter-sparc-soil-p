@@ -41,33 +41,57 @@ megadata <- read.csv(file.path("tidy_data", "tidy_soil_p.csv")) %>%
 # Check columns
 dplyr::glimpse(megadata)
 
+## Exploring across-site ------------------------- ##
+
+# Create necessary sub-folder(s) to export our visualizations in
+# Customize as needed, for example I made a sub-folder to store all the total P vs. N conc graphs
+dir.create(path = file.path("exploratory_graphs"), showWarnings = F)
+dir.create(path = file.path("exploratory_graphs", "totalP_Nconc_across_site"), showWarnings = F)
+
+# Point to our export folder(s)
+totalP_Nconc_folder <- file.path("exploratory_graphs", "totalP_Nconc_across_site")
+
+# Creating the exploratory plot
+# Edit the x and y values as needed
+ggplot(data = megadata, aes(x = total_P_mg_kg, y = N_conc_percent, color = site)) +
+  geom_point() +
+  # Best-fit line by site
+  geom_smooth(aes(color = site, fill = site), method = "lm", formula = "y ~ x", alpha = 0.2, show.legend = F) +
+  # Average across-site best-fit line 
+  geom_smooth(color = "black",fill = "gray82", method = "lm", formula = "y ~ x")
+
+# Export the plot if you want
+ggsave(file.path(totalP_Nconc_folder, "overall_totalP_Nconc.png"))
+
+## Exploring site + treatment combinations ------- ##
+
 # Create necessary sub-folder(s) to export our visualizations in
 # Customize as needed, for example I made a sub-folder to store all the slow P vs. N conc graphs
-dir.create(path = file.path("exploratory_graphs"), showWarnings = F)
-dir.create(path = file.path("exploratory_graphs", "slowP_Nconc"), showWarnings = F)
+dir.create(path = file.path("exploratory_graphs", "slowP_Nconc_within_site"), showWarnings = F)
 
-# Point to our export folders
-slowP_Nconc_folder <- file.path("exploratory_graphs", "slowP_Nconc")
+# Point to our export folder(s)
+slowP_Nconc_folder <- file.path("exploratory_graphs", "slowP_Nconc_within_site")
 
-for (a_site in unique(megadata$dataset)){
-  # Filter our megadata to only one site
+for (a_subdataset in unique(megadata$dataset)){
+  # Filter our megadata to only one subdataset
   example_site <- megadata %>%
-    dplyr::filter(dataset == a_site)
+    dplyr::filter(dataset == a_subdataset)
   
   # Saving the exploratory plot as a png
   # Edit the file path as needed
-  png(filename = file.path(slowP_Nconc_folder, paste0(a_site, ".png")), width = 850, height = 850, units = "px")
+  png(filename = file.path(slowP_Nconc_folder, paste0(a_subdataset, ".png")), width = 850, height = 850, units = "px")
   
   # Creating the exploratory plot
   # Edit the x and y values as needed
   example_plot <- ggplot(data = example_site, aes(x = slow_P_mg_kg, y = N_conc_percent, color = treatment)) +
     geom_point(show.legend = T) +
-    facet_grid(site ~ ., scales = "free") 
+    # Facet by site
+    facet_grid(site ~ ., scales = "free") +
+    # Best-fit line by treatment
+    geom_smooth(aes(color = treatment, fill = treatment), method = "lm", formula = "y ~ x", alpha = 0.2, show.legend = F) 
   
   # Plotting it
   plot(example_plot)
   
   dev.off()
 }
-
-
