@@ -1,7 +1,7 @@
 ## ------------------------------------------ ##
 #     SPARC Soil P -- Exploratory Graphs
 ## ------------------------------------------ ##
-# Script author(s): Angel Chen
+# Script author(s): Angel Chen, Nick Lyon
 
 # Purpose:
 ## Create a few exploratory graphs from the tidy megadata file
