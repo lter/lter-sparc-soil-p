@@ -126,3 +126,6 @@ for (single_lter in unique(megadata$lter)){
   } # Close conditional that checked for non-NA values
   
 } # Close across LTER loop
+
+# End ----
+
