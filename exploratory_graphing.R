@@ -35,63 +35,55 @@ rm(list = ls())
 
 # Read in megadata file
 megadata <- read.csv(file.path("tidy_data", "tidy_soil_p.csv")) %>%
-  # Filter out the rows with no treatment info
-  dplyr::filter(nchar(treatment) != 0)
+  # Replace missing treatment data with "no treatment"
+  dplyr::mutate(treatment = ifelse(test = nchar(treatment) == 0,
+                                   yes = "none",
+                                   no = treatment))
 
 # Check columns
-dplyr::glimpse(megadata)
+dplyr::glimpse(megadata[1:30])
 
 ## Exploring across-site ------------------------- ##
 
 # Create necessary sub-folder(s) to export our visualizations in
-# Customize as needed, for example I made a sub-folder to store all the total P vs. N conc graphs
 dir.create(path = file.path("exploratory_graphs"), showWarnings = F)
-dir.create(path = file.path("exploratory_graphs", "totalP_Nconc_across_site"), showWarnings = F)
-
-# Point to our export folder(s)
-totalP_Nconc_folder <- file.path("exploratory_graphs", "totalP_Nconc_across_site")
 
 # Creating the exploratory plot
 # Edit the x and y values as needed
-ggplot(data = megadata, aes(x = total_P_mg_kg, y = N_conc_percent, color = site)) +
+ggplot(data = megadata, aes(x = total_P_mg_kg, y = N_conc_percent, color = lter)) +
   geom_point() +
   # Best-fit line by site
-  geom_smooth(aes(color = site, fill = site), method = "lm", formula = "y ~ x", alpha = 0.2, show.legend = F) +
+  geom_smooth(method = "lm", formula = "y ~ x", alpha = 0.2, show.legend = F) +
   # Average across-site best-fit line 
-  geom_smooth(color = "black",fill = "gray82", method = "lm", formula = "y ~ x")
+  geom_smooth(color = "black",fill = "gray82", method = "lm", formula = "y ~ x") +
+  theme_bw()
 
 # Export the plot if you want
-ggsave(file.path(totalP_Nconc_folder, "overall_totalP_Nconc.png"))
+ggsave(filename = file.path("exploratory_graphs", "overall_totalP_Nconc.png"),
+       plot = last_plot(), width = 6, height = 6, units = "in")
 
 ## Exploring site + treatment combinations ------- ##
 
-# Create necessary sub-folder(s) to export our visualizations in
-# Customize as needed, for example I made a sub-folder to store all the slow P vs. N conc graphs
-dir.create(path = file.path("exploratory_graphs", "slowP_Nconc_within_site"), showWarnings = F)
-
-# Point to our export folder(s)
-slowP_Nconc_folder <- file.path("exploratory_graphs", "slowP_Nconc_within_site")
-
-for (a_subdataset in unique(megadata$dataset)){
+# Loop across LTERs
+for (single_lter in unique(megadata$lter)){
+  
   # Filter our megadata to only one subdataset
-  example_site <- megadata %>%
-    dplyr::filter(dataset == a_subdataset)
+  example_site <- dplyr::filter(megadata, lter == single_lter)
   
-  # Saving the exploratory plot as a png
-  # Edit the file path as needed
-  png(filename = file.path(slowP_Nconc_folder, paste0(a_subdataset, ".png")), width = 850, height = 850, units = "px")
+  # Create a graph
+  ggplot(data = example_site, aes(x = slow_P_mg_kg, y = C_conc_percent, color = lter)) +
+    geom_point() +
+    # Best-fit line by site
+    geom_smooth(method = "lm", formula = "y ~ x", alpha = 0.2, show.legend = F) +
+    # Average across-site best-fit line 
+    geom_smooth(color = "black",fill = "gray82", method = "lm", formula = "y ~ x") +
+    theme_bw()
   
-  # Creating the exploratory plot
-  # Edit the x and y values as needed
-  example_plot <- ggplot(data = example_site, aes(x = slow_P_mg_kg, y = N_conc_percent, color = treatment)) +
-    geom_point(show.legend = T) +
-    # Facet by site
-    facet_grid(site ~ ., scales = "free") +
-    # Best-fit line by treatment
-    geom_smooth(aes(color = treatment, fill = treatment), method = "lm", formula = "y ~ x", alpha = 0.2, show.legend = F) 
+  # Make a name for this graph
+  example_name <- paste0(single_lter, "_slowP_Cconc.png")
   
-  # Plotting it
-  plot(example_plot)
+  # Export the graph
+  ggsave(filename = file.path("exploratory_graphs", example_name),
+         plot = last_plot(), width = 6, height = 6, units = "in")
   
-  dev.off()
 }
