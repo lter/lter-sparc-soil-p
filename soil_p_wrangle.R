@@ -275,8 +275,8 @@ sort(unique(tidy_v2$depth_cm))
 tidy_v2b <- tidy_v2 %>%
   # Tidy and rename the starting horizon column
   dplyr::mutate(horizon_raw = dplyr::case_when(
-    tolower(horizon) %in% c("upper organic") ~ "Oe",
-    tolower(horizon) %in% c("lower organic") ~ "Oa",
+    tolower(horizon) %in% c("upper organic") ~ "upper organic",
+    tolower(horizon) %in% c("lower organic") ~ "lower organic",
     tolower(horizon) %in% c("mineral") ~ "mineral",
     T ~ horizon), .after = horizon) %>%
   # Standardize range formatting
@@ -331,24 +331,32 @@ tidy_v2c <- tidy_v2b %>%
     dataset == "Hubbard Brook" & depth_raw == "C50+" ~ "50-75",
     dataset == "Hubbard Brook" & depth_raw == "C+" ~ "", # guess needed
     dataset == "Hubbard Brook" & depth_raw == "Oa" ~ "", # guess needed
-    dataset == "Hubbard Brook" & depth_raw == "50-C" ~ "50",
-    dataset == "Hubbard Brook" & depth_raw == "C0-25" ~ "0-25",
-    dataset == "Hubbard Brook" & depth_raw == "C25+" ~ "25",
-    dataset == "Hubbard Brook" & depth_raw == "C25-50" ~ "25-50",
-    dataset == "Hubbard Brook" & depth_raw == "C50+" ~ "50",
+    dataset == "Hubbard Brook" & depth_raw == "50-C" ~ "", # guess needed
+    dataset == "Hubbard Brook" & depth_raw == "C0-25" ~ "", # guess needed
+    dataset == "Hubbard Brook" & depth_raw == "C25+" ~ "", # guess needed
+    dataset == "Hubbard Brook" & depth_raw == "C25-50" ~ "", # guess needed
+    dataset == "Hubbard Brook" & depth_raw == "C50+" ~ "", # guess needed
+    ## Jornada
+    dataset == "Jornada" & depth_raw == "5" ~ "0-5",
+    dataset == "Jornada" & depth_raw == "15" ~ "5-15",
+    ## Konza
+    dataset == "Konza_1" & depth_raw == "81+" ~ "81-91", # guessing all KNZ are 10 cm cores
+    dataset == "Konza_1" & depth_raw == "192+" ~ "192-202", 
+    dataset == "Konza_1" & depth_raw == "198+" ~ "198-208", 
+    dataset == "Konza_1" & depth_raw == "221+" ~ "221-231",
     ## Luquillo (1)
     ### No ranges so we'll just add a constant to every depth value to get the end of the range
     dataset == "Luquillo_1" & stringr::str_detect(string = depth_raw, pattern = "-") != T ~ paste0(depth_raw, "-", suppressWarnings(as.numeric(depth_raw)) + 10),
     ## Luquillo (2)
-    dataset == "Luquillo_2" & depth_raw == "1" ~ "1", # guess needed
-    dataset == "Luquillo_2" & depth_raw == "2" ~ "2", # guess needed
+    dataset == "Luquillo_2" & depth_raw == "1" ~ "", # guess needed
+    dataset == "Luquillo_2" & depth_raw == "2" ~ "", # guess needed
     ## Niwot (3)
-    dataset == "Niwot_3" & depth_raw == "10" ~ "10", # guess needed
-    dataset == "Niwot_3" & depth_raw == "20" ~ "20", # guess needed
+    dataset == "Niwot_3" & depth_raw == "10" ~ "0-10", # guess needed
+    dataset == "Niwot_3" & depth_raw == "20" ~ "10-20", # guess needed
     ## Seviletta (2)
-    dataset == "Sevilleta_2" & depth_raw == "10" ~ "10", # guess needed
-    dataset == "Sevilleta_2" & depth_raw == "20" ~ "20", # guess needed
-    dataset == "Sevilleta_2" & depth_raw == "30" ~ "30", # guess needed
+    dataset == "Sevilleta_2" & depth_raw == "10" ~ "0-10", # guess needed
+    dataset == "Sevilleta_2" & depth_raw == "20" ~ "10-20", # guess needed
+    dataset == "Sevilleta_2" & depth_raw == "30" ~ "20-30", # guess needed
     ## Otherwise raw depth assumed to be a functioning range
     TRUE ~ depth_raw), .after = depth_raw) %>%
   # Drop now-unneeded BNZ depth column
@@ -356,7 +364,8 @@ tidy_v2c <- tidy_v2b %>%
   # If depth included horizon information we probably can assume that it was *relative* depth
   dplyr::mutate(depth_type = dplyr::case_when(
     # Relative depth within horizon layer
-    dataset == "Hubbard Brook" & depth_raw %in% c("30+", "C+", "C25+", "C50+", "Oa") ~ "relative",
+    dataset == "Hubbard Brook" & depth_raw %in% c("30+", "C+", "C25+", "C50+", "Oa",
+                                                  "50-C", "C0-25", "C25-50") ~ "relative",
     # No depth info means no depth type
     is.na(depth_raw) | nchar(depth_raw) == 0 ~ NA,
     # Otherwise depth info is assumed to be objective depth
@@ -436,10 +445,18 @@ tidy_v2e %>%
 
 # Wrangle horizon information to get other desired facets of that variable
 tidy_v3 <- tidy_v2e %>%
+  # Make a column that simplifies horizon information
+  dplyr::mutate(horizon_simp = dplyr::case_when(
+    !horizon_raw %in% c("upper organic", "lower organic",
+                        "mineral", "T") ~ stringr::str_sub(string = horizon_raw, 
+                                                           start = 1, end = 1),
+    horizon_raw %in% c("upper organic", "lower organic") ~ "O",
+    dataset == "Toolik" & horizon_raw == "mineral" ~ "A", # Note judgement call
+    T ~ horizon_raw)) %>%
   # Create a column that uses entered horizon, depth horizon info, and expert knowledge to increase coverage
   dplyr::mutate(horizon_actual = dplyr::case_when(
     # If horizon is in data, use that
-    !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ horizon_raw,
+    !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ horizon_simp,
     !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ depth_horizon,
     # If not in data, use expert knowledge to fill conditionally
     # dataset == "Bonanza Creek_1" ~ "",
@@ -486,11 +503,10 @@ tidy_v3 <- tidy_v2e %>%
   dplyr::mutate(horizon_binary = dplyr::case_when(
     horizon_actual %in% c("organic", "O", "Oi", "Oe", "Oa") ~ "organic",
     horizon_actual %in% c("mineral", "A", "B", "C", "AEB") ~ "mineral",
-    # Placeholder until I figure out what a T horizon is
-    horizon_actual == "T" ~ "UNKNOWN",
+    horizon_actual == "T" ~ "hurricane",
     T ~ NA), .after = horizon_source) %>%
   # Drop depth horizon column and original (un-tidied) horizon column
-  dplyr::select(-depth_horizon) %>%
+  dplyr::select(-depth_horizon, -horizon_simp) %>%
   # Rename tidied horizon column
   dplyr::rename(horizon = horizon_actual)
 
