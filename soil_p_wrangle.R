@@ -955,7 +955,7 @@ tidy_v8 <- tidy_v7 %>%
 dplyr::glimpse(tidy_v8)
 
 ## ------------------------------------------ ##
-      # Relative Depth Wrangling ----
+        # Relative Depth Wrangling ----
 ## ------------------------------------------ ##
 
 # Some depths are relative to their soil horizon
@@ -964,7 +964,9 @@ dplyr::glimpse(tidy_v8)
 # Split off only relative data
 rel_v1 <- dplyr::filter(tidy_v8, depth_type == "relative") %>%
   # Keep only columns with at least one value
-  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
+  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == "")))) %>%
+  # Add in a row number column
+  dplyr::mutate(row_num = 1:nrow(.))
 
 # Split off non-relative data (to avoid accidentally tweaking it)
 tidy_v8_nonrelative <- dplyr::filter(tidy_v8, depth_type == "objective" | is.na(depth_type))
@@ -983,7 +985,7 @@ dplyr::glimpse(rel_v1)
 # Wrangle relative depth data object
 rel_v2 <- rel_v1 %>%
   # Pare down to only the necessary columns for depth / re-attaching with core data later
-  dplyr::select(lter:treatment_years, horizon, depth_start_cm, depth_end_cm) %>%
+  dplyr::select(row_num, lter:treatment_years, horizon, depth_start_cm, depth_end_cm) %>%
   # Pivot longer to have depth start/end as a column
   tidyr::pivot_longer(cols = depth_start_cm:depth_end_cm,
                       names_to = "start_end", values_to = "depth_cm") %>%
@@ -997,7 +999,7 @@ rel_v2 <- rel_v1 %>%
   tidyr::pivot_wider(names_from = temp_horizon, values_from = depth_cm) %>%
   # Reorder based on horizon order
   dplyr::relocate(dplyr::starts_with("temp_O"), 
-                  dplyr::starts_with("temp_AEB"), 
+                  dplyr::starts_with("temp_A"), 
                   dplyr::starts_with("temp_C"), 
                   .after = dplyr::everything())
 
@@ -1012,13 +1014,13 @@ rel_v3 <- rel_v2 %>%
     dataset == "Hubbard Brook" & is.na(temp_O_start) ~ 0,
     T ~ temp_O_start)) %>%
   # If O end is empty but next horizon isn't empty, replace with that
-  ## Doing as `case_when` to allow for future below O horizons (currently only "AEB")
+  ## Doing as `case_when` to allow for future below O horizons (currently only "A")
   dplyr::mutate(temp_O_end = dplyr::case_when(
-    dataset == "Hubbard Brook" & is.na(temp_O_end) & !is.na(temp_AEB_start) ~ temp_AEB_start,
+    dataset == "Hubbard Brook" & is.na(temp_O_end) & !is.na(temp_A_start) ~ temp_A_start,
     T ~ temp_O_end)) %>%
   # If start of C horizon is empty, add in end of preceding horizon
   dplyr::mutate(temp_C_start = dplyr::case_when(
-    dataset == "Hubbard Brook" & is.na(temp_C_start) & !is.na(temp_AEB_end) ~ temp_AEB_end,
+    dataset == "Hubbard Brook" & is.na(temp_C_start) & !is.na(temp_A_end) ~ temp_A_end,
     T ~ temp_C_start))
 
 # Check structure
@@ -1054,7 +1056,9 @@ rel_v5 <- rel_v1 %>%
                 depth_end_cm = dplyr::coalesce(depth_end_cm.x, depth_end_cm.y),
                 .after = depth_start_cm.x) %>%
   # Drop .x and .y depth columns left over from that join
-  dplyr::select(-dplyr::ends_with(".x"), -dplyr::ends_with(".y"))
+  dplyr::select(-dplyr::ends_with(".x"), -dplyr::ends_with(".y")) %>%
+  # Drop row number column
+  dplyr::select(-row_num)
 
 # Check structure
 dplyr::glimpse(rel_v5)
