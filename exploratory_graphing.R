@@ -107,7 +107,9 @@ for (single_lter in unique(megadata$lter)){
      !all(is.na(example_site[[within_site_yvar]]))){
     
   # Create a graph
-  ggplot(data = example_site, aes(x = slow_P_mg_kg, y = C_conc_percent, color = lter)) +
+  ggplot(data = example_site, aes(x = .data[[within_site_xvar]], 
+                                  y = .data[[within_site_yvar]], 
+                                  color = lter)) +
     geom_point() +
     # Best-fit line by site
     geom_smooth(method = "lm", formula = "y ~ x", alpha = 0.2, show.legend = F) +
