@@ -800,6 +800,8 @@ p_sums <- tidy_v6 %>%
     dataset == "FloridaCoastal" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Hubbard Brook" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Jornada" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Kellog_Biological_Station" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "Konza_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Luquillo_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Luquillo_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Niwot_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
@@ -853,6 +855,16 @@ p_sums <- tidy_v6 %>%
                                     HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
                                     Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
     dataset == "Jornada" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Kellog_Biological_Station" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "Konza_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
                               NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
                               ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
                               HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
