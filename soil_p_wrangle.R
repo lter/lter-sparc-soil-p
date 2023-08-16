@@ -67,13 +67,13 @@ key <- key_v0 %>%
     TRUE ~ Raw_Column_Name)) %>%
   ## Unconditional fixes
   ## Spaces & parentheses & slashes & hyphens in a CSV column name will be coerced to periods
-  dplyr::mutate(Raw_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:", replacement = ".", 
+  dplyr::mutate(Raw_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:|,", replacement = ".", 
                                        x = Raw_Column_Name)) %>%
   ## Percent symbols become Xs
   dplyr::mutate(Raw_Column_Name = gsub(pattern = "\\%", replacement = "X", 
                                        x = Raw_Column_Name)) %>%
   # Make sure all synonymized column names avoid characters that are bad in column names
-  dplyr::mutate(Combined_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:", 
+  dplyr::mutate(Combined_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:|,", 
                                             replacement = "_", x = Combined_Column_Name)) %>%
   # Drop unwanted column(s)
   dplyr::select(-first_char, -Extraction_Method, -Notes, -X)
@@ -88,9 +88,7 @@ key %>%
   dplyr::filter(ct > 1)
 
 # Subset the downloaded files to only those in the data key
-raw_files <- data.frame("x" = downloaded_files) %>%
-  dplyr::filter(x %in% key$Raw_Filename) %>%
-  dplyr::pull(x)
+raw_files <- intersect(downloaded_files, key$Raw_Filename)
 
 # Make an empty list (to store raw data in shortly)
 df_list <- list()
@@ -244,6 +242,7 @@ tidy_v2 <- tidy_v1 %>%
     lter %in% c("FloridaCoastal") ~ "FCE",
     lter %in% c("Hubbard Brook") ~ "HBR",
     lter %in% c("Jornada") ~ "JRN",
+    lter %in% c("Konza_1") ~ "KNZ",
     lter %in% c("Luquillo_1", "Luquillo_2") ~ "LUQ",
     lter %in% c("Niwot_1", "Niwot_2", "Niwot_3") ~ "NWT",
     lter %in% c("Sevilleta_1", "Sevilleta_2") ~ "SEV",
