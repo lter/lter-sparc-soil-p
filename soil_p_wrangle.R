@@ -242,9 +242,9 @@ tidy_v2 <- tidy_v1 %>%
     lter %in% c("FloridaCoastal") ~ "FCE",
     lter %in% c("Hubbard Brook") ~ "HBR",
     lter %in% c("Jornada") ~ "JRN",
-    lter %in% c("Konza_1") ~ "KNZ",
+    lter %in% c("Konza_1", "Konza_2") ~ "KNZ",
     lter %in% c("Luquillo_1", "Luquillo_2") ~ "LUQ",
-    lter %in% c("Niwot_1", "Niwot_2", "Niwot_3") ~ "NWT",
+    lter %in% c("Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4") ~ "NWT",
     lter %in% c("Sevilleta_1", "Sevilleta_2") ~ "SEV",
     lter %in% c("Toolik") ~ "ARC",
     # Non-LTER sites
