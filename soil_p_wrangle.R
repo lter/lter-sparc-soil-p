@@ -558,7 +558,7 @@ tidy_v3c <- tidy_v3b %>%
     ## Missing values should be NA
     value_clean %in% c("M", ".", "NaN", "NA000") ~ NA,
     nchar(value_clean) == 0 ~ NA,
-    ## Handle 'less than' indications
+    ## Handle 'less than' indications (note judgement call)
     value_clean == "< 0.5" ~ "0.25",
     ## Otherwise keep the value as it is
     T ~ value_clean))
@@ -638,8 +638,10 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "Coweeta" ~ 0.9,
     dataset == "Fernow" ~ 0.9,
     dataset == "FloridaCoastal" ~ 0.9,
-    dataset == "Jornada" ~ 0.9,
     dataset == "Hubbard Brook" ~ 0.9,
+    dataset == "Jornada" ~ 0.9,
+    dataset == "Kellog_Biological_Station" ~ 0.9,
+    dataset == "Konza_1" ~ 0.9,
     dataset == "Luquillo_1" ~ 0.9,
     dataset == "Luquillo_2" ~ 0.9,
     dataset == "Niwot_1" ~ 0.9,
@@ -649,7 +651,6 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "Sevilleta_1" ~ 0.9,
     dataset == "Sevilleta_2" ~ 0.9,
     dataset == "Toolik" ~ 0.9,
-    # dataset == "" ~ ,
     # If no bulk density is supplied by above conditions, fill with NA
     TRUE ~ NA), .after = bulk_density_g_cm3_raw) %>%
   # Drop old column and rename remaining one to avoid confusion
