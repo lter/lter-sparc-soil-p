@@ -416,6 +416,10 @@ tidy_v2d <- tidy_v2c %>%
 # Check for non-numbers
 supportR::multi_num_check(data = tidy_v2d, col_vec = c("depth_1", "depth_2"))
 
+# JUDGEMENT CALL NOTE:
+## If depth is completely missing we need a filler value for core length (in cm)
+core_lng <- 10
+
 # Now can do numeric wrangling of depth columns
 tidy_v2e <- tidy_v2d %>%
   # Do any needed fixes of non-numbers
@@ -430,7 +434,9 @@ tidy_v2e <- tidy_v2d %>%
   # Drop intermediary columns and old raw depth columns
   dplyr::select(-depth_1, -depth_2, -depth_raw, -depth_range_raw) %>%
   # Calculate length of core as well
-  dplyr::mutate(core_length_cm = depth_end_cm - depth_start_cm,
+  dplyr::mutate(core_length_cm = ifelse(!is.na(depth_end_cm) & !is.na(depth_start_cm),
+                                        yes = depth_end_cm - depth_start_cm,
+                                        no = core_lng),
                 .after = depth_end_cm) %>%
   # Move these columns to the left
   dplyr::relocate(depth_type, depth_start_cm, depth_end_cm, core_length_cm, .after = horizon_raw)
