@@ -1114,11 +1114,15 @@ final_tidy <- tidy_v9
 # Check its structure
 dplyr::glimpse(final_tidy)
 
+# Create a folder to export into
+dir.create(path = file.path("tidy_data"), showWarnings = F)
+
 # Save out the final data object
-write.csv(x = final_tidy, file = "tidy_soil_p.csv", row.names = F, na = "")
+write.csv(x = final_tidy, file = file.path("tidy_data", "tidy_soil_p.csv"), 
+          row.names = F, na = "")
 
 # Upload to GoogleDrive
-googledrive::drive_upload(media = "tidy_soil_p.csv", overwrite = T,
+googledrive::drive_upload(media = file.path("tidy_data", "tidy_soil_p.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9"))
 
 # End ----
