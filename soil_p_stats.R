@@ -52,7 +52,7 @@ stat_df <- mega %>%
   ## Assuming that un-specified horizons are mineral layer
   dplyr::filter(horizon_binary == "mineral" | nchar(horizon_binary) == 0) %>%
   # Identify minimum depth of remaining data within sample info column groups
-  dplyr::group_by(dplyr::across(c(lter:treatment_years))) %>%
+  dplyr::group_by(dplyr::across(c(lter:block, treatment:treatment_years))) %>%
   dplyr::mutate(min_depth = ifelse(!all(is.na(depth_start_cm)),
                                    yes = min(depth_start_cm, na.rm = T),
                                    no = NA),
@@ -60,13 +60,33 @@ stat_df <- mega %>%
                 .after = horizon_binary) %>%
   dplyr::ungroup() %>%
   # Filter to only samples in that range
-  dplyr::filter(depth_start_cm >= min_depth & depth_end_cm <= max_allowed_depth)
-
-# Check out the structure of the data
-dplyr::glimpse(stat_df)
+  dplyr::filter(depth_start_cm >= min_depth & depth_end_cm <= max_allowed_depth) %>%
+  # Now drop any columns that don't have at least one value
+  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
 
 # Check to make sure we're okay with the columns we dropped
 supportR::diff_check(old = names(mega), new = names(stat_df), sort = F)
 
+# Check out the structure of the data
+dplyr::glimpse(stat_df)
+
+# Now create a version of this that is averaged within sites
+site_avgs <- stat_df %>%
+  # Drop depth columns so we can reshape to get averages
+  dplyr::select(-dplyr::contains("depth")) %>%
+  # Flip all numeric variables into long format
+  tidyr::pivot_longer(cols = -lter:-horizon_binary,
+                      names_to = 'variables',
+                      values_to = 'values') %>%
+  # Average within site-level information columns
+  ## Note we'll implicitly drop any column not used in grouping or created by `summarize`
+  dplyr::group_by(lter, dataset, site, treatment, treatment_years, variables) %>%
+  dplyr::summarize(mean_val = mean(values, na.rm = T)) %>%
+  dplyr::ungroup() %>%
+  # Flip back to wide format
+  tidyr::pivot_wider(names_from = variables, values_from = mean_val)
+
+# Glimpse it
+dplyr::glimpse(site_avgs)
 
 # End ----
