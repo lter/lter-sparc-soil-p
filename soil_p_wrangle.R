@@ -237,7 +237,10 @@ tidy_v2 <- tidy_v1 %>%
   # Create a better version of the LTER column
   dplyr::mutate(lter = dplyr::coalesce(lter, dataset)) %>%
   dplyr::mutate(lter = dplyr::case_when(
+    raw_filename == "HJAndrews_Spears.et.al_2000.csv" ~ "AND",
     lter %in% c("Bonanza Creek_1", "Bonanza Creek_2") ~ "BNZ",
+    lter %in% c("Cedar Creek ") ~ "CDR",
+    lter %in% c("Chichaqua Bottoms ") ~ "Chichaqua Bottoms",
     lter %in% c("Coweeta") ~ "CWT",
     lter %in% c("FloridaCoastal") ~ "FCE",
     lter %in% c("Hubbard Brook") ~ "HBR",
@@ -631,10 +634,12 @@ tidy_v5 <- tidy_v4 %>%
   # If bulk density was provided, use that instead of doing conditionals
     !is.na(bulk_density_g_cm3_raw) & 
       nchar(bulk_density_g_cm3_raw) != 0 ~ as.numeric(bulk_density_g_cm3_raw),
+    dataset == "HJAndrews_1" ~ 0.9,
     dataset == "Bonanza Creek_1" ~ 0.9,
     dataset == "Bonanza Creek_2" ~ 0.9,
     dataset == "Brazil" ~ 0.9,
     dataset == "Calhoun" ~ 0.9,
+    dataset == "CedarCreek_1" ~ 0.9,
     dataset == "Coweeta" ~ 0.9,
     dataset == "Fernow" ~ 0.9,
     dataset == "FloridaCoastal" ~ 0.9,
@@ -791,10 +796,12 @@ p_sums <- tidy_v6 %>%
   tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
   # Calculate slow P conditionally
   dplyr::mutate(slow_P_mg_kg = dplyr::case_when(
+    dataset == "HJAndrews_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Bonanza Creek_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Bonanza Creek_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Brazil" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Calhoun" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
+    dataset == "CedarCreek_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Coweeta" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "Fernow" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
     dataset == "FloridaCoastal" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
@@ -814,6 +821,11 @@ p_sums <- tidy_v6 %>%
     TRUE ~ NA )) %>%
   # Also total P
   dplyr::mutate(total_P_mg_kg = dplyr::case_when(
+    dataset == "HJAndrews_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                                      NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                                      ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                                      HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                                      Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
     dataset == "Bonanza Creek_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
                                       NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
                                       ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
@@ -830,6 +842,11 @@ p_sums <- tidy_v6 %>%
                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
     dataset == "Calhoun" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
+                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
+                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
+                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
+                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
+    dataset == "CedarCreek_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
                               NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
                               ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
                               HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
