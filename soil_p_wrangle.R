@@ -962,14 +962,14 @@ dplyr::glimpse(tidy_v7)
 # Calculate absolute P totals (rather than portions of each core)
 tidy_v8 <- tidy_v7 %>%
   # Due to our earlier depth/bulk density prep this is easy!
-  dplyr::mutate(slow_P_absolute = slow_P_mg_kg * core_length_cm * bulk_density_g_cm3,
+  dplyr::mutate(slow_P_stock = slow_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = slow_P_mg_kg) %>%
-  dplyr::mutate(total_P_absolute = total_P_mg_kg * core_length_cm * bulk_density_g_cm3,
+  dplyr::mutate(total_P_stock = total_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = total_P_mg_kg)
 ## Units of absolute sums are ____?
   
 # Re-check structure
-dplyr::glimpse(tidy_v8)
+dplyr::glimpse(tidy_v8[1:35])
 
 ## ------------------------------------------ ##
         # Relative Depth Wrangling ----
