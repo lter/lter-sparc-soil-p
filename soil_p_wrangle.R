@@ -313,6 +313,11 @@ tidy_v2b %>%
 # Wrangle depth into actual numbers
 tidy_v2c <- tidy_v2b %>%
   dplyr::mutate(depth_range_raw = dplyr::case_when(
+    ## Andrews
+    dataset == "HJAndrews_1" & depth_raw == "5" ~ "0-5", # guess confirmation needed
+    dataset == "HJAndrews_1" & depth_raw == "15" ~ "5-15", # guess confirmation needed
+    dataset == "HJAndrews_1" & depth_raw == "30" ~ "15-30", # guess confirmation needed
+    dataset == "HJAndrews_1" & depth_raw == "60" ~ "30-60", # guess confirmation needed
     ## Bonanza (1)
     dataset == "Bonanza Creek_1" & depth_raw == "24" ~ "24-40",
     dataset == "Bonanza Creek_1" & depth_raw == "36" ~ "36-50",
@@ -802,28 +807,29 @@ p_sums <- tidy_v6 %>%
   tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
   # Calculate slow P conditionally
   dplyr::mutate(slow_P_mg_kg = dplyr::case_when(
-    dataset == "HJAndrews_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Bonanza Creek_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Bonanza Creek_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Brazil" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Calhoun" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "CedarCreek_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Coweeta" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Fernow" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "FloridaCoastal" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Hubbard Brook" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Jornada" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Kellog_Biological_Station" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Konza_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Luquillo_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Luquillo_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Niwot_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Niwot_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Niwot_3" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Sevilleta_1" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Sevilleta_2" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    dataset == "Toolik" ~ (HCl_P_mg_kg + ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg),
-    # dataset == "" ~ (),
+    dataset == "HJAndrews_1" ~ (HCl_P_mg_kg),
+    dataset == "Bonanza Creek_1" ~ NA,
+    dataset == "Bonanza Creek_2" ~ NA,
+    dataset == "Brazil" ~ NA,
+    dataset == "Calhoun" ~ (HCl_P_mg_kg),
+    dataset == "CedarCreek_1" ~ NA, # Seems like the data Marie Spohn sent only has total P, but will try to get the hedley fraction
+    dataset == "Coweeta" ~ (HCl_P_mg_kg), 
+    dataset == "Fernow" ~ NA, # only have a neutral salt extraction (available P). We should probably remove this entirely)
+    dataset == "FloridaCoastal" ~ (HCl_P_mg_kg),
+    dataset == "Hubbard Brook" ~ (HBR_Leach3_mg_g * 1000), # Note unit conversion (mg/g -> mg/kg)
+    dataset == "Jornada" ~ NA,
+    dataset == "Kellog_Biological_Station" ~ (HCl_inorganic_mg_kg),
+    dataset == "Konza_1" ~ (Ca_bound_P_mg_kg), # This is based on 2 different methodologies (at 2 sites not well descibed in the paper)
+    dataset == "Luquillo_1" ~ NA,
+    dataset == "Luquillo_2" ~ (dil_HCl_mg_kg), #Double Check!! assuming these are the correct units, and dilute HCl is 1M step from hedley
+    dataset == "Niwot_1" ~ (HCl_P_mg_kg),
+    dataset == "Niwot_2" ~ (HCl_P_mg_kg),
+    dataset == "Niwot_3" ~ NA,
+    dataset == "Sevilleta_1" ~ (HCl_P_mg_kg),
+    dataset == "Sevilleta_2" ~ NA,
+    dataset == "Toolik" ~ ifelse((P_stock_Soluble_and_moderately_stable_mg_m2 - P_conc_Sorbed_or_Weakly_bound_mg_kg) < 0,
+                                 yes = 0, 
+                                 no = P_stock_Soluble_and_moderately_stable_mg_m2 - P_conc_Sorbed_or_Weakly_bound_mg_kg), # If resulting number is negative it gets set to zero
     TRUE ~ NA )) %>%
   # Also total P
   dplyr::mutate(total_P_mg_kg = dplyr::case_when(
@@ -942,8 +948,8 @@ p_sums <- tidy_v6 %>%
 # Any datasets missing?
 p_sums %>%
   dplyr::filter(is.na(slow_P_mg_kg) | is.na(total_P_mg_kg)) %>%
-  dplyr::pull(dataset) %>%
-  unique()
+  dplyr::select(dataset, slow_P_mg_kg, total_P_mg_kg) %>%
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(p_sums)
