@@ -789,6 +789,21 @@ tidy_v6 %>%
 dplyr::glimpse(tidy_v6[c(1:10, 25:35)])
 
 ## ------------------------------------------ ##
+    # P Fraction Unit Standardization ----
+## ------------------------------------------ ##
+
+# Before we can do our P sums (for total/slow/etc. P) we need all fractions in consistent units
+## While we're here we could maybe do some name standardization as well
+
+# Glimpse the entire dataset
+dplyr::glimpse(tidy_v6)
+
+
+## NEEDED: UNIT FIXES!
+
+
+
+## ------------------------------------------ ##
             # Phosphorus Sums ----
 ## ------------------------------------------ ##
 
