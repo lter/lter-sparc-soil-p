@@ -76,8 +76,7 @@ key <- key_v0 %>%
   dplyr::mutate(Combined_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:|,", 
                                             replacement = "_", x = Combined_Column_Name)) %>%
   # Keep only desired columns
-  dplyr::select(Dataset, Raw_Filename, Raw_Column_Name, 
-                Combined_Column_Name, Concentration_Units)
+  dplyr::select(Dataset, Raw_Filename, Raw_Column_Name, Combined_Column_Name, Units)
 
 # Check structure of key
 dplyr::glimpse(key)
@@ -145,28 +144,13 @@ for(j in 1:length(raw_files)){
     # Drop any columns that don't have a synonymized equivalent
     dplyr::filter(!is.na(Combined_Column_Name)) %>%
     # Pick a standard 'not provided' entry for concentration units
-    dplyr::mutate(Concentration_Units = ifelse(nchar(Concentration_Units) == 0,
-                                               yes = NA, no = Concentration_Units)) %>%
+    dplyr::mutate(Units = ifelse(nchar(Units) == 0, yes = NA, no = Units)) %>%
     # Handle concentration units characters that can't be in column names
-    dplyr::mutate(conc_actual = gsub(pattern = "\\/", replacement = "_", 
-                                     x = Concentration_Units)) %>%
+    dplyr::mutate(conc_actual = gsub(pattern = "\\/", replacement = "_", x = Units)) %>%
     # Combine concentration units with column name (where conc units are provided)
-    dplyr::mutate(names_fix = ifelse(!is.na(conc_actual),
+    dplyr::mutate(names_actual = ifelse(test = !is.na(conc_actual),
                                      yes = paste0(Combined_Column_Name, "_", conc_actual),
                                      no = Combined_Column_Name)) %>%
-    # If units were already in the column name and the above step duplicate them, handle that
-    dplyr::mutate(names_actual = gsub(pattern = "_mg_kg_mg_kg", replacement = "_mg_kg", 
-                                      x = names_fix)) %>%
-    dplyr::mutate(names_actual = gsub(pattern = "_g_m2_g_m2", replacement = "_g_m2", 
-                                      x = names_actual)) %>%
-    dplyr::mutate(names_actual = gsub(pattern = "_percent_percent", replacement = "_percent", 
-                                      x = names_actual)) %>%
-    plyr::mutate(names_actual = gsub(pattern = "_kg_ha_kg_ha", replacement = "_kg_ha", 
-                                     x = names_actual)) %>%
-    dplyr::mutate(names_actual = gsub(pattern = "_ppm_ppm", replacement = "_ppm", 
-                                      x = names_actual)) %>%
-    dplyr::mutate(names_actual = gsub(pattern = "_cm_cm", replacement = "_cm", 
-                                      x = names_actual)) %>%
     # Pare down to only needed columns (implicitly removes unspecified columns)
     dplyr::select(row_num, Dataset, Raw_Filename, names_actual, values)
   
@@ -231,14 +215,15 @@ tidy_v2 <- tidy_v1 %>%
   dplyr::rename(lter = LTER,
                 dataset = Dataset,
                 raw_filename = Raw_Filename,
-                available_P_ppm = Avail_P_ppm,
-                coarse_vol_percent = Coarse_Vol_percent,
-                tot_P_kg_ha_0_10 = `0_10_tot_P_kg_ha`) %>%
+                coarse_vol_percent = Coarse_Vol_percent) %>%
   # Relocate all spatial/site columns to the left of the dataframe
   dplyr::relocate(lter, dataset, raw_filename, site, lat, lon, plot, block, core,
                   sample_replicate, treatment, treatment_years, distance, topography, 
                   horizon, depth_cm, org_depth_cm, pH,
                   .before = dplyr::everything()) %>%
+  # Move P fractions to the right
+  dplyr::relocate(dplyr::starts_with("P_"), dplyr::starts_with("Po_"), 
+                  dplyr::starts_with("Pi_"), .after = dplyr::everything()) %>%
   # Create a better version of the LTER column
   dplyr::mutate(lter = dplyr::coalesce(lter, dataset)) %>%
   dplyr::mutate(lter = dplyr::case_when(
@@ -249,7 +234,8 @@ tidy_v2 <- tidy_v1 %>%
     lter %in% c("Coweeta") ~ "CWT",
     lter %in% c("FloridaCoastal") ~ "FCE",
     lter %in% c("Hubbard Brook") ~ "HBR",
-    lter %in% c("Jornada") ~ "JRN",
+    lter %in% c("Jornada_1") ~ "JRN",
+    lter %in% c("Kellog_Biological_Station") ~ "KBS",
     lter %in% c("Konza_1", "Konza_2") ~ "KNZ",
     lter %in% c("Luquillo_1", "Luquillo_2") ~ "LUQ",
     lter %in% c("Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4") ~ "NWT",
