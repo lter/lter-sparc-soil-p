@@ -75,8 +75,9 @@ key <- key_v0 %>%
   # Make sure all synonymized column names avoid characters that are bad in column names
   dplyr::mutate(Combined_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:|,", 
                                             replacement = "_", x = Combined_Column_Name)) %>%
-  # Drop unwanted column(s)
-  dplyr::select(-first_char, -Extraction_Method, -Notes, -X)
+  # Keep only desired columns
+  dplyr::select(Dataset, Raw_Filename, Raw_Column_Name, 
+                Combined_Column_Name, Concentration_Units)
 
 # Check structure of key
 dplyr::glimpse(key)
@@ -158,6 +159,10 @@ for(j in 1:length(raw_files)){
                                       x = names_fix)) %>%
     dplyr::mutate(names_actual = gsub(pattern = "_g_m2_g_m2", replacement = "_g_m2", 
                                       x = names_actual)) %>%
+    dplyr::mutate(names_actual = gsub(pattern = "_percent_percent", replacement = "_percent", 
+                                      x = names_actual)) %>%
+    plyr::mutate(names_actual = gsub(pattern = "_kg_ha_kg_ha", replacement = "_kg_ha", 
+                                     x = names_actual)) %>%
     dplyr::mutate(names_actual = gsub(pattern = "_ppm_ppm", replacement = "_ppm", 
                                       x = names_actual)) %>%
     dplyr::mutate(names_actual = gsub(pattern = "_cm_cm", replacement = "_cm", 
@@ -799,19 +804,26 @@ dplyr::glimpse(tidy_v6[c(1:10, 25:35)])
 dplyr::glimpse(tidy_v6)
 
 
-## NEEDED: UNIT FIXES!
+# Before we can do unit fixes, should standardize P fraction names
+## This will make P fractions that are the same except for units share most of their column name
+## And be easily grouped / manipulated
+## Plus, it'll be clearer conceptually which are similar to one another
 
+# Make a new dataset to do this wrangling
+tidy_v7 <- tidy_v6
 
+# Re-check structure
+dplyr::glimpse(tidy_v7)
 
 ## ------------------------------------------ ##
             # Phosphorus Sums ----
 ## ------------------------------------------ ##
 
 # Glimpse the entire dataset
-dplyr::glimpse(tidy_v6)
+dplyr::glimpse(tidy_v7)
 
 # Now we'll want to add together our various types of P (conditionally)
-p_sums <- tidy_v6 %>%
+p_sums <- tidy_v7 %>%
   # First need to fill NAs with 0s to avoid making NA sums
   ## Pivot longer
   tidyr::pivot_longer(cols = -lter:-C_conc_org_percent,
@@ -973,21 +985,21 @@ dplyr::glimpse(p_sums)
 ## They're not "real" 0s so we want to preserve the real 0s while still easily getting sums
 
 # Now we can attach our sums to the original tidy object
-tidy_v7 <- tidy_v6 %>%
+tidy_v8 <- tidy_v7 %>%
   # By not specifying which columns to join by, all shared columns will be used
   dplyr::left_join(y = p_sums) %>%
   # Move our P sums to the left for more easy reference
   dplyr::relocate(slow_P_mg_kg, total_P_mg_kg, .after = bulk_density_kg_ha)
 
 # Check structure
-dplyr::glimpse(tidy_v7)
+dplyr::glimpse(tidy_v8)
 
 ## ------------------------------------------ ##
               # Absolute P ----
 ## ------------------------------------------ ##
 
 # Calculate absolute P totals (rather than portions of each core)
-tidy_v8 <- tidy_v7 %>%
+tidy_v9 <- tidy_v8 %>%
   # Due to our earlier depth/bulk density prep this is easy!
   dplyr::mutate(slow_P_stock = slow_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = slow_P_mg_kg) %>%
@@ -996,7 +1008,7 @@ tidy_v8 <- tidy_v7 %>%
 ## Units of absolute sums are ____?
   
 # Re-check structure
-dplyr::glimpse(tidy_v8[1:35])
+dplyr::glimpse(tidy_v9[1:35])
 
 ## ------------------------------------------ ##
         # Relative Depth Wrangling ----
@@ -1006,17 +1018,19 @@ dplyr::glimpse(tidy_v8[1:35])
 ## Need to calculate their objective depths
 
 # Split off only relative data
-rel_v1 <- dplyr::filter(tidy_v8, depth_type == "relative") %>%
+rel_v1 <- tidy_v9 %>%
+  dplyr::filter(depth_type == "relative") %>%
   # Keep only columns with at least one value
   dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == "")))) %>%
   # Add in a row number column
   dplyr::mutate(row_num = 1:nrow(.))
 
 # Split off non-relative data (to avoid accidentally tweaking it)
-tidy_v8_nonrelative <- dplyr::filter(tidy_v8, depth_type == "objective" | is.na(depth_type))
+tidy_v9_nonrelative <- tidy_v9 %>%
+  dplyr::filter(depth_type == "objective" | is.na(depth_type))
 
 # Check to make sure no rows were lost
-nrow(rel_v1) + nrow(tidy_v8_nonrelative) == nrow(tidy_v8)
+nrow(rel_v1) + nrow(tidy_v9_nonrelative) == nrow(tidy_v9)
 
 # What horizon layers are in this subset of the data?
 rel_v1 %>%
@@ -1113,7 +1127,7 @@ summary(rel_v1$depth_end_cm); summary(rel_v5$depth_end_cm)
 ## Fixes more starts than ends (likely because of 'start of O is 0' assumption)
 
 # Finish up the depth/horizon wrangling
-tidy_v9 <- tidy_v8_nonrelative %>%
+tidy_v10 <- tidy_v9_nonrelative %>%
   # Bind the rows of the wrangled relative data object back onto the dataframe
   dplyr::bind_rows(rel_v5) %>% # Comfortable with assumptions? Use this
   # dplyr::bind_rows(rel_v1) %>% # Don't want to make assumptions? Use this
@@ -1126,17 +1140,17 @@ tidy_v9 <- tidy_v8_nonrelative %>%
                 .after = depth_end_cm)
 
 # Re-check structure
-dplyr::glimpse(tidy_v9)
+dplyr::glimpse(tidy_v10)
 
 # Retained all rows?
-nrow(tidy_v9) == nrow(tidy_v8)
+nrow(tidy_v10) == nrow(tidy_v9)
 
 ## ------------------------------------------ ##
                   # Export ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-final_tidy <- tidy_v9
+final_tidy <- tidy_v10
 
 # Check its structure
 dplyr::glimpse(final_tidy)
