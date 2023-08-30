@@ -685,7 +685,7 @@ tidy_v5 %>%
   dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
   dplyr::glimpse()
 
-# Convert N & C into percents
+# Convert N & C concentrations into percents
 tidy_v5b <- tidy_v5 %>%
   # Standardize Nitrogen concentration units (conditions are from most to least preferred unit)
   dplyr::mutate(N_conc_actual = dplyr::case_when(
