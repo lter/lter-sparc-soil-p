@@ -877,114 +877,8 @@ p_sums <- tidy_v7 %>%
                                  no = P_conc_HCl_mg_kg - P_conc_citrate_mg_kg), 
     TRUE ~ NA )) %>%
   # Also total P
-  dplyr::mutate(total_P_mg_kg = dplyr::case_when(
-    dataset == "HJAndrews_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                      NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                      ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                      HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                      Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Bonanza Creek_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                      NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                      ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                      HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                      Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Bonanza Creek_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                      NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                      ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                      HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                      Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Brazil" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Calhoun" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "CedarCreek_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Coweeta" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Fernow" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "FloridaCoastal" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                     NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                     ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                     HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                     Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Hubbard Brook" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                    NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                    ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                    HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                    Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Jornada" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Kellog_Biological_Station" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Konza_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Luquillo_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                 NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                 ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                 HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                 Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Luquillo_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                 NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                 ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                 HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                 Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Niwot_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Niwot_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Niwot_3" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                              NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                              ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                              HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                              Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Sevilleta_1" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                  NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                  ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                  HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                  Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Sevilleta_2" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                                  NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                                  ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                                  HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                                  Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    dataset == "Toolik" ~ (Resin_P_mg_kg + HCO3_Po_mg_kg + HCO3_Pi_mg_kg +
-                             NaOH_Po_mg_kg + NaOH_Pi_mg_kg + HCl_P_mg_kg +
-                             ConHCl_Po_mg_kg + ConHCl_Pi_mg_kg + MIII_P_mg_kg +
-                             HCO3_P_mg_kg + NaOH_P_mg_kg + Sonic_P_mg_kg + Residual_P_mg_kg +
-                             Sonic_Pi_mg_kg + Sonic_Po_mg_kg),
-    # dataset == "" ~ (),
-    TRUE ~ NA )) %>%
+  ## NOTE: using slow P as placeholder while we wait for identification of P fractions / site
+  dplyr::mutate(total_P_mg_kg = slow_P_mg_kg) %>%
   # After summing, remove all columns where we changed NAs to 0s
   dplyr::select(lter:C_conc_org_percent, slow_P_mg_kg, total_P_mg_kg) %>%
   # Keep only unique rows
@@ -1023,8 +917,11 @@ tidy_v9 <- tidy_v8 %>%
                 .before = slow_P_mg_kg) %>%
   dplyr::mutate(total_P_stock = total_P_mg_kg * core_length_cm * bulk_density_g_cm3,
                 .before = total_P_mg_kg)
-## Units of absolute sums are ____?
-  
+
+# Check contents of those columns
+summary(tidy_v9$slow_P_stock)
+summary(tidy_v9$total_P_stock)
+
 # Re-check structure
 dplyr::glimpse(tidy_v9[1:35])
 
