@@ -790,16 +790,42 @@ dplyr::glimpse(tidy_v6[c(1:10, 25:35)])
 # Glimpse the entire dataset
 dplyr::glimpse(tidy_v6)
 
-
-# Before we can do unit fixes, should standardize P fraction names
-## This will make P fractions that are the same except for units share most of their column name
-## And be easily grouped / manipulated
-## Plus, it'll be clearer conceptually which are similar to one another
-
 # Make a new dataset to do this wrangling
-tidy_v7 <- tidy_v6
+tidy_v7 <- tidy_v6 %>%
+  # Group columns by what type of P they are measuring
+  dplyr::relocate(dplyr::starts_with("P_conc_"), dplyr::starts_with("Po_conc_"),
+                  dplyr::starts_with("Pi_conc"), dplyr::starts_with("P_stock"),
+                  .after = dplyr::everything()) %>%
+  # P concentration unit standardization
+  ## mg/g -> mg/kg
+  dplyr::mutate(P_conc_H2O2_mg_kg = P_conc_H2O2_mg_g * 1000,
+                P_conc_HNO3_cold_mg_kg = P_conc_HNO3_cold_mg_g * 1000,
+                P_conc_HNO3_hot_mg_kg = P_conc_HNO3_hot_mg_g * 1000,
+                P_conc_NH4Cl_mg_kg = P_conc_NH4Cl_mg_g * 1000,
+                .before = P_conc_H2O2_mg_g) %>%
+  ## g/kg -> mg/kg
+  dplyr::mutate(P_conc_H2SO4_mg_kg = P_conc_H2SO4_g_kg / 1000,
+                .after = P_conc_H2SO4_g_kg) %>%
+  # Organic P concentration unit standardization
+  
+  # Inorganic P concentration unit standardization
+  
+  # P stocks unit standardization
+  ## g/m2 -> mg/m2
+  dplyr::mutate(P_stock_resin_mg_m2 = P_stock_resin_g_m2 / 1000,
+                .after = P_stock_resin_g_m2) %>%
+  # Delete columns we've converted to another unit
+  dplyr::select(-P_conc_H2O2_mg_g, -P_conc_HNO3_cold_mg_g,
+                -P_conc_HNO3_hot_mg_g, -P_conc_NH4Cl_mg_g,
+                -P_conc_H2SO4_g_kg, -P_stock_resin_g_m2)
 
-# Re-check structure
+# Re-check structure of each group
+dplyr::glimpse(dplyr::select(tidy_v7, dplyr::starts_with("P_conc_")))
+dplyr::glimpse(dplyr::select(tidy_v7, dplyr::starts_with("Po_conc_")))
+dplyr::glimpse(dplyr::select(tidy_v7, dplyr::starts_with("Pi_conc_")))
+dplyr::glimpse(dplyr::select(tidy_v7, dplyr::starts_with("P_stock_")))
+
+# Check structure of entire dataset
 dplyr::glimpse(tidy_v7)
 
 ## ------------------------------------------ ##
@@ -821,29 +847,34 @@ p_sums <- tidy_v7 %>%
   tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
   # Calculate slow P conditionally
   dplyr::mutate(slow_P_mg_kg = dplyr::case_when(
-    dataset == "HJAndrews_1" ~ (HCl_P_mg_kg),
+    dataset == "HJAndrews_1" ~ (P_conc_HCl_mg_kg),
     dataset == "Bonanza Creek_1" ~ NA,
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Brazil" ~ NA,
-    dataset == "Calhoun" ~ (HCl_P_mg_kg),
-    dataset == "CedarCreek_1" ~ NA, # Seems like the data Marie Spohn sent only has total P, but will try to get the hedley fraction
-    dataset == "Coweeta" ~ (HCl_P_mg_kg), 
-    dataset == "Fernow" ~ NA, # only have a neutral salt extraction (available P). We should probably remove this entirely)
-    dataset == "FloridaCoastal" ~ (HCl_P_mg_kg),
-    dataset == "Hubbard Brook" ~ (HBR_Leach3_mg_g * 1000), # Note unit conversion (mg/g -> mg/kg)
+    dataset == "Calhoun" ~ (P_conc_HCl_mg_kg),
+    # (vvv) Data seem to only have total P but searching for Hedley fraction
+    dataset == "CedarCreek_1" ~ NA, 
+    dataset == "Coweeta" ~ (P_conc_HCl_mg_kg), 
+    # (vvv) Only have a neutral salt extraction (available P). May remove dataset entirely
+    dataset == "Fernow" ~ NA,
+    dataset == "FloridaCoastal" ~ (P_conc_HCl_mg_kg),
+    dataset == "Hubbard Brook" ~ (P_conc_HNO3_cold_mg_kg),
     dataset == "Jornada" ~ NA,
-    dataset == "Kellog_Biological_Station" ~ (HCl_inorganic_mg_kg),
-    dataset == "Konza_1" ~ (Ca_bound_P_mg_kg), # This is based on 2 different methodologies (at 2 sites not well descibed in the paper)
+    dataset == "Kellog_Biological_Station" ~ (Pi_conc_HCl_mg_kg),
+    # (vvv) Based on 2 different methodologies
+    dataset == "Konza_1" ~ (P_conc_Ca_bound_mg_kg),
     dataset == "Luquillo_1" ~ NA,
-    dataset == "Luquillo_2" ~ (dil_HCl_mg_kg), #Double Check!! assuming these are the correct units, and dilute HCl is 1M step from hedley
-    dataset == "Niwot_1" ~ (HCl_P_mg_kg),
-    dataset == "Niwot_2" ~ (HCl_P_mg_kg),
+    # (vvv) Re-check! assuming these are the correct units, and dilute HCl is 1M step from Hedley
+    dataset == "Luquillo_2" ~ (P_conc_dilHCl_mg_kg),
+    dataset == "Niwot_1" ~ (P_conc_HCl_mg_kg),
+    dataset == "Niwot_2" ~ (P_conc_HCl_mg_kg),
     dataset == "Niwot_3" ~ NA,
-    dataset == "Sevilleta_1" ~ (HCl_P_mg_kg),
+    dataset == "Sevilleta_1" ~ (P_conc_HCl_mg_kg),
     dataset == "Sevilleta_2" ~ NA,
-    dataset == "Toolik" ~ ifelse((P_stock_Soluble_and_moderately_stable_mg_m2 - P_conc_Sorbed_or_Weakly_bound_mg_kg) < 0,
+    # (vvv) If resulting number is negative it gets set to zero
+    dataset == "Toolik" ~ ifelse((P_conc_HCl_mg_kg - P_conc_citrate_mg_kg) < 0,
                                  yes = 0, 
-                                 no = P_stock_Soluble_and_moderately_stable_mg_m2 - P_conc_Sorbed_or_Weakly_bound_mg_kg), # If resulting number is negative it gets set to zero
+                                 no = P_conc_HCl_mg_kg - P_conc_citrate_mg_kg), 
     TRUE ~ NA )) %>%
   # Also total P
   dplyr::mutate(total_P_mg_kg = dplyr::case_when(
