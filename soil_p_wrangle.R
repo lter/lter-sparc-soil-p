@@ -205,10 +205,10 @@ key_v5 %>%
 downloaded_files <- dir(path = file.path("raw_data"))
 
 # Compare the two to see if all file names in the key were in the Drive
-supportR::diff_check(old = downloaded_files, new = unique(key_v0$Raw_Filename))
+supportR::diff_check(old = downloaded_files, new = unique(key_v5$Raw_Filename))
 
 # Subset the data key to only raw files that we downloaded
-key <- key_v0 %>%
+key <- key_v5 %>%
   dplyr::filter(Raw_Filename %in% downloaded_files)
 
 # Subset the downloaded files to only those in the data key
@@ -223,13 +223,8 @@ for(j in 1:length(raw_files)){
   # Grab its name
   focal_raw <- raw_files[j]
   
-  # Subset the key object a bit
-  key_sub <- key %>%
-    # Only this file's section
-    dplyr::filter(Raw_Filename == focal_raw) %>%
-    # And only columns that have a synonymized equivalent
-    dplyr::filter(!is.na(Combined_Column_Name) & nchar(Combined_Column_Name) != 0) %>%
-    dplyr::filter(Combined_Column_Name != "NA") 
+  # Subset the key object to only this file's section
+  key_sub <- dplyr::filter(key, Raw_Filename == focal_raw)
   
   # Load in that file
   raw_df_v1 <- read.csv(file = file.path("raw_data", focal_raw))
@@ -241,7 +236,8 @@ for(j in 1:length(raw_files)){
                   Raw_Filename = focal_raw,
                   .before = dplyr::everything()) %>%
     # Make all columns into character columns
-    dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character)) %>%
+    dplyr::mutate(dplyr::across(.cols = dplyr::everything(), 
+                                .fns = as.character)) %>%
     # Now pivot everything into ultimate long format
     ## Note: if column class differs this step can't be done
     ## That is why we convert everything into characters in the previous step
@@ -267,21 +263,15 @@ for(j in 1:length(raw_files)){
     dplyr::left_join(key_sub, by = c("Raw_Filename", "Raw_Column_Name")) %>%
     # Drop any columns that don't have a synonymized equivalent
     dplyr::filter(!is.na(Combined_Column_Name)) %>%
-    # Pick a standard 'not provided' entry for concentration units
-    dplyr::mutate(Units = ifelse(nchar(Units) == 0, yes = NA, no = Units)) %>%
-    # Handle concentration units characters that can't be in column names
-    dplyr::mutate(conc_actual = gsub(pattern = "\\/", replacement = "_", x = Units)) %>%
-    # Combine concentration units with column name (where conc units are provided)
-    dplyr::mutate(names_actual = ifelse(test = !is.na(conc_actual),
-                                     yes = paste0(Combined_Column_Name, "_", conc_actual),
-                                     no = Combined_Column_Name)) %>%
     # Pare down to only needed columns (implicitly removes unspecified columns)
-    dplyr::select(row_num, Dataset, Raw_Filename, names_actual, values)
+    dplyr::select(row_num, Dataset, Raw_Filename, Combined_Column_Name, values)
   
   # As a separate object (for ease of maintenance we want the preceding work in its own object)
   raw_df <- raw_df_v3 %>%
     # Pivot back to wide format with revised column names
-    tidyr::pivot_wider(names_from = names_actual, values_from = values, values_fill = NA) %>%
+    tidyr::pivot_wider(names_from = Combined_Column_Name, 
+                       values_from = values, 
+                       values_fill = NA) %>%
     # Drop row number column
     dplyr::select(-row_num) %>%
     # Drop non-unique rows (there shouldn't be any but better safe than sorry)
