@@ -243,7 +243,10 @@ for(j in 1:length(raw_files)){
     ## That is why we convert everything into characters in the previous step
     tidyr::pivot_longer(cols = -row_num:-Raw_Filename,
                         names_to = "Raw_Column_Name",
-                        values_to = "values")
+                        values_to = "values") %>%
+    # Process raw column names as needed
+    dplyr::mutate(Raw_Column_Name = gsub(pattern = spec_char, replacement = ".",
+                                         x = Raw_Column_Name))
   
   # Identify any columns that are in the data key but (apparently) not in the data
   missing_cols <- setdiff(x = key_sub$Raw_Column_Name, y = unique(raw_df_v2$Raw_Column_Name))
