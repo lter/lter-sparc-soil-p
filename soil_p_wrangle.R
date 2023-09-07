@@ -30,32 +30,40 @@ purrr::walk2(.x = raw_ids$id, .y = raw_ids$name,
 rm(list = ls())
 
 ## ------------------------------------------ ##
-            # Data Harmonizing ----
+              # Data Key Prep ----
 ## ------------------------------------------ ##
+
+# Make a folder for local storage of the data key
+dir.create(path = file.path("key_files"), showWarnings = F)
 
 # Download data key (connects raw column names with synonymized equivalents)
 googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1WIAo08Jnmp7BdvN8xxobZ_txcFCWZ35w"), pattern = "LTER_P_DataKey") %>%
-  googledrive::drive_download(file = ., type = "csv", overwrite = T)
+  googledrive::drive_download(file = .$id, type = "csv", overwrite = T,
+                              path = file.path("key_files", .$name))
 
 # Retrieve the data key
-key_v0 <- read.csv(file = file.path("LTER_P_DataKey.csv"))
+key_v1 <- read.csv(file = file.path("key_files", "LTER_P_DataKey.csv")) %>%
+  # Remove any rows that lack an entry in the "Variable" column
+  dplyr::filter(!is.na(Variable) & nchar(Variable) != 0 & Variable != "NA") %>%
+  # Drop unwanted columns
+  dplyr::select(-Total_P_Method, -Notes)
 
-# Identify the downloaded raw files
-downloaded_files <- dir(path = file.path("raw_data"))
+# Check structure of this object
+dplyr::glimpse(key_v1)
 
-# Compare the two to see if all file names in the key were in the Drive
-supportR::diff_check(old = downloaded_files, new = unique(key_v0$Raw_Filename))
+# There are many characters we'll want to coerce to "." so make that an object
+spec_char <- " |\\(|\\)|\\/|\\-|\\+|\\:|,"
 
-# Wrangle key object
-key <- key_v0 %>%
-  # Subset to only files we downloaded
-  dplyr::filter(Raw_Filename %in% downloaded_files) %>%
-  # Tweak what the key expects raw file column names to be
-  ## Identify what the first character is (some fixes depend on this)
-  dplyr::mutate(first_char = stringr::str_sub(Raw_Column_Name, start = 1, end = 1)) %>%
-  ## Conditional fixes
+# First, we need to modify the 'raw column name' column
+## Reading in certain characters mangles them...
+## ...so we need to do that same change in the key
+key_v2 <- key_v1 %>%
+  # Identify first character of the raw column name
+  dplyr::mutate(first_char = stringr::str_sub(Raw_Column_Name, 
+                                              start = 1, end = 1)) %>%
+  # Make conditional fixes to "fix" the raw column name in the data key
   dplyr::mutate(Raw_Column_Name = dplyr::case_when(
-    # Leading % becomes X. when reading in CSV
+    # Leading "%" becomes "X." when reading in CSV
     first_char == "%" ~ paste0("X.", gsub(pattern = "%", replacement = "",
                                           x = Raw_Column_Name)),
     # Leading number becomes X 
@@ -65,16 +73,27 @@ key <- key_v0 %>%
     Dataset == "Luquillo_1" & Raw_Column_Name == "N (%)" ~ "N....",
     # If conditions not specified, return column unmodified
     TRUE ~ Raw_Column_Name)) %>%
-  ## Unconditional fixes
-  ## Spaces & parentheses & slashes & hyphens in a CSV column name will be coerced to periods
-  dplyr::mutate(Raw_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:|,", replacement = ".", 
+  # Certain special characters become periods when in column names
+  dplyr::mutate(Raw_Column_Name = gsub(pattern = spec_char,
+                                       replacement = ".", 
                                        x = Raw_Column_Name)) %>%
-  ## Percent symbols become Xs
+  # Percent symbols become Xs
   dplyr::mutate(Raw_Column_Name = gsub(pattern = "\\%", replacement = "X", 
                                        x = Raw_Column_Name)) %>%
-  # Make sure all synonymized column names avoid characters that are bad in column names
-  dplyr::mutate(Combined_Column_Name = gsub(pattern = " |\\(|\\)|\\/|\\-|\\+|\\:|,", 
-                                            replacement = "_", x = Combined_Column_Name)) %>%
+  # Drop the first character column
+  dplyr::select(-first_char)
+  
+# Re-check structure
+dplyr::glimpse(key_v2)
+
+# Now we need to check / standardize the information in the other parts of the key
+
+
+
+
+
+# Wrangle key object
+key <- key_v1 %>%
   # Keep only desired columns
   dplyr::select(Dataset, Raw_Filename, Raw_Column_Name, Combined_Column_Name, Units)
 
@@ -86,6 +105,20 @@ key %>%
   dplyr::group_by(Raw_Filename, Raw_Column_Name) %>%
   dplyr::summarize(ct = dplyr::n()) %>%
   dplyr::filter(ct > 1)
+
+## ------------------------------------------ ##
+                # Data Harmonizing ----
+## ------------------------------------------ ##
+
+# Identify the downloaded raw files
+downloaded_files <- dir(path = file.path("raw_data"))
+
+# Compare the two to see if all file names in the key were in the Drive
+supportR::diff_check(old = downloaded_files, new = unique(key_v0$Raw_Filename))
+
+# Subset the data key to only raw files that we downloaded
+key <- key_v0 %>%
+  dplyr::filter(Raw_Filename %in% downloaded_files)
 
 # Subset the downloaded files to only those in the data key
 raw_files <- intersect(downloaded_files, key$Raw_Filename)
