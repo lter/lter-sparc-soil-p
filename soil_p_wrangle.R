@@ -98,6 +98,7 @@ key_v3 <- key_v2 %>%
     Variable == "core" ~ "no",
     Variable == "sample replicate" ~ "no",
     Variable == "treatment" ~ "no",
+    Variable == "treatment years" ~ "no",
     Variable == "lat" ~ "no",
     Variable == "lon" ~ "no",
     Variable == "horizon" ~ "no",
@@ -315,7 +316,7 @@ sort(unique(tidy_v1$plot))
 sort(unique(tidy_v1$block))
 sort(unique(tidy_v1$core))
 sort(unique(tidy_v1$treatment))
-sort(unique(tidy_v1$treatment_years))
+sort(unique(tidy_v1$treatment.years))
 sort(unique(tidy_v1$distance))
 sort(unique(tidy_v1$topography))
 
@@ -325,22 +326,24 @@ tidy_v2 <- tidy_v1 %>%
   dplyr::mutate(lat = as.numeric(lat),
                 lon = as.numeric(lon),
                 distance = as.numeric(distance),
-                treatment_years = as.numeric(treatment_years),
+                treatment.years = as.numeric(treatment.years),
                 topography = tolower(topography)) %>%
   # Rename columns so that everything is in snake case except element abbreviations
   ## snake case = "lower_lower_lower"
   dplyr::rename(lter = LTER,
                 dataset = Dataset,
-                raw_filename = Raw_Filename,
-                coarse_vol_percent = Coarse_Vol_percent) %>%
+                raw_filename = Raw_Filename) %>%
   # Relocate all spatial/site columns to the left of the dataframe
-  dplyr::relocate(lter, dataset, raw_filename, site, lat, lon, plot, block, core,
-                  sample_replicate, treatment, treatment_years, distance, topography, 
-                  horizon, depth_cm, org_depth_cm, pH,
+  dplyr::relocate(lter, dataset, raw_filename, lat, lon, site, plot, block, core,
+                  sample.replicate, treatment, treatment.years, distance, topography, 
+                  horizon, depth_cm, org.depth_cm, pH,
                   .before = dplyr::everything()) %>%
   # Move P fractions to the right
-  dplyr::relocate(dplyr::starts_with("P_"), dplyr::starts_with("Po_"), 
-                  dplyr::starts_with("Pi_"), .after = dplyr::everything()) %>%
+  dplyr::relocate(dplyr::contains("_data.type_"),
+                  dplyr::starts_with("P_conc"), dplyr::starts_with("P_stock"), 
+                  dplyr::starts_with("Po_conc"), dplyr::starts_with("Po_stock"), 
+                  dplyr::starts_with("Pi_conc"), dplyr::starts_with("Pi_stock"),
+                  .after = dplyr::everything()) %>%
   # Create a better version of the LTER column
   dplyr::mutate(lter = dplyr::coalesce(lter, dataset)) %>%
   dplyr::mutate(lter = dplyr::case_when(
