@@ -52,7 +52,7 @@ key_v1 <- read.csv(file = file.path("key_files", "LTER_P_DataKey.csv")) %>%
 dplyr::glimpse(key_v1)
 
 # There are many characters we'll want to coerce to "." so make that an object
-spec_char <- " |\\(|\\)|\\/|\\-|\\+|\\:|,"
+spec_char <- " |\\(|\\)|\\/|\\-|\\+|\\:|,|_|\""
 
 # First, we need to modify the 'raw column name' column
 ## Reading in certain characters mangles them...
@@ -86,22 +86,113 @@ key_v2 <- key_v1 %>%
 # Re-check structure
 dplyr::glimpse(key_v2)
 
-# Now we need to check / standardize the information in the other parts of the key
+# We need to identify what (if anything) is *missing* from the data key for each variable (in each dataset)
+key_v3 <- key_v2 %>%
+  # Identify which variables _should not_ have units
+  ## Note this is done **manually** and will need to be updated that way too
+  dplyr::mutate(need_units = dplyr::case_when(
+    Variable == "LTER" ~ "no",
+    Variable == "site" ~ "no",
+    Variable == "block" ~ "no",
+    Variable == "plot" ~ "no",
+    Variable == "core" ~ "no",
+    Variable == "sample replicate" ~ "no",
+    Variable == "treatment" ~ "no",
+    Variable == "lat" ~ "no",
+    Variable == "lon" ~ "no",
+    Variable == "horizon" ~ "no",
+    Variable == "topography" ~ "no",
+    Variable == "distance" ~ "no",
+    Variable == "pH" ~ "no",
+    # If not identified above, variables is _assumed to need units_
+    T ~ "yes"), .before = Units) %>%
+  # Identify which columns _do not_ need a data type
+  dplyr::mutate(need_type = dplyr::case_when(
+    need_units == "no" ~ "no",
+    Variable == "depth" ~ "no",
+    Variable == "org depth" ~ "no",
+    stringr::str_detect(string = Variable, pattern = "bulk") ~ "no",
+    stringr::str_detect(string = Variable, pattern = "soil") ~ "no",
+    stringr::str_detect(string = Variable, pattern = "coarse") ~ "no",
+    T ~ "yes"), .before = Data_Type) %>%
+  # Identify which columns _do not_ need Phosphorus methods
+  dplyr::mutate(need_method = dplyr::case_when(
+    need_type == "no" ~ "no",
+    stringr::str_detect(string = Variable, pattern = "N") ~ "no",
+    stringr::str_detect(string = Variable, pattern = "C") ~ "no",
+    T ~ "yes"), .before = Leach_Order) %>%
+  # If a piece of information is needed but is absent, fill it in!
+  ## Units
+  dplyr::mutate(Units = ifelse(need_units == "yes" & (is.na(Units) | Units == "NA" | nchar(Units) == 0),
+                               yes = "units", no = Units)) %>%
+## Data Type
+  dplyr::mutate(Data_Type = ifelse(need_type == "yes" & (is.na(Data_Type) | Data_Type == "NA" | nchar(Data_Type) == 0),
+                               yes = "data.type", no = Data_Type)) %>%
+## Methods information pieces
+  dplyr::mutate(
+    ### Leach order
+    Leach_Order = ifelse(need_method == "yes" & (is.na(Leach_Order) | Leach_Order == "NA" | nchar(Leach_Order) == 0),
+                         yes = "order", no = Leach_Order),
+    ### Reagent
+    Reagent = ifelse(need_method == "yes" & (is.na(Reagent) | Reagent == "NA" | nchar(Reagent) == 0),
+                         yes = "reagent", no = Reagent),
+    ### Molarity
+    Molarity = ifelse(need_method == "yes" & (is.na(Molarity) | Molarity == "NA" | nchar(Molarity) == 0),
+                         yes = "molarity", no = Molarity),
+    ### Time
+    Time = ifelse(need_method == "yes" & (is.na(Time) | Time == "NA" | nchar(Time) == 0),
+                         yes = "time", no = Time),
+    ### Temperature
+    Temperature = ifelse(need_method == "yes" & (is.na(Temperature) | Temperature == "NA" | nchar(Temperature) == 0),
+                         yes = "temp", no = Temperature))
 
+# Check which columns _DO_ need units
+## Add them above if any of these don't belong
+unique(dplyr::filter(key_v3, need_units == "yes")$Variable)
 
+# Do the same for data type
+unique(dplyr::filter(key_v3, need_type == "yes")$Variable)
 
+# And for P methods
+unique(dplyr::filter(key_v3, need_method == "yes")$Variable)
 
+# Check structure again
+dplyr::glimpse(key_v3)
 
-# Wrangle key object
-key <- key_v1 %>%
-  # Keep only desired columns
-  dplyr::select(Dataset, Raw_Filename, Raw_Column_Name, Combined_Column_Name, Units)
+# Do final sub-column tidying to assemble the 'combined column name'
+key_v4 <- key_v3 %>%
+  # Fix special characters in all user-entered columns in the key
+  dplyr::mutate(dplyr::across(.cols = c(Variable:Temperature), 
+                              .fns = ~ gsub(pattern = spec_char, 
+                                            replacement = ".", x = .x))) %>%
+  # Combine them into a combined column name based on what they need!
+  dplyr::mutate(Combined_Column_Name = dplyr::case_when(
+    ## If needs all info then aggregate all key columns!
+    need_units == "yes" & need_type == "yes" & 
+      need_method == "yes" ~ paste(Variable, Data_Type, Units, Leach_Order, Molarity, Reagent, Time, Temperature, sep = "_"),
+    ## Otherwise only use columns that are needed
+    need_units == "yes" & need_type == "yes" &
+      need_method == "no" ~ paste(Variable, Data_Type, Units, sep = "_"),
+    need_units == "yes" & need_type == "no" &
+      need_method == "no" ~ paste(Variable, Units, sep = "_"),
+    # If doesn't need anything just use the variable as-is
+    need_units == "no" & need_type == "no" &
+      need_method == "no" ~ Variable))
+
+# Do one more structure check
+dplyr::glimpse(key_v4)
+## view(key_v4)
+
+# Pare down to only needed columns
+key_v5 <- key_v4 %>%
+  dplyr::select(Dataset, Raw_Filename, Raw_Column_Name, Combined_Column_Name) %>%
+  dplyr::distinct()
 
 # Check structure of key
-dplyr::glimpse(key)
+dplyr::glimpse(key_v5)
 
 # Check whether any raw column names are duplicate within any data file
-key %>% 
+key_v5 %>% 
   dplyr::group_by(Raw_Filename, Raw_Column_Name) %>%
   dplyr::summarize(ct = dplyr::n()) %>%
   dplyr::filter(ct > 1)
