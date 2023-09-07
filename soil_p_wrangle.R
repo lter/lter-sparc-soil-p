@@ -747,25 +747,26 @@ supportR::diff_check(old = names(tidy_v3), new = names(tidy_v4))
 # Wrangling for soil information
 tidy_v5 <- tidy_v4 %>%
   # Relocate soil columns to the left
-  dplyr::relocate(dplyr::contains("bulk_density"), coarse_vol_percent, dplyr::contains("soil"),
+  dplyr::relocate(dplyr::contains("bulk"), coarse.volume_percent, 
+                  dplyr::contains("soil"),
                   .after = pH) %>%
   # Average across the two bulk density columns in the same units
   dplyr::mutate(bulk_dens_avg_kg_ha = dplyr::case_when(
-    !is.na(bulk_density_kg_ha) & !is.na(bulk_density_value2_kg_ha) ~ (bulk_density_kg_ha + bulk_density_value2_kg_ha) / 2,
-    !is.na(bulk_density_kg_ha) & is.na(bulk_density_value2_kg_ha) ~ bulk_density_kg_ha,
-    is.na(bulk_density_kg_ha) & !is.na(bulk_density_value2_kg_ha) ~ bulk_density_value2_kg_ha,
-    T ~ NA), .after = bulk_density_g_cm3) %>%
+    !is.na(bulk.density_kg.ha) & !is.na(bulk.density.value.2_kg.ha) ~ (bulk.density_kg.ha + bulk.density.value.2_kg.ha) / 2,
+    !is.na(bulk.density_kg.ha) & is.na(bulk.density.value.2_kg.ha) ~ bulk.density_kg.ha,
+    is.na(bulk.density_kg.ha) & !is.na(bulk.density.value.2_kg.ha) ~ bulk.density.value.2_kg.ha,
+    T ~ NA), .after = bulk.density_g.cm3) %>%
   # Drop those now-superseded columns
-  dplyr::select(-bulk_density_kg_ha, -bulk_density_value2_kg_ha) %>%
+  dplyr::select(-bulk.density_kg.ha, -bulk.density.value.2_kg.ha) %>%
   # Rename the bulk density columns
-  dplyr::rename(bulk_density_kg_ha = bulk_dens_avg_kg_ha,
-                bulk_density_g_cm3_raw = bulk_density_g_cm3) %>%
+  dplyr::rename(bulk.density_kg.ha = bulk_dens_avg_kg_ha,
+                bulk.density_g.cm3_raw = bulk.density_g.cm3) %>%
   #  We're hard coding bulk density in here rather than typing manually
   ## Citations/justifications are included next to each bulk density value
   dplyr::mutate(bulk_density = dplyr::case_when(
   # If bulk density was provided, use that instead of doing conditionals
-    !is.na(bulk_density_g_cm3_raw) & 
-      nchar(bulk_density_g_cm3_raw) != 0 ~ as.numeric(bulk_density_g_cm3_raw),
+    !is.na(bulk.density_g.cm3_raw) & 
+      nchar(bulk.density_g.cm3_raw) != 0 ~ as.numeric(bulk.density_g.cm3_raw),
     dataset == "HJAndrews_1" ~ 0.9,
     dataset == "Bonanza Creek_1" ~ 0.9,
     dataset == "Bonanza Creek_2" ~ 0.9,
@@ -777,7 +778,8 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "FloridaCoastal" ~ 0.9,
     dataset == "Hubbard Brook" ~ 0.9,
     dataset == "Jornada_1" ~ 0.9,
-    dataset %in% c("Kellog_Biological_Station",
+    dataset %in% c("Kellogg_Bio_Station",
+                   "Kellog_Biological_Station",
                    "Kellogg_Biological_Station") ~ 0.9,
     dataset == "Konza_1" ~ 0.9,
     dataset == "Luquillo_1" ~ 0.9,
@@ -790,15 +792,15 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "Sevilleta_2" ~ 0.9,
     dataset == "Toolik" ~ 0.9,
     # If no bulk density is supplied by above conditions, fill with NA
-    TRUE ~ NA), .after = bulk_density_g_cm3_raw) %>%
+    TRUE ~ NA), .after = bulk.density_g.cm3_raw) %>%
   # Drop old column and rename remaining one to avoid confusion
-  dplyr::select(-bulk_density_g_cm3_raw) %>%
-  dplyr::rename(bulk_density_g_cm3 = bulk_density)
+  dplyr::select(-bulk.density_g.cm3_raw) %>%
+  dplyr::rename(bulk.density_g.cm3 = bulk_density)
 
 # Check whether we're missing any bulk density values
 ## If so, need to add another conditional to the above `case_when`
 tidy_v5 %>%
-  dplyr::filter(is.na(bulk_density_g_cm3)) %>%
+  dplyr::filter(is.na(bulk.density_g.cm3)) %>%
   # dplyr::select(dataset, site, plot, block) %>%
   dplyr::select(dataset) %>%
   dplyr::distinct()
