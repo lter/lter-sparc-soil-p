@@ -1102,6 +1102,37 @@ sort(unique(tidy_v9$units))
 dplyr::glimpse(tidy_v9)
 
 ## ------------------------------------------ ##
+        # Separate Archival Data ----
+## ------------------------------------------ ##
+
+# For archival purposes this tidied long format data is ideal!
+archive <- tidy_v9
+
+# However, it contains details we neither want nor need for our purposes
+tidy_v10 <- tidy_v9 %>%
+  # Drop unwanted columns
+  dplyr::select(-molarity, -time, -temp) %>%
+  # Fill remaining P information columns with placeholders where needed
+  dplyr::mutate(
+    measurement = ifelse(is.na(measurement), yes = "data.type", no = measurement),
+    units = ifelse(is.na(units), yes = "units", no = units),
+    order = ifelse(is.na(order), yes = "order", no = order),
+    reagent = ifelse(is.na(reagent), yes = "reagent", no = reagent)
+  ) %>%
+  # Recombine them into a single column
+  dplyr::mutate(P_fractions = paste(p_type, measurement, units, order, reagent,
+                                    sep = "_")) %>%
+  # Drop the separate pieces of information
+  dplyr::select(-p_type, -measurement, -units, -order, -reagent) %>%
+  # Reclaim wide format!
+  tidyr::pivot_wider(names_from = P_fractions, 
+                     values_from = value,
+                     values_fill = NA)
+
+# Glimpse data structure
+dplyr::glimpse(tidy_v10)
+
+## ------------------------------------------ ##
             # Phosphorus Sums ----
 ## ------------------------------------------ ##
 
@@ -1219,5 +1250,9 @@ write.csv(x = final_tidy, file = file.path("tidy_data", "tidy_soil_p.csv"),
 # Upload to GoogleDrive
 googledrive::drive_upload(media = file.path("tidy_data", "tidy_soil_p.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9"))
+
+# Also export the version of the data for archiving in a data repository
+write.csv(x = archive, row.names = F, na = '',
+          file = file.path("tidy_data", "sparc_soil-p-synthesis-data.csv"))
 
 # End ----
