@@ -338,12 +338,6 @@ tidy_v2 <- tidy_v1 %>%
                   sample.replicate, treatment, treatment.years, distance, topography, 
                   horizon, depth_cm, org.depth_cm, pH,
                   .before = dplyr::everything()) %>%
-  # Move P fractions to the right
-  dplyr::relocate(dplyr::contains("_data.type_"),
-                  dplyr::starts_with("P_conc"), dplyr::starts_with("P_stock"), 
-                  dplyr::starts_with("Po_conc"), dplyr::starts_with("Po_stock"), 
-                  dplyr::starts_with("Pi_conc"), dplyr::starts_with("Pi_stock"),
-                  .after = dplyr::everything()) %>%
   # Create a better version of the LTER column
   dplyr::mutate(lter = dplyr::coalesce(lter, dataset)) %>%
   dplyr::mutate(lter = dplyr::case_when(
@@ -406,7 +400,7 @@ tidy_v2b <- tidy_v2 %>%
 # Check structure of this
 tidy_v2b %>%
   dplyr::select(lter:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
-  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::select(-dplyr::contains(".by.depth")) %>%
   dplyr::glimpse()
 
 # Check for depth values that *aren't* ranges (i.e., no hyphens)
@@ -435,7 +429,7 @@ tidy_v2c <- tidy_v2b %>%
     dataset == "Bonanza Creek_1" ~ gsub(pattern = "\\+", replacement = "", x = depth_raw),
     ## Bonanza (2)
     ### Starting depth listed in separate column
-    dataset == "Bonanza Creek_2" ~ paste0(org_depth_cm, "-", depth_raw),
+    dataset == "Bonanza Creek_2" ~ paste0(org.depth_cm, "-", depth_raw),
     ## Brazil
     dataset == "Brazil" & depth_raw == "0--10" ~ "0-10",
     dataset == "Brazil" & depth_raw == "10--30" ~ "10-30",
@@ -479,7 +473,7 @@ tidy_v2c <- tidy_v2b %>%
     ## Otherwise raw depth assumed to be a functioning range
     TRUE ~ depth_raw), .after = depth_raw) %>%
   # Drop now-unneeded BNZ depth column
-  dplyr::select(-org_depth_cm) %>%
+  dplyr::select(-org.depth_cm) %>%
   # If depth included horizon information we probably can assume that it was *relative* depth
   dplyr::mutate(depth_type = dplyr::case_when(
     # Relative depth within horizon layer
@@ -504,8 +498,9 @@ tidy_v2c %>%
 
 # Check structure again
 tidy_v2c %>%
-  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
-  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"),
+                dplyr::contains("depth")) %>%
+  dplyr::select(-dplyr::contains(".by.depth")) %>%
   dplyr::glimpse()
 
 # Separate the semi-tidied depth range into a start and end
@@ -544,28 +539,31 @@ tidy_v2e <- tidy_v2d %>%
   dplyr::mutate(depth_1 = as.numeric(depth_1),
                 depth_2 = as.numeric(depth_2)) %>%
   # Now that all depths are numbers we can figure out start and end depths
-  dplyr::mutate(depth_start_cm = ifelse(depth_1 < depth_2, yes = depth_1, no = depth_2),
-                depth_end_cm = ifelse(depth_2 > depth_1, yes = depth_2, no = depth_1),
+  dplyr::mutate(depth.start_cm = ifelse(depth_1 < depth_2, 
+                                        yes = depth_1, no = depth_2),
+                depth.end_cm = ifelse(depth_2 > depth_1, 
+                                      yes = depth_2, no = depth_1),
                 .after = depth_type) %>%
   # Drop intermediary columns and old raw depth columns
   dplyr::select(-depth_1, -depth_2, -depth_raw, -depth_range_raw) %>%
   # Calculate length of core as well
-  dplyr::mutate(core_length_cm = ifelse(!is.na(depth_end_cm) & !is.na(depth_start_cm),
-                                        yes = depth_end_cm - depth_start_cm,
+  dplyr::mutate(core.length_cm = ifelse(!is.na(depth.end_cm) & !is.na(depth.start_cm),
+                                        yes = depth.end_cm - depth.start_cm,
                                         no = core_lng),
-                .after = depth_end_cm) %>%
+                .after = depth.end_cm) %>%
   # Move these columns to the left
-  dplyr::relocate(depth_type, depth_start_cm, depth_end_cm, core_length_cm, .after = horizon_raw)
+  dplyr::relocate(depth_type, depth.start_cm, depth.end_cm, core.length_cm, 
+                  .after = horizon_raw)
 
 # Check distribution of the new depth columns we just extracted
-psych::multi.hist(x = tidy_v2e$depth_start_cm)
-psych::multi.hist(x = tidy_v2e$depth_end_cm)
-psych::multi.hist(x = tidy_v2e$core_length_cm)
+psych::multi.hist(x = tidy_v2e$depth.start_cm)
+psych::multi.hist(x = tidy_v2e$depth.end_cm)
+psych::multi.hist(x = tidy_v2e$core.length_cm)
 
 # Check structure yet again
 tidy_v2e %>%
   dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth")) %>%
-  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::select(-dplyr::contains(".by.depth")) %>%
   dplyr::glimpse()
 
 # Wrangle horizon information to get other desired facets of that variable
@@ -649,8 +647,9 @@ sort(unique(tidy_v3$horizon_binary))
 
 # Ad nauseam at this point but check structure
 tidy_v3 %>%
-  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth"), core_length_cm) %>%
-  dplyr::select(-dplyr::ends_with("_by_depth")) %>%
+  dplyr::select(dataset:core, dplyr::contains("horizon"), dplyr::contains("depth"),
+                core.length_cm) %>%
+  dplyr::select(-dplyr::contains(".by.depth")) %>%
   dplyr::glimpse()
 
 # Check again for column order
@@ -665,7 +664,7 @@ dplyr::glimpse(tidy_v3[1:21])
 
 # Reshape into long format to make a single column to check for non-numbers
 tidy_v3b <- tidy_v3 %>%
-  tidyr::pivot_longer(cols = -lter:-core_length_cm,
+  tidyr::pivot_longer(cols = -lter:-core.length_cm,
                       names_to = "variable",
                       values_to = "value_raw") %>%
   # Ditch empty rows too
@@ -692,7 +691,7 @@ tidy_v3c <- tidy_v3b %>%
 supportR::num_check(data = tidy_v3c, col = "value_actual")
 
 # Identify names of all columns except for sample replicate / old values columns
-(keeps <- setdiff(x = names(tidy_v3c), y = c("sample_replicate", "value_raw", 
+(keeps <- setdiff(x = names(tidy_v3c), y = c("sample.replicate", "value_raw", 
                                             "value_clean", "value_actual")))
 
 # Finish wrangling this object!
@@ -719,10 +718,21 @@ tidy_v4 <- tidy_v3d %>%
   # Pivot back to wide format
   tidyr::pivot_wider(names_from = variable, values_from = value) %>%
   # Relocate pH column
-  dplyr::relocate(pH, .after = core_length_cm) %>%
+  dplyr::relocate(pH, .after = core.length_cm) %>%
   # Group C/N columns together
+  dplyr::relocate(dplyr::contains("_data.type_"), .after = pH) %>% 
+  dplyr::relocate(dplyr::starts_with("N_stock"), .after = pH) %>%
+  dplyr::relocate(dplyr::starts_with("N_conc"), .after = pH) %>%
+  dplyr::relocate(dplyr::starts_with("C.inorg"), .after = pH) %>%  
+  dplyr::relocate(dplyr::starts_with("C.org"), .after = pH) %>%
+  dplyr::relocate(dplyr::starts_with("C_stock"), .after = pH) %>%
   dplyr::relocate(dplyr::starts_with("C_conc"), .after = pH) %>%
-  dplyr::relocate(dplyr::starts_with("N_conc"), .after = pH)
+  # Move P fractions to the right
+  dplyr::relocate(dplyr::contains("P_data.type_"),
+                  dplyr::starts_with("P_conc"), dplyr::starts_with("P_stock"), 
+                  dplyr::starts_with("Po_conc"), dplyr::starts_with("Po_stock"), 
+                  dplyr::starts_with("Pi_conc"), dplyr::starts_with("Pi_stock"),
+                  .after = dplyr::everything())
 
 # Re-check structure
 dplyr::glimpse(tidy_v4)
