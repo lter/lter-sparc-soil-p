@@ -1247,6 +1247,9 @@ dplyr::glimpse(final_tidy)
 # Create a folder to export into
 dir.create(path = file.path("tidy_data"), showWarnings = F)
 
+# And identify the tidy data Drive URL
+tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
+
 # Define the tidy file name
 tidy_name <- "tidy_soil_p.csv"
 
@@ -1255,18 +1258,18 @@ write.csv(x = final_tidy, file = file.path("tidy_data", tidy_name),
           row.names = F, na = "")
 
 # Upload to GoogleDrive
-googledrive::drive_upload(media = file.path("tidy_data", tidy_name), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9"))
+googledrive::drive_upload(media = file.path("tidy_data", tidy_name), 
+                          overwrite = T, path = tidy_drive)
 
 # Also define a name for the archival variant of the data
 arch_name <- "sparc-soil-p_archival-data.csv"
 
-# Also export the version of the data for archiving in a data repository
+# Export the version of the data for archiving in a data repository
 write.csv(x = archive, row.names = F, na = '',
           file = file.path("tidy_data", arch_name))
 
 # Upload that as well
-googledrive::drive_upload(media = file.path("tidy_data", arch_name), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9"))
+googledrive::drive_upload(media = file.path("tidy_data", arch_name), 
+                          overwrite = T, path = tidy_drive)
 
 # End ----
