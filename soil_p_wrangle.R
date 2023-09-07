@@ -1033,59 +1033,73 @@ tidy_v7 <- nonrel_v1 %>%
                                         no = NA),
                 .after = depth.end_cm)
 
-# Re-check structure
-dplyr::glimpse(tidy_v7)
-
 # Retained all rows?
 nrow(tidy_v7) == nrow(tidy_v6)
 
-## ------------------------------------------ ##
-    # P Fraction Unit Standardization ----
-## ------------------------------------------ ##
-
-# Before we can do our P sums (for total/slow/etc. P) we need all fractions in consistent units
-## While we're here we could maybe do some name standardization as well
-
-# Glimpse the entire dataset
-dplyr::glimpse(tidy_v6)
-
-# Make a new dataset to do this wrangling
-tidy_v7 <- tidy_v6 %>%
-  # Group columns by what type of P they are measuring
-  dplyr::relocate(dplyr::starts_with("P_conc_"), dplyr::starts_with("Po_conc_"),
-                  dplyr::starts_with("Pi_conc"), dplyr::starts_with("P_stock"),
-                  .after = dplyr::everything()) %>%
-  # P concentration unit standardization
-  ## mg/g -> mg/kg
-  dplyr::mutate(P_conc_H2O2_mg_kg = P_conc_H2O2_mg_g * 1000,
-                P_conc_HNO3_cold_mg_kg = P_conc_HNO3_cold_mg_g * 1000,
-                P_conc_HNO3_hot_mg_kg = P_conc_HNO3_hot_mg_g * 1000,
-                P_conc_NH4Cl_mg_kg = P_conc_NH4Cl_mg_g * 1000,
-                .before = P_conc_H2O2_mg_g) %>%
-  ## g/kg -> mg/kg
-  dplyr::mutate(P_conc_H2SO4_mg_kg = P_conc_H2SO4_g_kg / 1000,
-                .after = P_conc_H2SO4_g_kg) %>%
-  # Organic P concentration unit standardization
-  
-  # Inorganic P concentration unit standardization
-  
-  # P stocks unit standardization
-  ## g/m2 -> mg/m2
-  dplyr::mutate(P_stock_resin_mg_m2 = P_stock_resin_g_m2 / 1000,
-                .after = P_stock_resin_g_m2) %>%
-  # Delete columns we've converted to another unit
-  dplyr::select(-P_conc_H2O2_mg_g, -P_conc_HNO3_cold_mg_g,
-                -P_conc_HNO3_hot_mg_g, -P_conc_NH4Cl_mg_g,
-                -P_conc_H2SO4_g_kg, -P_stock_resin_g_m2)
-
-# Re-check structure of each group
-dplyr::glimpse(dplyr::select(tidy_v7, dplyr::starts_with("P_conc_")))
-dplyr::glimpse(dplyr::select(tidy_v7, dplyr::starts_with("Po_conc_")))
-dplyr::glimpse(dplyr::select(tidy_v7, dplyr::starts_with("Pi_conc_")))
-dplyr::glimpse(dplyr::select(tidy_v7, dplyr::starts_with("P_stock_")))
-
-# Check structure of entire dataset
+# Re-check structure
 dplyr::glimpse(tidy_v7)
+
+## ------------------------------------------ ##
+      # P Fraction Unit Conversions ----
+## ------------------------------------------ ##
+
+# This is simpler if we rotate into long format first
+tidy_v8 <- tidy_v7 %>%
+  # Make a row number column to regenerate this structure easily
+  dplyr::mutate(row_num = 1:nrow(.), .before = dplyr::everything()) %>%
+  # Rotate into long format
+  tidyr::pivot_longer(cols = c(dplyr::starts_with("P_"),
+                               dplyr::starts_with("Po_"),
+                               dplyr::starts_with("ReBHsin_"),
+                               dplyr::starts_with("Pi_")),
+                      names_to = "p_info", values_to = "value") %>%
+  # Drop missing measurements
+  dplyr::filter(!is.na(value)) %>%
+  # Break the old column names into their component parts
+  tidyr::separate_wider_delim(cols = p_info, delim = "_", 
+                              names = c("p_type", "measurement", "units",
+                                        "order", "molarity", "reagent",
+                                        "time", "temp")) %>%
+  # Drop filler content where we added it earlier
+  dplyr::mutate(dplyr::across(.cols = measurement:temp,
+                              .fns = ~ gsub(pattern = "units|data.type|order|reagent|molarity|time|temp",
+                                            replacement = NA, x = .x)))
+
+# Glance at structure
+dplyr::glimpse(tidy_v8)
+
+# Check units in the data
+sort(unique(tidy_v8$units))
+
+# In this format we can more easily do our unit conversions!
+## In part because units are semi-independent of rest of context for the value
+tidy_v9 <- tidy_v8 %>%
+  # Start with mass / mass (i.e., concentration)
+  ## Conditional on units, do appropriate algebra
+  dplyr::mutate(value = dplyr::case_when(
+    units == "g.kg" ~ value * 10^3,
+    units == "mg.g" ~ value * 10^3,
+    T ~ value)) %>%
+  ## Once done, update the units column to reflect the conversion
+  dplyr::mutate(units = dplyr::case_when(
+    units == "g.kg" ~ "mg.kg",
+    units == "mg.g" ~ "mg.kg",
+    T ~ units)) %>%
+  # Do the same for mass / area (i.e., stock)
+  dplyr::mutate(value = dplyr::case_when(
+    units == "g.m2" ~ value * 10^3,
+    units == "kg.ha" ~ value * 10^-4 * 10^6, ## 10^4 m2:1 ha
+    T ~ value)) %>%
+  dplyr::mutate(units = dplyr::case_when(
+    units == "g.m2" ~ "mg.m2",
+    units == "kg.ha" ~ "mg.m2",
+    T ~ units))
+
+# What units are in the data now?
+sort(unique(tidy_v9$units))
+
+# Re-check full data structure
+dplyr::glimpse(tidy_v9)
 
 ## ------------------------------------------ ##
             # Phosphorus Sums ----
