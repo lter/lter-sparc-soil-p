@@ -814,52 +814,44 @@ dplyr::glimpse(tidy_v5[1:30])
 
 # Look at the most relevant bit for N/C tidying
 tidy_v5 %>%
-  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
+  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_"),
+                dplyr::starts_with("N."), dplyr::starts_with("C."),
+                dplyr::starts_with("mean.N_"), dplyr::starts_with("mean.C_")) %>%
   dplyr::glimpse()
 
 # Convert N & C concentrations into percents
 tidy_v5b <- tidy_v5 %>%
-  # Standardize Nitrogen concentration units (conditions are from most to least preferred unit)
+  # Standardize Nitrogen concentration units
   dplyr::mutate(N_conc_actual = dplyr::case_when(
+    ## Percent
     !is.na(N_conc_percent) ~ N_conc_percent,
-    is.na(N_conc_percent) & !is.na(N_conc_mg_kg) ~ N_conc_mg_kg * 0.0001,
-    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
-      !is.na(N_conc_mg_g) ~ (N_conc_mg_g * 10^3) * 0.0001,
-    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
-      is.na(N_conc_mg_g) & !is.na(N_conc_ug_g) ~ (N_conc_ug_g * 10^6) * 0.0001,
-    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
-      is.na(N_conc_mg_g) & is.na(N_conc_ug_g) &
-      !is.na(N_conc_g_kg) ~ (N_conc_g_kg / 10^3) * 0.0001,
-    is.na(N_conc_percent) & is.na(N_conc_mg_kg) &
-      is.na(N_conc_mg_g) & is.na(N_conc_ug_g) &
-      is.na(N_conc_g_kg) & !is.na(mean_N_percent) ~ mean_N_percent,
+    !is.na(mean.N_conc_percent) ~ mean.N_conc_percent,
+    ## _g / _g
+    !is.na(N_conc_mg.kg) ~ N_conc_mg.kg * 0.0001,
+    !is.na(N_conc_mg.g) ~ (N_conc_mg.g * 10^3) * 0.0001,
+    !is.na(N_conc_ug.g) ~ (N_conc_ug.g * 10^6) * 0.0001,
+    !is.na(N_conc_g.kg) ~ (N_conc_g.kg / 10^3) * 0.0001,
     # If nothing exists, fill with NA
     TRUE ~ NA), .before = N_conc_percent) %>%
   # Do the same for Carbon
   dplyr::mutate(C_conc_actual = dplyr::case_when(
+    ## Percent
     !is.na(C_conc_percent) ~ C_conc_percent,
-    is.na(C_conc_percent) & !is.na(C_conc_mg_kg) ~ C_conc_mg_kg * 0.0001,
-    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
-      !is.na(C_conc_mg_g) ~ (C_conc_mg_g * 10^3) * 0.0001,
-    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
-      is.na(C_conc_mg_g) & !is.na(C_conc_ug_g) ~ (C_conc_ug_g * 10^6) * 0.0001,
-    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
-      is.na(C_conc_mg_g) & is.na(C_conc_ug_g) &
-      !is.na(C_conc_g_kg) ~ (C_conc_g_kg / 10^3) * 0.0001,
-    is.na(C_conc_percent) & is.na(C_conc_mg_kg) &
-      is.na(C_conc_mg_g) & is.na(C_conc_ug_g) &
-      is.na(C_conc_g_kg) & !is.na(mean_C_percent) ~ mean_C_percent,
+    !is.na(mean.C_conc_percent) ~ mean.C_conc_percent,
+    ## _g / _g
+    !is.na(C_conc_mg.kg) ~ C_conc_mg.kg * 0.0001,
+    !is.na(C_conc_mg.g) ~ (C_conc_mg.g * 10^3) * 0.0001,
+    !is.na(C_conc_ug.g) ~ (C_conc_ug.g * 10^6) * 0.0001,
+    !is.na(C_conc_g.kg) ~ (C_conc_g.kg / 10^3) * 0.0001,
     TRUE ~ NA), .before = C_conc_percent) %>%
   # Drop now-superseded columns
-  dplyr::select(-N_conc_percent, -N_conc_mg_kg, -N_conc_mg_g, 
-                -N_conc_ug_g, -N_conc_g_kg, -mean_N_percent,
-                -C_conc_percent, -C_conc_mg_kg, -C_conc_mg_g, 
-                -C_conc_ug_g, -C_conc_g_kg, -mean_C_percent) %>%
+  dplyr::select(-N_conc_percent, -N_conc_mg.kg, -N_conc_mg.g, 
+                -N_conc_ug.g, -N_conc_g.kg, -mean.N_conc_percent,
+                -C_conc_percent, -C_conc_mg.kg, -C_conc_mg.g, 
+                -C_conc_ug.g, -C_conc_g.kg, -mean.C_conc_percent) %>%
   # Rename combined columns for clarity and to maintain snake_case
   dplyr::rename(N_conc_percent = N_conc_actual,
-                C_conc_percent = C_conc_actual,
-                C_conc_inorg_percent = C_conc_Inorg_percent,
-                C_conc_org_percent = C_conc_Org_percent)
+                C_conc_percent = C_conc_actual)
 
 # How many NAs did we fill for Nitrogran?
 summary(tidy_v5$N_conc_percent); summary(tidy_v5b$N_conc_percent)
@@ -869,44 +861,43 @@ summary(tidy_v5$C_conc_percent); summary(tidy_v5b$C_conc_percent)
 
 # Check remaining columns
 tidy_v5b %>%
-  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
-  dplyr::glimpse()
+  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_"),
+                dplyr::starts_with("N."), dplyr::starts_with("C."),
+                dplyr::starts_with("mean.N_"), dplyr::starts_with("mean.C_")) %>%  dplyr::glimpse()
 
 # Now let's handle different units for stock
 tidy_v6 <- tidy_v5b %>%
   # Convert Nitrogen stock into one unit (mg/m2)
   dplyr::mutate(N_stock_actual = dplyr::case_when(
-    !is.na(N_stock_mg_m2) ~ N_stock_mg_m2,
-    is.na(N_stock_mg_m2) & !is.na(N_stock_g_m2) ~ (N_stock_g_m2 / 10^3),
-    is.na(N_stock_mg_m2) & is.na(N_stock_g_m2) &
-      !is.na(N_kg_ha) ~ (N_kg_ha * 100),
+    !is.na(N_stock_mg.m2) ~ N_stock_mg.m2,
+    !is.na(N_stock_g.m2) ~ (N_stock_g.m2 / 10^3),
+    !is.na(N_stock_kg.ha) ~ (N_stock_kg.ha * 100),
     T ~ NA), .after = N_conc_percent) %>%
   # Convert Carbon stocks too
   dplyr::mutate(C_stock_actual = dplyr::case_when(
-    !is.na(C_stock_mg_m2) ~ C_stock_mg_m2,
-    is.na(C_stock_mg_m2) & !is.na(C_stock_g_m2) ~ (C_stock_g_m2 / 10^3),
-    is.na(C_stock_mg_m2) & is.na(C_stock_g_m2) &
-      !is.na(C_kg_ha) ~ (C_kg_ha * 100),
+    !is.na(C_stock_mg.m2) ~ C_stock_mg.m2,
+    !is.na(C_stock_g.m2) ~ (C_stock_g.m2 / 10^3),
+    !is.na(C_stock_kg.ha) ~ (C_stock_kg.ha * 100),
     T ~ NA), .after = C_conc_percent) %>%
   # Drop now-superseded columns
-  dplyr::select(-N_stock_mg_m2, -N_stock_g_m2, -N_kg_ha,
-                -C_stock_mg_m2, -C_stock_g_m2, -C_kg_ha) %>%
+  dplyr::select(-N_stock_mg.m2, -N_stock_g.m2, -N_stock_kg.ha,
+                -C_stock_mg.m2, -C_stock_g.m2, -C_stock_kg.ha) %>%
   # Rename remaining columns for clarity
-  dplyr::rename(N_stock_mg_m2 = N_stock_actual,
-                C_stock_mg_m2 = C_stock_actual) %>%
+  dplyr::rename(N_stock_mg.m2 = N_stock_actual,
+                C_stock_mg.m2 = C_stock_actual) %>%
   # Relocate N/C 'by depth' columns to be near these others
-  dplyr::relocate(N_by_depth, .after = N_stock_mg_m2) %>%
-  dplyr::relocate(C_by_depth, .after = C_stock_mg_m2)
+  dplyr::relocate(dplyr::contains(".by.depth"), .after = N_stock_mg.m2)
 
 # How many NAs did we fill for Nitrogran?
-summary(tidy_v5b$N_stock_mg_m2); summary(tidy_v6$N_stock_mg_m2)
+summary(tidy_v5b$N_stock_mg.m2); summary(tidy_v6$N_stock_mg.m2)
 
 # Check Carbon in the same way
-summary(tidy_v5b$C_stock_mg_m2); summary(tidy_v6$C_stock_mg_m2)
+summary(tidy_v5b$C_stock_mg.m2); summary(tidy_v6$C_stock_mg.m2)
 
 # Check remaining columns' structure again
 tidy_v6 %>%
-  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
+  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_"),
+                dplyr::starts_with("N."), dplyr::starts_with("C.")) %>%
   dplyr::glimpse()
 
 # Check structure of more columns
