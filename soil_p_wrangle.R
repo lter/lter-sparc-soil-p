@@ -1222,9 +1222,9 @@ dplyr::glimpse(tidy_v11)
 # Calculate absolute P totals (rather than portions of each core)
 tidy_v12 <- tidy_v11 %>%
   # Due to our earlier depth/bulk density prep this is easy!
-  dplyr::mutate(slow.P_stock = slow.P_mg.kg * core.length_cm * bulk.density_g.cm3,
+  dplyr::mutate(slow.P_stock_g.m2 = ((slow.P_mg.kg * core.length_cm * bulk.density_g.cm3) * 10^4) / 10^6,
                 .before = slow.P_mg.kg) %>%
-  dplyr::mutate(total.P_stock = total.P_mg.kg * core.length_cm * bulk.density_g.cm3,
+  dplyr::mutate(total.P_stock_g.m2 = ((total.P_mg.kg * core.length_cm * bulk.density_g.cm3) * 10^4) / 10^6,
                 .before = total.P_mg.kg)
 
 # Check contents of those columns
