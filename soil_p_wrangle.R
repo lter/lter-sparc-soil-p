@@ -817,10 +817,8 @@ tidy_v5b <- tidy_v5 %>%
   dplyr::mutate(N_conc_actual = dplyr::case_when(
     ## Percent
     !is.na(N_conc_percent) ~ N_conc_percent,
-    !is.na(mean.N_conc_percent) ~ mean.N_conc_percent,
     ## _g / _g
     !is.na(N_conc_mg.kg) ~ N_conc_mg.kg * 0.0001,
-    !is.na(N_conc_ug.g) ~ N_conc_ug.g * 0.0001,
     !is.na(N_conc_mg.g) ~ (N_conc_mg.g * 10^3) * 0.0001,
     !is.na(N_conc_g.kg) ~ (N_conc_g.kg / 10^3) * 0.0001,
     # If nothing exists, fill with NA
@@ -829,18 +827,14 @@ tidy_v5b <- tidy_v5 %>%
   dplyr::mutate(C_conc_actual = dplyr::case_when(
     ## Percent
     !is.na(C_conc_percent) ~ C_conc_percent,
-    !is.na(mean.C_conc_percent) ~ mean.C_conc_percent,
     ## _g / _g
     !is.na(C_conc_mg.kg) ~ C_conc_mg.kg * 0.0001,
-    !is.na(C_conc_ug.g) ~ C_conc_ug.g * 0.0001,
     !is.na(C_conc_mg.g) ~ (C_conc_mg.g * 10^3) * 0.0001,
     !is.na(C_conc_g.kg) ~ (C_conc_g.kg / 10^3) * 0.0001,
     TRUE ~ NA), .before = C_conc_percent) %>%
   # Drop now-superseded columns
-  dplyr::select(-N_conc_percent, -N_conc_mg.kg, -N_conc_mg.g, 
-                -N_conc_ug.g, -N_conc_g.kg, -mean.N_conc_percent,
-                -C_conc_percent, -C_conc_mg.kg, -C_conc_mg.g, 
-                -C_conc_ug.g, -C_conc_g.kg, -mean.C_conc_percent) %>%
+  dplyr::select(-N_conc_percent, -N_conc_mg.kg, -N_conc_mg.g, -N_conc_g.kg,
+                -C_conc_percent, -C_conc_mg.kg, -C_conc_mg.g, -C_conc_g.kg) %>%
   # Rename combined columns for clarity and to maintain snake_case
   dplyr::rename(N_conc_percent = N_conc_actual,
                 C_conc_percent = C_conc_actual)
@@ -854,8 +848,9 @@ summary(tidy_v5$C_conc_percent); summary(tidy_v5b$C_conc_percent)
 # Check remaining columns
 tidy_v5b %>%
   dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_"),
-                dplyr::starts_with("N."), dplyr::starts_with("C."),
-                dplyr::starts_with("mean.N_"), dplyr::starts_with("mean.C_")) %>%  dplyr::glimpse()
+                dplyr::starts_with("No_"), dplyr::starts_with("Co_"),
+                dplyr::starts_with("Ni_"), dplyr::starts_with("Ci_")) %>% 
+  dplyr::glimpse()
 
 # Now let's handle different units for stock
 tidy_v6 <- tidy_v5b %>%
@@ -863,17 +858,15 @@ tidy_v6 <- tidy_v5b %>%
   dplyr::mutate(N_stock_actual = dplyr::case_when(
     !is.na(N_stock_mg.m2) ~ N_stock_mg.m2,
     !is.na(N_stock_g.m2) ~ (N_stock_g.m2 / 10^3),
-    !is.na(N_stock_kg.ha) ~ (N_stock_kg.ha * 100),
     T ~ NA), .after = N_conc_percent) %>%
   # Convert Carbon stocks too
   dplyr::mutate(C_stock_actual = dplyr::case_when(
     !is.na(C_stock_mg.m2) ~ C_stock_mg.m2,
     !is.na(C_stock_g.m2) ~ (C_stock_g.m2 / 10^3),
-    !is.na(C_stock_kg.ha) ~ (C_stock_kg.ha * 100),
     T ~ NA), .after = C_conc_percent) %>%
   # Drop now-superseded columns
-  dplyr::select(-N_stock_mg.m2, -N_stock_g.m2, -N_stock_kg.ha,
-                -C_stock_mg.m2, -C_stock_g.m2, -C_stock_kg.ha) %>%
+  dplyr::select(-N_stock_mg.m2, -N_stock_g.m2,
+                -C_stock_mg.m2, -C_stock_g.m2) %>%
   # Rename remaining columns for clarity
   dplyr::rename(N_stock_mg.m2 = N_stock_actual,
                 C_stock_mg.m2 = C_stock_actual) %>%
@@ -889,7 +882,8 @@ summary(tidy_v5b$C_stock_mg.m2); summary(tidy_v6$C_stock_mg.m2)
 # Check remaining columns' structure again
 tidy_v6 %>%
   dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_"),
-                dplyr::starts_with("N."), dplyr::starts_with("C.")) %>%
+                dplyr::starts_with("No_"), dplyr::starts_with("Co_"),
+                dplyr::starts_with("Ni_"), dplyr::starts_with("Ci_")) %>% 
   dplyr::glimpse()
 
 # Check structure of more columns
