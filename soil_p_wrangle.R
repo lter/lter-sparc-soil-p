@@ -182,7 +182,6 @@ key_v4 <- key_v3 %>%
 
 # Do one more structure check
 dplyr::glimpse(key_v4)
-## view(key_v4)
 
 # Pare down to only needed columns
 key_v5 <- key_v4 %>%
@@ -191,6 +190,7 @@ key_v5 <- key_v4 %>%
 
 # Check structure of key
 dplyr::glimpse(key_v5)
+## view(key_v5)
 
 # Check whether any raw column names are duplicate within any data file
 key_v5 %>% 
@@ -209,8 +209,7 @@ downloaded_files <- dir(path = file.path("raw_data"))
 supportR::diff_check(old = downloaded_files, new = unique(key_v5$Raw_Filename))
 
 # Subset the data key to only raw files that we downloaded
-key <- key_v5 %>%
-  dplyr::filter(Raw_Filename %in% downloaded_files)
+key <- dplyr::filter(key_v5, Raw_Filename %in% downloaded_files)
 
 # Subset the downloaded files to only those in the data key
 raw_files <- intersect(downloaded_files, key$Raw_Filename)
