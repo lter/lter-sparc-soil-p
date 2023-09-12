@@ -1,5 +1,5 @@
 ## ------------------------------------------ ##
-      # SPARC Soil P -- Data Wrangling
+     # SPARC Soil P -- Data Harmonization
 ## ------------------------------------------ ##
 # Script author(s): Nick J Lyon
 
@@ -1088,6 +1088,37 @@ sort(unique(tidy_v9$units))
 
 # Re-check full data structure
 dplyr::glimpse(tidy_v9)
+
+## ------------------------------------------ ##
+          # Export Archival Data ----
+## ------------------------------------------ ##
+
+# Create a final data object
+final_tidy <- tidy_v9
+
+# Check its structure
+dplyr::glimpse(final_tidy)
+
+# Create a folder to export into
+dir.create(path = file.path("tidy_data"), showWarnings = F)
+
+# And identify the tidy data Drive URL
+tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
+
+# Define the file name for this harmonized/tidied data file
+arch_name <- "sparc-soil-p_archival-data.csv"
+
+# Export locally
+write.csv(x = final_tidy, row.names = F, na = '',
+          file = file.path("tidy_data", arch_name))
+
+# Upload that to the Drive as well
+googledrive::drive_upload(media = file.path("tidy_data", arch_name), 
+                          overwrite = T, path = tidy_drive)
+
+# End ----
+
+
 
 ## ------------------------------------------ ##
         # Separate Archival Data ----
