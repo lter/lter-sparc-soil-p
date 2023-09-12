@@ -750,16 +750,8 @@ tidy_v5 <- tidy_v4 %>%
   dplyr::relocate(dplyr::contains("bulk"), coarse.volume_percent, 
                   dplyr::contains("soil"),
                   .after = pH) %>%
-  # Average across the two bulk density columns in the same units
-  dplyr::mutate(bulk_dens_avg_kg_ha = dplyr::case_when(
-    !is.na(bulk.density_kg.ha) & !is.na(bulk.density.value.2_kg.ha) ~ (bulk.density_kg.ha + bulk.density.value.2_kg.ha) / 2,
-    !is.na(bulk.density_kg.ha) & is.na(bulk.density.value.2_kg.ha) ~ bulk.density_kg.ha,
-    is.na(bulk.density_kg.ha) & !is.na(bulk.density.value.2_kg.ha) ~ bulk.density.value.2_kg.ha,
-    T ~ NA), .after = bulk.density_g.cm3) %>%
-  # Drop those now-superseded columns
-  dplyr::select(-bulk.density_kg.ha, -bulk.density.value.2_kg.ha) %>%
   # Rename the bulk density columns
-  dplyr::rename(bulk.density_kg.ha = bulk_dens_avg_kg_ha,
+  dplyr::rename(bulk.density_kg.ha = bulk.density.P_kg.ha,
                 bulk.density_g.cm3_raw = bulk.density_g.cm3) %>%
   #  We're hard coding bulk density in here rather than typing manually
   ## Citations/justifications are included next to each bulk density value
@@ -815,8 +807,8 @@ dplyr::glimpse(tidy_v5[1:30])
 # Look at the most relevant bit for N/C tidying
 tidy_v5 %>%
   dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_"),
-                dplyr::starts_with("N."), dplyr::starts_with("C."),
-                dplyr::starts_with("mean.N_"), dplyr::starts_with("mean.C_")) %>%
+                dplyr::starts_with("No_"), dplyr::starts_with("Co_"),
+                dplyr::starts_with("Ni_"), dplyr::starts_with("Ci_")) %>%
   dplyr::glimpse()
 
 # Convert N & C concentrations into percents
