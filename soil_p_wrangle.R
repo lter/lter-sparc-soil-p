@@ -828,8 +828,8 @@ tidy_v5b <- tidy_v5 %>%
     !is.na(mean.N_conc_percent) ~ mean.N_conc_percent,
     ## _g / _g
     !is.na(N_conc_mg.kg) ~ N_conc_mg.kg * 0.0001,
+    !is.na(N_conc_ug.g) ~ N_conc_ug.g * 0.0001,
     !is.na(N_conc_mg.g) ~ (N_conc_mg.g * 10^3) * 0.0001,
-    !is.na(N_conc_ug.g) ~ (N_conc_ug.g * 10^6) * 0.0001,
     !is.na(N_conc_g.kg) ~ (N_conc_g.kg / 10^3) * 0.0001,
     # If nothing exists, fill with NA
     TRUE ~ NA), .before = N_conc_percent) %>%
@@ -840,8 +840,8 @@ tidy_v5b <- tidy_v5 %>%
     !is.na(mean.C_conc_percent) ~ mean.C_conc_percent,
     ## _g / _g
     !is.na(C_conc_mg.kg) ~ C_conc_mg.kg * 0.0001,
+    !is.na(C_conc_ug.g) ~ C_conc_ug.g * 0.0001,
     !is.na(C_conc_mg.g) ~ (C_conc_mg.g * 10^3) * 0.0001,
-    !is.na(C_conc_ug.g) ~ (C_conc_ug.g * 10^6) * 0.0001,
     !is.na(C_conc_g.kg) ~ (C_conc_g.kg / 10^3) * 0.0001,
     TRUE ~ NA), .before = C_conc_percent) %>%
   # Drop now-superseded columns
