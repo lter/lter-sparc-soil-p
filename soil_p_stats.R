@@ -102,7 +102,7 @@ dplyr::glimpse(site_avgs)
 mod_strip <- function(fit, resp, exp){
   
   # Strip out the summary stats for the table
-  stat_table <- scicomptools::stat_extract(mod_fit = xsite_N_totP_fit)
+  stat_table <- scicomptools::stat_extract(mod_fit = fit)
   
   # Add on new desired columns
   stat_table_v2 <- stat_table %>%
@@ -124,14 +124,21 @@ xsite_N_slowP_fit <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = site_avgs)
 xsite_C_slowP_fit <- lm(C_conc_percent ~ slow.P_conc_mg.kg, data = site_avgs)
 
 # Strip out the summary statistics
-xsite_N_totP_table <- scicomptools::stat_extract(mod_fit = xsite_N_totP_fit)
-xsite_C_totP_table <- scicomptools::stat_extract(mod_fit = xsite_C_totP_fit)
-xsite_N_slowP_table <- scicomptools::stat_extract(mod_fit = xsite_N_slowP_fit)
-xsite_C_slowP_table <- scicomptools::stat_extract(mod_fit = xsite_C_slowP_fit)
+xsite_N_totP_table <- mod_strip(fit = xsite_N_totP_fit, resp = "N Percent", 
+                                exp = "Total P mg/kg")
+xsite_C_totP_table <- mod_strip(fit = xsite_C_totP_fit, resp = "C Percent", 
+                                exp = "Total P mg/kg")
+xsite_N_slowP_table <- mod_strip(fit = xsite_N_slowP_fit, resp = "N Percent", 
+                                 exp = "Slow P mg/kg")
+xsite_C_slowP_table <- mod_strip(fit = xsite_C_slowP_fit, resp = "C Percent", 
+                                 exp = "Slow P mg/kg")
 
-# Add some more needed context to each
+# Bind them together for ease of exporting
+xsite_outs <- xsite_N_totP_table %>%
+  dplyr::bind_rows(xsite_C_totP_table, xsite_N_slowP_table, xsite_C_slowP_table)
 
-
+# Check that out
+xsite_outs
 
 
 # End ----
