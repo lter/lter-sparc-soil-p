@@ -17,14 +17,18 @@ librarian::shelf(tidyverse, googledrive, scicomptools)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
+dir.create(path = file.path("stat_results"), showWarnings = F)
+
+# Clear environment
+rm(list = ls())
 
 # Identify and download the tidied megadata object from the Drive
 googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")) %>%
   dplyr::filter(name == "tidy_soil_p.csv") %>%
   googledrive::drive_download(file = .$id, path = file.path("tidy_data", .$name), overwrite = T)
 
-# Clear environment
-rm(list = ls())
+# Identify Drive folder to upload stat results
+stat_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1it7t9b3JF9V2Tdnt10lR130-CLs0Nxub")
 
 ## ------------------------------------------ ##
           # Pre-Stats Wrangling ----
@@ -139,6 +143,19 @@ xsite_outs <- xsite_N_totP_table %>%
 
 # Check that out
 xsite_outs
+
+## ------------------------------------------ ##
+            # Across-Site Export ----
+## ------------------------------------------ ##
+
+# Make a file path for across site results
+xsite_path <- file.path("stat_results", "across-site-results.csv")
+
+# Write that out as a CSV
+write.csv(x = xsite_outs, file = xsite_path, row.names = F, na = '')
+
+# Upload to drive
+googledrive::drive_upload(media = xsite_path, path = stat_drive, overwrite = T)
 
 
 # End ----
