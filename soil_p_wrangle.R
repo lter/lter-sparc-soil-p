@@ -1154,7 +1154,7 @@ p_sums <- tidy_v10 %>%
   tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
   # Calculate slow P conditionally
   ## NOTE: using placeholder (obviously wrong) while we await complete methods data knowledge / inclusion in data key
-  dplyr::mutate(slow.P_mg.kg = 1) %>%
+  dplyr::mutate(slow.P_conc_mg.kg = 1) %>%
   # dplyr::mutate(slow.P_mg_kg = dplyr::case_when(
   #   dataset == "HJAndrews_1" ~ (P_conc_HCl_mg_kg),
   #   dataset == "Bonanza Creek_1" ~ NA,
@@ -1187,16 +1187,16 @@ p_sums <- tidy_v10 %>%
   #   TRUE ~ NA )) %>%
   # Also total P
   ## NOTE: using slow P as placeholder while we wait for identification of P fractions / site
-  dplyr::mutate(total.P_mg.kg = slow.P_mg.kg) %>%
+  dplyr::mutate(total.P_conc_mg.kg = slow.P_conc_mg.kg) %>%
   # After summing, remove all columns where we changed NAs to 0s
-  dplyr::select(lter:soil.mass_g.m2, slow.P_mg.kg, total.P_mg.kg) %>%
+  dplyr::select(lter:soil.mass_g.m2, slow.P_conc_mg.kg, total.P_conc_mg.kg) %>%
   # Keep only unique rows
   dplyr::distinct()
 
 # Any datasets missing?
 p_sums %>%
-  dplyr::filter(is.na(slow.P_mg.kg) | is.na(total.P_mg.kg)) %>%
-  dplyr::select(dataset, slow.P_mg.kg, total.P_mg.kg) %>%
+  dplyr::filter(is.na(slow.P_conc_mg.kg) | is.na(total.P_conc_mg.kg)) %>%
+  dplyr::select(dataset, slow.P_conc_mg.kg, total.P_conc_mg.kg) %>%
   dplyr::distinct()
 
 # Check structure
@@ -1210,22 +1210,22 @@ tidy_v11 <- tidy_v10 %>%
   # By not specifying which columns to join by, all shared columns will be used
   dplyr::left_join(y = p_sums) %>%
   # Move our P sums to the left for more easy reference
-  dplyr::relocate(slow.P_mg.kg, total.P_mg.kg, .after = bulk.density_kg.ha)
+  dplyr::relocate(slow.P_conc_mg.kg, total.P_conc_mg.kg, .after = bulk.density_kg.ha)
 
 # Check structure
 dplyr::glimpse(tidy_v11)
 
 ## ------------------------------------------ ##
-              # Absolute P ----
+          # Stock P Calculations ----
 ## ------------------------------------------ ##
 
 # Calculate absolute P totals (rather than portions of each core)
 tidy_v12 <- tidy_v11 %>%
   # Due to our earlier depth/bulk density prep this is easy!
-  dplyr::mutate(slow.P_stock_g.m2 = ((slow.P_mg.kg * core.length_cm * bulk.density_g.cm3) * 10^4) / 10^6,
-                .before = slow.P_mg.kg) %>%
-  dplyr::mutate(total.P_stock_g.m2 = ((total.P_mg.kg * core.length_cm * bulk.density_g.cm3) * 10^4) / 10^6,
-                .before = total.P_mg.kg)
+  dplyr::mutate(slow.P_stock_g.m2 = ((slow.P_conc_mg.kg * core.length_cm * bulk.density_g.cm3) * 10^4) / 10^6,
+                .before = slow.P_conc_mg.kg) %>%
+  dplyr::mutate(total.P_stock_g.m2 = ((total.P_conc_mg.kg * core.length_cm * bulk.density_g.cm3) * 10^4) / 10^6,
+                .before = total.P_conc_mg.kg)
 
 # Check contents of those columns
 summary(tidy_v12$slow.P_stock)
