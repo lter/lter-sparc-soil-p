@@ -45,22 +45,27 @@ stat_df <- mega %>%
   # Pare down to only columns of interest
   ## Unspecified columns are implicitly removed
   dplyr::select(lter, dataset, site, plot, block, core, dplyr::starts_with("treatment"),
-                dplyr::starts_with("horizon_"), dplyr::starts_with("depth_"),
-                core_length_cm, pH:soil_mass_g_m2,
-                dplyr::starts_with("N_"), dplyr::starts_with("C_")) %>%
+                dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
+                core.length_cm, pH, dplyr::starts_with("bulk.density"),
+                dplyr::starts_with("slow.P"), dplyr::starts_with("total.P"),
+                C_conc_percent, N_conc_percent) %>%
+  # Drop non-unique rows
+  dplyr::distinct() %>%
   # Only interested in mineral layer
   ## Assuming that un-specified horizons are mineral layer
   dplyr::filter(horizon_binary == "mineral" | nchar(horizon_binary) == 0) %>%
   # Identify minimum depth of remaining data within sample info column groups
-  dplyr::group_by(dplyr::across(c(lter:block, treatment:treatment_years))) %>%
-  dplyr::mutate(min_depth = ifelse(!all(is.na(depth_start_cm)),
-                                   yes = min(depth_start_cm, na.rm = T),
+  dplyr::group_by(dplyr::across(c(lter:block, treatment:treatment.years))) %>%
+  dplyr::mutate(min_depth = ifelse(!all(is.na(depth.start_cm)),
+                                   yes = min(depth.start_cm, na.rm = T),
                                    no = NA),
                 max_allowed_depth = (min_depth + depth_cutoff),
                 .after = horizon_binary) %>%
   dplyr::ungroup() %>%
   # Filter to only samples in that range
-  dplyr::filter(depth_start_cm >= min_depth & depth_end_cm <= max_allowed_depth) %>%
+  dplyr::filter(depth.start_cm >= min_depth & depth.end_cm <= max_allowed_depth) %>%
+  # Drop columns needed for that filter but otherwise not needed
+  dplyr::select(-min_depth, -max_allowed_depth) %>%
   # Now drop any columns that don't have at least one value
   dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
 
@@ -80,7 +85,7 @@ site_avgs <- stat_df %>%
                       values_to = 'values') %>%
   # Average within site-level information columns
   ## Note we'll implicitly drop any column not used in grouping or created by `summarize`
-  dplyr::group_by(lter, dataset, site, treatment, treatment_years, variables) %>%
+  dplyr::group_by(lter, dataset, site, treatment, treatment.years, variables) %>%
   dplyr::summarize(mean_val = mean(values, na.rm = T)) %>%
   dplyr::ungroup() %>%
   # Flip back to wide format
