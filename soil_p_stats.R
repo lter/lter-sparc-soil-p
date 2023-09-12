@@ -121,7 +121,7 @@ mod_strip <- function(fit, resp, exp){
          # Across-Site Statistics ----
 ## ------------------------------------------ ##
 
-# Begin by fitting the four models of interests
+# Begin by fitting the four models of interest
 xsite_N_totP_fit <- lm(N_conc_percent ~ total.P_conc_mg.kg, data = site_avgs)
 xsite_C_totP_fit <- lm(C_conc_percent ~ total.P_conc_mg.kg, data = site_avgs)
 xsite_N_slowP_fit <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = site_avgs)
@@ -156,6 +156,71 @@ write.csv(x = xsite_outs, file = xsite_path, row.names = F, na = '')
 
 # Upload to drive
 googledrive::drive_upload(media = xsite_path, path = stat_drive, overwrite = T)
+
+## ------------------------------------------ ##
+          # Within-Site Statistics ----
+## ------------------------------------------ ##
+
+# Make an empty list (for storing outputs)
+within_list <- list()
+
+# Loop across LTERs
+for(LTER in unique(stat_df$lter)){
+  
+  # Print starting message
+  message("Fitting models for LTER: ", LTER)
+  
+  # Subset data
+  stat_sub <- dplyr::filter(stat_df, lter == LTER)
+  
+  # Do stats if have data
+  ## Placeholder until we finalize data tidying
+  if(!all(is.na(stat_sub$N_conc_percent)) & !all(nchar(stat_sub$N_conc_percent) == 0)){
+    
+    # Fit models
+    mod1_fit <- lm(N_conc_percent ~ total.P_conc_mg.kg, data = stat_sub)
+    mod3_fit <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = stat_sub)
+    
+    # Strip out the summary statistics
+    mod1_table <- mod_strip(fit = mod1_fit, resp = "N Percent", exp = "Total P mg/kg")
+    mod3_table <- mod_strip(fit = mod3_fit, resp = "N Percent", exp = "Slow P mg/kg")
+    
+    # Combine and add to list
+    within_list[[paste(lter, "N")]] <- dplyr::bind_rows(mod1_table, mod3_table) %>%
+      # Add LTER column
+      dplyr::mutate(lter = LTER, .before = dplyr::everything())
+  } # Close N conditional
+  
+  # Do stats if have data
+  ## Placeholder until we finalize data tidying
+  if(!all(is.na(stat_sub$C_conc_percent)) & !all(nchar(stat_sub$C_conc_percent) == 0)){
+    
+    # Fit models
+    mod2_fit <- lm(C_conc_percent ~ total.P_conc_mg.kg, data = stat_sub)
+    mod4_fit <- lm(C_conc_percent ~ slow.P_conc_mg.kg, data = stat_sub)
+    
+    # Strip out stats
+    mod2_table <- mod_strip(fit = mod2_fit, resp = "C Percent", exp = "Total P mg/kg")
+    mod4_table <- mod_strip(fit = mod4_fit, resp = "C Percent", exp = "Slow P mg/kg")
+    
+    # Combine and add to list
+    within_list[[paste(lter, "N")]] <- dplyr::bind_rows(mod2_table, mod4_table) %>%
+      # Add LTER column
+      dplyr::mutate(lter = LTER, .before = dplyr::everything())
+    } # Close C conditional
+} # Close loop
+
+# Unlist the output
+within_outs <- purrr::list_rbind(x = within_list)
+
+# Check that out
+within_outs
+
+
+
+
+
+
 
 
 # End ----
