@@ -51,10 +51,14 @@ sparc_v2 <- sparc_v1 %>%
   dplyr::select(-molarity, -time, -temp) %>%
   # Fill remaining P information columns with placeholders where needed
   dplyr::mutate(
-    measurement = ifelse(is.na(measurement), yes = "data.type", no = measurement),
-    units = ifelse(is.na(units), yes = "units", no = units),
-    order = ifelse(is.na(order), yes = "order", no = order),
-    reagent = ifelse(is.na(reagent), yes = "reagent", no = reagent)
+    measurement = ifelse(is.na(measurement) | nchar(measurement) == 0, 
+                         yes = "data.type", no = measurement),
+    units = ifelse(is.na(units) | nchar(units) == 0, 
+                   yes = "units", no = units),
+    order = ifelse(is.na(order) | nchar(order) == 0, 
+                   yes = "order", no = order),
+    reagent = ifelse(is.na(reagent) | nchar(reagent) == 0, 
+                     yes = "reagent", no = reagent)
   ) %>%
   # Recombine them into a single column
   dplyr::mutate(P_fractions = paste(p_type, measurement, units, order, reagent,
