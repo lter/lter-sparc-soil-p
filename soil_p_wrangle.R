@@ -1070,6 +1070,7 @@ tidy_v9 <- tidy_v8 %>%
   dplyr::mutate(units = dplyr::case_when(
     units == "g.kg" ~ "mg.kg",
     units == "mg.g" ~ "mg.kg",
+    units == "ppm" ~ "mg.kg", # ppm = mg/kg so no conversion needed
     T ~ units)) %>%
   # Do the same for mass / area (i.e., stock)
   dplyr::mutate(value = dplyr::case_when(
