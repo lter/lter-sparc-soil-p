@@ -216,11 +216,17 @@ within_outs <- purrr::list_rbind(x = within_list)
 # Check that out
 within_outs
 
+## ------------------------------------------ ##
+            # Within-Site Export ----
+## ------------------------------------------ ##
 
+# Make a file path for across site results
+within_path <- file.path("stat_results", "within-site-results.csv")
 
+# Write that out as a CSV
+write.csv(x = within_outs, file = within_path, row.names = F, na = '')
 
-
-
-
+# Upload to drive
+googledrive::drive_upload(media = within_path, path = stat_drive, overwrite = T)
 
 # End ----
