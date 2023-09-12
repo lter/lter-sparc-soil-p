@@ -1,14 +1,18 @@
 ## ------------------------------------------ ##
-# SPARC Soil P -- Data Wrangling
+        # SPARC Soil P -- Data Wrangling
 ## ------------------------------------------ ##
 # Script author(s): Nick J Lyon
 
 # Purpose:
-## Harmonize / wrangle soil phosphorus & nitrogen concentration data
-## Ultimately creates a "megadata" file that can be used by downstream analysis/plotting
+## Process 'archival' data for the purposes of the 'Soil P' LTER SPARC group
+
+# Pre-Requisites:
+## Assumes that "soil_p_harmonize.R" script has been run relatively recently
+## Otherwise risks using a superseded version of the tidy data
+### (that ccould lack raw data/data key information)
 
 ## ------------------------------------------ ##
-# Housekeeping -----
+              # Housekeeping -----
 ## ------------------------------------------ ##
 
 # Load necessary libraries
