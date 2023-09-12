@@ -720,10 +720,11 @@ tidy_v4 <- tidy_v3d %>%
   dplyr::relocate(pH, .after = core.length_cm) %>%
   # Group C/N columns together
   dplyr::relocate(dplyr::contains("_data.type_"), .after = pH) %>% 
+  dplyr::relocate(dplyr::starts_with("No_"), .after = pH) %>%  
   dplyr::relocate(dplyr::starts_with("N_stock"), .after = pH) %>%
   dplyr::relocate(dplyr::starts_with("N_conc"), .after = pH) %>%
-  dplyr::relocate(dplyr::starts_with("C.inorg"), .after = pH) %>%  
-  dplyr::relocate(dplyr::starts_with("C.org"), .after = pH) %>%
+  dplyr::relocate(dplyr::starts_with("Co_"), .after = pH) %>%  
+  dplyr::relocate(dplyr::starts_with("Ci_"), .after = pH) %>%
   dplyr::relocate(dplyr::starts_with("C_stock"), .after = pH) %>%
   dplyr::relocate(dplyr::starts_with("C_conc"), .after = pH) %>%
   # Move P fractions to the right
