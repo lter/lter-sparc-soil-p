@@ -109,7 +109,10 @@ c_color2 <- "#264653"
 sparc_theme <- theme(panel.grid = element_blank(),
                      panel.background = element_blank(),
                      legend.position = "none",
-                     axis.line = element_line(color = "black"))
+                     axis.line = element_line(color = "black"),
+                     axis.text.y = element_text(size = 14),
+                     axis.text.x = element_text(size = 13),
+                     axis.title = element_text(size = 16))
 
 ## ------------------------------------------ ##
           # Site Average Graphs ----
@@ -125,7 +128,7 @@ sparc_theme <- theme(panel.grid = element_blank(),
   sparc_theme)
 
 # Export it
-ggsave(filename = file.path("graphs", "nitrogen_total-P.png"),
+ggsave(filename = file.path("graphs", "xsite_nitrogen_total-P.png"),
        width = 5, height = 5, units = "in")
 
 # Do the same for N ~ slow P
@@ -138,7 +141,7 @@ ggsave(filename = file.path("graphs", "nitrogen_total-P.png"),
   sparc_theme)
 
 # Export it
-ggsave(filename = file.path("graphs", "nitrogen_slow-P.png"),
+ggsave(filename = file.path("graphs", "xsite_nitrogen_slow-P.png"),
        width = 5, height = 5, units = "in")
 
 # Make a C ~ total P graph
@@ -151,7 +154,7 @@ ggsave(filename = file.path("graphs", "nitrogen_slow-P.png"),
   sparc_theme)
 
 # Export it
-ggsave(filename = file.path("graphs", "carbon_total-P.png"),
+ggsave(filename = file.path("graphs", "xsite_carbon_total-P.png"),
        width = 5, height = 5, units = "in")
 
 # Do the same for C ~ slow P
@@ -164,7 +167,7 @@ ggsave(filename = file.path("graphs", "carbon_total-P.png"),
   sparc_theme)
 
 # Export it
-ggsave(filename = file.path("graphs", "carbon_slow-P.png"),
+ggsave(filename = file.path("graphs", "xsite_carbon_slow-P.png"),
        width = 5, height = 5, units = "in")
 
 ## ------------------------------------------ ##
