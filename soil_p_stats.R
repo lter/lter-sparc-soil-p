@@ -13,7 +13,7 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, scicomptools)
+librarian::shelf(tidyverse, googledrive, scicomptools, supportR)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
