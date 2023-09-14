@@ -171,15 +171,19 @@ ggsave(filename = file.path("graphs", "carbon_slow-P.png"),
         # Site Average Combo Graph ----
 ## ------------------------------------------ ##
 
+# Assemble a multi-panel figure!
+cowplot::plot_grid(xsite_ntotp, xsite_nslowp, xsite_ctotp, xsite_cslowp,
+                   labels = "AUTO", nrow = 2, ncol = 2)
 
-
-
+# Export it
+ggsave(filename = file.path("graphs", "multipanel_xsite_carbon_slow-P.png"),
+       width = 10, height = 10, units = "in")
 
 ## ------------------------------------------ ##
 # Within-Site Graphs ----
 ## ------------------------------------------ ##
 
-
+# [ UNDER CONSTRUCTION ]
 
 
 
