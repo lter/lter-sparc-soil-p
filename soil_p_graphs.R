@@ -95,140 +95,30 @@ site_avgs <- main_df %>%
 # Glimpse it
 dplyr::glimpse(site_avgs)
 
+## ------------------------------------------ ##
 
-
+## ------------------------------------------ ##
 
 
 
 ## ------------------------------------------ ##
-# Custom Function(s) ----
+# Site Average Graphs ----
 ## ------------------------------------------ ##
 
-# Write a neat little custom function for extracting model outputs
-mod_strip <- function(fit, resp, exp){
-  
-  # Strip out the summary stats for the table
-  stat_table <- scicomptools::stat_extract(mod_fit = fit)
-  
-  # Add on new desired columns
-  stat_table_v2 <- stat_table %>%
-    dplyr::mutate(Response_Var = resp,
-                  Explanatory_Var = exp,
-                  .before = dplyr::everything())
-  
-  # Return that
-  return(stat_table_v2) }
 
-## ------------------------------------------ ##
-# Across-Site Statistics ----
-## ------------------------------------------ ##
 
-# Begin by fitting the four models of interest
 xsite_N_totP_fit <- lm(N_conc_percent ~ total.P_conc_mg.kg, data = site_avgs)
 xsite_C_totP_fit <- lm(C_conc_percent ~ total.P_conc_mg.kg, data = site_avgs)
 xsite_N_slowP_fit <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = site_avgs)
 xsite_C_slowP_fit <- lm(C_conc_percent ~ slow.P_conc_mg.kg, data = site_avgs)
 
-# Strip out the summary statistics
-xsite_N_totP_table <- mod_strip(fit = xsite_N_totP_fit, resp = "N Percent", 
-                                exp = "Total P mg/kg")
-xsite_C_totP_table <- mod_strip(fit = xsite_C_totP_fit, resp = "C Percent", 
-                                exp = "Total P mg/kg")
-xsite_N_slowP_table <- mod_strip(fit = xsite_N_slowP_fit, resp = "N Percent", 
-                                 exp = "Slow P mg/kg")
-xsite_C_slowP_table <- mod_strip(fit = xsite_C_slowP_fit, resp = "C Percent", 
-                                 exp = "Slow P mg/kg")
-
-# Bind them together for ease of exporting
-xsite_outs <- xsite_N_totP_table %>%
-  dplyr::bind_rows(xsite_C_totP_table, xsite_N_slowP_table, xsite_C_slowP_table)
-
-# Check that out
-xsite_outs
 
 ## ------------------------------------------ ##
-# Across-Site Export ----
+# Within-Site Graphs ----
 ## ------------------------------------------ ##
 
-# Make a file path for across site results
-xsite_path <- file.path("stat_results", "across-site-results.csv")
 
-# Write that out as a CSV
-write.csv(x = xsite_outs, file = xsite_path, row.names = F, na = '')
 
-# Upload to drive
-googledrive::drive_upload(media = xsite_path, path = stat_drive, overwrite = T)
 
-## ------------------------------------------ ##
-# Within-Site Statistics ----
-## ------------------------------------------ ##
-
-# Make an empty list (for storing outputs)
-within_list <- list()
-
-# Loop across LTERs
-for(LTER in unique(main_df$lter)){
-  
-  # Print starting message
-  message("Fitting models for LTER: ", LTER)
-  
-  # Subset data
-  stat_sub <- dplyr::filter(main_df, lter == LTER)
-  
-  # Do stats if have data
-  ## Placeholder until we finalize data tidying
-  if(!all(is.na(stat_sub$N_conc_percent)) & !all(nchar(stat_sub$N_conc_percent) == 0)){
-    
-    # Fit models
-    mod1_fit <- lm(N_conc_percent ~ total.P_conc_mg.kg, data = stat_sub)
-    mod3_fit <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = stat_sub)
-    
-    # Strip out the summary statistics
-    mod1_table <- mod_strip(fit = mod1_fit, resp = "N Percent", exp = "Total P mg/kg")
-    mod3_table <- mod_strip(fit = mod3_fit, resp = "N Percent", exp = "Slow P mg/kg")
-    
-    # Combine and add to list
-    within_list[[paste(lter, "N")]] <- dplyr::bind_rows(mod1_table, mod3_table) %>%
-      # Add LTER column
-      dplyr::mutate(lter = LTER, .before = dplyr::everything())
-  } # Close N conditional
-  
-  # Do stats if have data
-  ## Placeholder until we finalize data tidying
-  if(!all(is.na(stat_sub$C_conc_percent)) & !all(nchar(stat_sub$C_conc_percent) == 0)){
-    
-    # Fit models
-    mod2_fit <- lm(C_conc_percent ~ total.P_conc_mg.kg, data = stat_sub)
-    mod4_fit <- lm(C_conc_percent ~ slow.P_conc_mg.kg, data = stat_sub)
-    
-    # Strip out stats
-    mod2_table <- mod_strip(fit = mod2_fit, resp = "C Percent", exp = "Total P mg/kg")
-    mod4_table <- mod_strip(fit = mod4_fit, resp = "C Percent", exp = "Slow P mg/kg")
-    
-    # Combine and add to list
-    within_list[[paste(lter, "N")]] <- dplyr::bind_rows(mod2_table, mod4_table) %>%
-      # Add LTER column
-      dplyr::mutate(lter = LTER, .before = dplyr::everything())
-  } # Close C conditional
-} # Close loop
-
-# Unlist the output
-within_outs <- purrr::list_rbind(x = within_list)
-
-# Check that out
-within_outs
-
-## ------------------------------------------ ##
-# Within-Site Export ----
-## ------------------------------------------ ##
-
-# Make a file path for across site results
-within_path <- file.path("stat_results", "within-site-results.csv")
-
-# Write that out as a CSV
-write.csv(x = within_outs, file = within_path, row.names = F, na = '')
-
-# Upload to drive
-googledrive::drive_upload(media = within_path, path = stat_drive, overwrite = T)
 
 # End ----
