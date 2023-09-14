@@ -13,7 +13,7 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive)
+librarian::shelf(tidyverse, googledrive, supportR)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
@@ -28,7 +28,7 @@ googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/fol
   googledrive::drive_download(file = .$id, path = file.path("tidy_data", .$name), overwrite = T)
 
 ## ------------------------------------------ ##
-# Pre-Stats Wrangling ----
+            # Pre-Viz Wrangling ----
 ## ------------------------------------------ ##
 
 # Read in full megadata
@@ -42,7 +42,7 @@ dplyr::glimpse(mega)
 depth_cutoff <- 15
 
 # Megadata includes *a lot* of information and we only really need a subset of it for stats
-stat_df <- mega %>%
+main_df <- mega %>%
   # Pare down to only columns of interest
   ## Unspecified columns are implicitly removed
   dplyr::select(lter, dataset, site, plot, block, core, dplyr::starts_with("treatment"),
@@ -71,13 +71,13 @@ stat_df <- mega %>%
   dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
 
 # Check to make sure we're okay with the columns we dropped
-supportR::diff_check(old = names(mega), new = names(stat_df), sort = F)
+supportR::diff_check(old = names(mega), new = names(main_df), sort = F)
 
 # Check out the structure of the data
-dplyr::glimpse(stat_df)
+dplyr::glimpse(main_df)
 
 # Now create a version of this that is averaged within sites
-site_avgs <- stat_df %>%
+site_avgs <- main_df %>%
   # Drop depth columns so we can reshape to get averages
   dplyr::select(-dplyr::contains("depth")) %>%
   # Flip all numeric variables into long format
@@ -94,6 +94,11 @@ site_avgs <- stat_df %>%
 
 # Glimpse it
 dplyr::glimpse(site_avgs)
+
+
+
+
+
 
 ## ------------------------------------------ ##
 # Custom Function(s) ----
@@ -162,13 +167,13 @@ googledrive::drive_upload(media = xsite_path, path = stat_drive, overwrite = T)
 within_list <- list()
 
 # Loop across LTERs
-for(LTER in unique(stat_df$lter)){
+for(LTER in unique(main_df$lter)){
   
   # Print starting message
   message("Fitting models for LTER: ", LTER)
   
   # Subset data
-  stat_sub <- dplyr::filter(stat_df, lter == LTER)
+  stat_sub <- dplyr::filter(main_df, lter == LTER)
   
   # Do stats if have data
   ## Placeholder until we finalize data tidying
