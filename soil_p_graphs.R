@@ -13,7 +13,7 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, supportR)
+librarian::shelf(tidyverse, googledrive, supportR, cowplot)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
@@ -116,59 +116,59 @@ sparc_theme <- theme(panel.grid = element_blank(),
 ## ------------------------------------------ ##
 
 # Make a N ~ total P graph
-ggplot(data = site_avgs, aes(x = total.P_conc_mg.kg, y = N_conc_percent)) +
+(xsite_ntotp <- ggplot(data = site_avgs, aes(x = total.P_conc_mg.kg, y = N_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   geom_point(aes(fill = 'x'), pch = 21, size = 3) +
   # Custom labels / colors / theme
   labs(x = "Total P Conc. (mg/kg)", y = "N Conc. (%)") +
   scale_fill_manual(values = n_color1) +
-  sparc_theme
+  sparc_theme)
 
 # Export it
 ggsave(filename = file.path("graphs", "nitrogen_total-P.png"),
        width = 5, height = 5, units = "in")
 
 # Do the same for N ~ slow P
-ggplot(data = site_avgs, aes(x = slow.P_conc_mg.kg, y = N_conc_percent)) +
+(xsite_nslowp <- ggplot(data = site_avgs, aes(x = slow.P_conc_mg.kg, y = N_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   geom_point(aes(fill = 'x'), pch = 21, size = 3) +
   # Custom labels / colors / theme
   labs(x = "Slow P Conc. (mg/kg)", y = "N Conc. (%)") +
   scale_fill_manual(values = n_color2) +
-  sparc_theme
+  sparc_theme)
 
 # Export it
 ggsave(filename = file.path("graphs", "nitrogen_slow-P.png"),
        width = 5, height = 5, units = "in")
 
 # Make a C ~ total P graph
-ggplot(data = site_avgs, aes(x = total.P_conc_mg.kg, y = C_conc_percent)) +
+(xsite_ctotp <- ggplot(data = site_avgs, aes(x = total.P_conc_mg.kg, y = C_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = 'x'), pch = 21, size = 3) +
+  geom_point(aes(fill = 'x'), pch = 23, size = 3) +
   # Custom labels / colors / theme
   labs(x = "Total P Conc. (mg/kg)", y = "C Conc. (%)") +
   scale_fill_manual(values = c_color1) +
-  sparc_theme
+  sparc_theme)
 
 # Export it
 ggsave(filename = file.path("graphs", "carbon_total-P.png"),
        width = 5, height = 5, units = "in")
 
 # Do the same for C ~ slow P
-ggplot(data = site_avgs, aes(x = slow.P_conc_mg.kg, y = C_conc_percent)) +
+(xsite_cslowp <- ggplot(data = site_avgs, aes(x = slow.P_conc_mg.kg, y = C_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = 'x'), pch = 21, size = 3) +
+  geom_point(aes(fill = 'x'), pch = 23, size = 3) +
   # Custom labels / colors / theme
-  labs(x = "Slow P Conc. (mg/kg)", y = "N Conc. (%)") +
+  labs(x = "Slow P Conc. (mg/kg)", y = "C Conc. (%)") +
   scale_fill_manual(values = c_color2) +
-  sparc_theme
+  sparc_theme)
 
 # Export it
 ggsave(filename = file.path("graphs", "carbon_slow-P.png"),
        width = 5, height = 5, units = "in")
 
 ## ------------------------------------------ ##
-# Site Average Combo Graph ----
+        # Site Average Combo Graph ----
 ## ------------------------------------------ ##
 
 
