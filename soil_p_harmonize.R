@@ -579,7 +579,7 @@ tidy_v2e %>%
   dplyr::glimpse()
 
 # Wrangle horizon information to get other desired facets of that variable
-tidy_v3 <- tidy_v2e %>%
+tidy_v2f <- tidy_v2e %>%
   # Make a column that simplifies horizon information
   dplyr::mutate(horizon_simp = dplyr::case_when(
     !horizon_raw %in% c("upper organic", "lower organic",
@@ -594,25 +594,20 @@ tidy_v3 <- tidy_v2e %>%
     !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ horizon_simp,
     !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ depth_horizon,
     # If not in data, use expert knowledge to fill conditionally
-    # dataset == "HJAndrews_1" ~ "",
     dataset == "Bonanza Creek_1" & depth.start_cm == 0 ~ "O",
     dataset == "Bonanza Creek_1" & depth.start_cm != 0 ~ "mineral",
     dataset == "Bonanza Creek_2" ~ "mixed",
-    dataset == "Brazil" ~ "mineral", # Need to double check with data lead
-    dataset == "Calhoun" ~ "mineral", # Need to double check with data lead
-    dataset == "CedarCreek_1" ~ "mineral", # Need to double check with data lead
-    dataset == "Coweeta" ~ "mineral",
-    dataset == "Jornada_1" ~ "mineral",
-    dataset == "Jornada_2" ~ "mineral",
+    dataset %in% c("Brazil", "Calhoun", "CedarCreek_1",
+                   "Coweeta", "Jornada_1", "Jornada_2",
+                   "Luquillo_1", "Luquillo_2", "Sevilleta_1",
+                   "Sevilleta_2"
+                   ) ~ "mineral", # Need to double check Brazil, Calhoun, and CDR
+    # dataset == "HJAndrews_1" ~ "",
     # dataset == "Kellogg_Bio_Station" ~ "",
-    dataset == "Luquillo_1" ~ "mineral",
-    dataset == "Luquillo_2" ~ "mineral",
     # dataset == "Niwot_1" ~ "",
     # dataset == "Niwot_2" ~ "",
     # dataset == "Niwot_3" ~ "",
     # dataset == "Niwot_4" ~ "",
-    dataset == "Sevilleta_1" ~ "mineral",
-    dataset == "Sevilleta_2" ~ "mineral",
     # If not in data and not known, fill with NA
     T ~ NA), .after = horizon_raw) %>%
   # Identify the source of this information
@@ -621,24 +616,18 @@ tidy_v3 <- tidy_v2e %>%
     !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ "in data",
     !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ "in data",
     # If filled conditionally, enter that 
-    # dataset == "HJAndrews_1" ~ "expert knowledge",
-    dataset == "Bonanza Creek_1" ~ "expert knowledge",
-    dataset == "Bonanza Creek_2" ~ "expert knowledge",
-    dataset == "Brazil" ~ "expert knowledge",
-    dataset == "Calhoun" ~ "expert knowledge",
-    dataset == "CedarCreek_1" ~ "expert knowledge",
-    dataset == "Coweeta" ~ "expert knowledge",
-    dataset == "Jornada_1" ~ "expert knowledge",
-    dataset == "Jornada_2" ~ "expert knowledge",
-    # dataset == "Kellog_Biological_Station" ~ "expert knowledge",
-    dataset == "Luquillo_1" ~ "expert knowledge",
-    dataset == "Luquillo_2" ~ "expert knowledge",
-    # dataset == "Niwot_1" ~ "expert knowledge",
-    # dataset == "Niwot_2" ~ "expert knowledge",
-    # dataset == "Niwot_3" ~ "expert knowledge",
-    # dataset == "Niwot_4" ~ "expert knowledge",
-    dataset == "Sevilleta_1" ~ "expert knowledge",
-    dataset == "Sevilleta_2" ~ "expert knowledge",
+    dataset %in% c("Bonanza Creek_1", "Bonanza Creek_2" ,
+                   "Brazil", "Calhoun", "CedarCreek_1",
+                   "Coweeta", "Jornada_1", "Jornada_2",
+                   "Luquillo_1", "Luquillo_2", "Sevilleta_1",
+                   "Sevilleta_2"
+    ) ~ "expert knowledge", # Need to double check Brazil, Calhoun, and CDR
+    # dataset == "HJAndrews_1" ~ "",
+    # dataset == "Kellogg_Bio_Station" ~ "",
+    # dataset == "Niwot_1" ~ "",
+    # dataset == "Niwot_2" ~ "",
+    # dataset == "Niwot_3" ~ "",
+    # dataset == "Niwot_4" ~ "",
     # If no horizon information in this column, the source is NA
     is.na(horizon_actual) ~ NA,
     # Otherwise fill with NA
@@ -656,10 +645,20 @@ tidy_v3 <- tidy_v2e %>%
   dplyr::rename(horizon = horizon_actual)
 
 # For which datasets is horizon info *absent* (that could be filled by expert knowledge)?
-tidy_v3 %>% 
+tidy_v2f %>% 
   dplyr::filter(is.na(horizon) | nchar(horizon) == 0) %>%
   dplyr::select(dataset, raw_filename, horizon) %>%
   dplyr::distinct()
+
+# Fix issue with Toolik (Toolik_1) depths
+tidy_v3 <- tidy_v2f %>%
+  # Need to update only mineral layer depth start/end
+  dplyr::mutate(depth.end_cm = ifelse(horizon == "mineral",
+                                      yes = depth.end_cm - depth.start_cm,
+                                      no = depth.end_cm)) %>%
+  # Once subtraction from end is done, change start to 0
+  dplyr::mutate(depth.start_cm = ifelse(horizon == "mineral",
+                                        yes = 0, no = depth.start_cm))
 
 # Check contents of the specific horizon columns
 sort(unique(tidy_v3$horizon_raw))
