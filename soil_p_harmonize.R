@@ -938,7 +938,6 @@ tidy_v7 <- tidy_v6 %>%
   # Rotate into long format
   tidyr::pivot_longer(cols = c(dplyr::starts_with("P_"),
                                dplyr::starts_with("Po_"),
-                               dplyr::starts_with("ReBHsin_"),
                                dplyr::starts_with("Pi_")),
                       names_to = "p_info", values_to = "value") %>%
   # Drop missing measurements
@@ -959,25 +958,27 @@ dplyr::glimpse(tidy_v7)
 # Check units in the data
 sort(unique(tidy_v7$units))
 
-# In this format we can more easily do our unit conversions!
+# In this format we can _much_ more easily do our unit conversions!
 ## In part because units are semi-independent of rest of context for the value
-tidy_v8 <- tidy_v7 %>%
+tidy_v8a <- tidy_v7 %>%
   # Start with mass / mass (i.e., concentration)
   ## Conditional on units, do appropriate algebra
   dplyr::mutate(value = dplyr::case_when(
-    units == "g.kg" ~ value * 10^3,
-    units == "mg.g" ~ value * 10^3,
+    units == "g.kg" ~ (value * 10^3),
+    units == "mg.g" ~ (value * 10^3),
+    units == "percent" ~ (value * 10^4),
     T ~ value)) %>%
   ## Once done, update the units column to reflect the conversion
   dplyr::mutate(units = dplyr::case_when(
     units == "g.kg" ~ "mg.kg",
     units == "mg.g" ~ "mg.kg",
     units == "ppm" ~ "mg.kg", # ppm = mg/kg so no conversion needed
+    units == "percent" ~ "mg.kg",
     T ~ units)) %>%
   # Do the same for mass / area (i.e., stock)
   dplyr::mutate(value = dplyr::case_when(
-    units == "g.m2" ~ value * 10^3,
-    units == "kg.ha" ~ value * 10^-4 * 10^6, ## 10^4 m2:1 ha
+    units == "g.m2" ~ (value * 10^3),
+    units == "kg.ha" ~ ((value * 10^-4) * 10^6), ## 10^4 m2 / 1 ha
     T ~ value)) %>%
   dplyr::mutate(units = dplyr::case_when(
     units == "g.m2" ~ "mg.m2",
@@ -985,17 +986,28 @@ tidy_v8 <- tidy_v7 %>%
     T ~ units))
 
 # What units are in the data now?
-sort(unique(tidy_v8$units))
+sort(unique(tidy_v8a$units))
+
+# It is possible that concentration was measured in mg/kg _and_ provided as a %
+## Would need to standardize those before continuing
+tidy_v8b <- tidy_v8a %>%
+  # Group by everything but value
+  dplyr::group_by(dplyr::across(.cols = -value)) %>%
+  dplyr::summarize(value = mean(value, na.rm = T)) %>%
+  dplyr::ungroup()
+
+# If there were any duplicates, we should lose rows
+nrow(tidy_v8a); nrow(tidy_v8b)
 
 # Re-check full data structure
-dplyr::glimpse(tidy_v8)
+dplyr::glimpse(tidy_v8b)
 
 ## ------------------------------------------ ##
           # Export Archival Data ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-final_tidy <- tidy_v8
+final_tidy <- tidy_v8b
 
 # Check its structure
 dplyr::glimpse(final_tidy)
