@@ -123,29 +123,37 @@ key_v3 <- key_v2 %>%
     stringr::str_detect(string = Variable, pattern = "N") ~ "no",
     stringr::str_detect(string = Variable, pattern = "C") ~ "no",
     T ~ "yes"), .before = Leach_Order) %>%
+  # Simplify missing information to all true NAs
+  dplyr::mutate(Units = ifelse(Units == "NA" | nchar(Units) == 0,
+                               yes = NA, no = Units),
+                Data_Type = ifelse(Data_Type == "NA" | nchar(Data_Type) == 0,
+                                   yes = NA, no = Data_Type),
+                Reagent = ifelse(Reagent == "NA" | nchar(Reagent) == 0,
+                                   yes = NA, no = Reagent),
+                Molarity = ifelse(Molarity == "NA" | nchar(Molarity) == 0,
+                                   yes = NA, no = Molarity),
+                Time = ifelse(Time == "NA" | nchar(Time) == 0,
+                                   yes = NA, no = Time),
+                Temperature = ifelse(Temperature == "NA" | nchar(Temperature) == 0,
+                                   yes = NA, no = Temperature)) %>%
   # If a piece of information is needed but is absent, fill it in!
-  ## Units
-  dplyr::mutate(Units = ifelse(need_units == "yes" & (is.na(Units) | Units == "NA" | nchar(Units) == 0),
-                               yes = "units", no = Units)) %>%
-## Data Type
-  dplyr::mutate(Data_Type = ifelse(need_type == "yes" & (is.na(Data_Type) | Data_Type == "NA" | nchar(Data_Type) == 0),
-                               yes = "data.type", no = Data_Type)) %>%
-## Methods information pieces
   dplyr::mutate(
-    ### Leach order
-    Leach_Order = ifelse(need_method == "yes" & (is.na(Leach_Order) | Leach_Order == "NA" | nchar(Leach_Order) == 0),
+    ## Units
+    Units = ifelse(need_units == "yes" & is.na(Units),
+                   yes = "units", no = Units),
+    ## Data Type
+    Data_Type = ifelse(need_type == "yes" & is.na(Data_Type),
+                       yes = "data.type", no = Data_Type),
+    ## Methods information
+    Leach_Order = ifelse(need_method == "yes" & is.na(Leach_Order),
                          yes = "order", no = Leach_Order),
-    ### Reagent
-    Reagent = ifelse(need_method == "yes" & (is.na(Reagent) | Reagent == "NA" | nchar(Reagent) == 0),
-                         yes = "reagent", no = Reagent),
-    ### Molarity
-    Molarity = ifelse(need_method == "yes" & (is.na(Molarity) | Molarity == "NA" | nchar(Molarity) == 0),
-                         yes = "molarity", no = Molarity),
-    ### Time
-    Time = ifelse(need_method == "yes" & (is.na(Time) | Time == "NA" | nchar(Time) == 0),
-                         yes = "time", no = Time),
-    ### Temperature
-    Temperature = ifelse(need_method == "yes" & (is.na(Temperature) | Temperature == "NA" | nchar(Temperature) == 0),
+    Reagent = ifelse(need_method == "yes" & is.na(Reagent),
+                     yes = "reagent", no = Reagent),
+    Molarity = ifelse(need_method == "yes" & is.na(Molarity),
+                      yes = "molarity", no = Molarity),
+    Time = ifelse(need_method == "yes" & is.na(Time),
+                  yes = "time", no = Time),
+    Temperature = ifelse(need_method == "yes" & is.na(Temperature),
                          yes = "temp", no = Temperature))
 
 # Check which columns _DO_ need units
