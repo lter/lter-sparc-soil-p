@@ -186,7 +186,7 @@ for(LTER in unique(stat_df$lter)){
     mod3_table <- mod_strip(fit = mod3_fit, resp = "N Percent", exp = "Slow P mg/kg")
     
     # Combine and add to list
-    within_list[[paste(lter, "N")]] <- dplyr::bind_rows(mod1_table, mod3_table) %>%
+    within_list[[paste(LTER, "N")]] <- dplyr::bind_rows(mod1_table, mod3_table) %>%
       # Add LTER column
       dplyr::mutate(lter = LTER, .before = dplyr::everything())
   } # Close N conditional
@@ -204,7 +204,7 @@ for(LTER in unique(stat_df$lter)){
     mod4_table <- mod_strip(fit = mod4_fit, resp = "C Percent", exp = "Slow P mg/kg")
     
     # Combine and add to list
-    within_list[[paste(lter, "N")]] <- dplyr::bind_rows(mod2_table, mod4_table) %>%
+    within_list[[paste(LTER, "C")]] <- dplyr::bind_rows(mod2_table, mod4_table) %>%
       # Add LTER column
       dplyr::mutate(lter = LTER, .before = dplyr::everything())
     } # Close C conditional
