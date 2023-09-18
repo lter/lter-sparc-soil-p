@@ -9,7 +9,7 @@
 # Pre-Requisites:
 ## Assumes that "soil_p_harmonize.R" script has been run relatively recently
 ## Otherwise risks using a superseded version of the tidy data
-### (that ccould lack raw data/data key information)
+### (that could lack updated raw data/data key information)
 
 ## ------------------------------------------ ##
               # Housekeeping -----
@@ -51,7 +51,7 @@ sparc_v2 <- sparc_v1 %>%
   dplyr::select(-molarity, -time, -temp) %>%
   # Fill remaining P information columns with placeholders where needed
   dplyr::mutate(
-    measurement = ifelse(is.na(measurement) | nchar(measurement) == 0, 
+    measurement = ifelse((is.na(measurement) | nchar(measurement) == 0), 
                          yes = "data.type", no = measurement),
     units = ifelse(is.na(units) | nchar(units) == 0, 
                    yes = "units", no = units),
@@ -61,8 +61,7 @@ sparc_v2 <- sparc_v1 %>%
                      yes = "reagent", no = reagent)
   ) %>%
   # Recombine them into a single column
-  dplyr::mutate(P_fractions = paste(p_type, measurement, units, order, reagent,
-                                    sep = "_")) %>%
+  dplyr::mutate(P_fractions = paste(p_type, measurement, units, order, reagent, sep = "_")) %>%
   # Drop the separate pieces of information
   dplyr::select(-p_type, -measurement, -units, -order, -reagent) %>%
   # Reclaim wide format!
