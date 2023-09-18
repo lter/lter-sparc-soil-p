@@ -586,20 +586,25 @@ tidy_v3 <- tidy_v2e %>%
     !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ horizon_simp,
     !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ depth_horizon,
     # If not in data, use expert knowledge to fill conditionally
-    # dataset == "Bonanza Creek_1" ~ "",
-    # dataset == "Bonanza Creek_2" ~ "",
-    # dataset == "Brazil" ~ "",
-    # dataset == "Calhoun" ~ "",
-    # dataset == "Coweeta" ~ "",
-    # dataset == "Jornada" ~ "",
-    # dataset == "Kellog_Biological_Station" ~ "",
-    # dataset == "Luquillo_1" ~ "",
-    # dataset == "Luquillo_2" ~ "",
+    # dataset == "HJAndrews_1" ~ "",
+    dataset == "Bonanza Creek_1" & depth.start_cm == 0 ~ "O",
+    dataset == "Bonanza Creek_1" & depth.start_cm != 0 ~ "mineral",
+    dataset == "Bonanza Creek_2" ~ "mixed",
+    dataset == "Brazil" ~ "mineral", # Need to double check with data lead
+    dataset == "Calhoun" ~ "mineral", # Need to double check with data lead
+    dataset == "CedarCreek_1" ~ "mineral", # Need to double check with data lead
+    dataset == "Coweeta" ~ "mineral",
+    dataset == "Jornada_1" ~ "mineral",
+    dataset == "Jornada_2" ~ "mineral",
+    # dataset == "Kellogg_Bio_Station" ~ "",
+    dataset == "Luquillo_1" ~ "mineral",
+    dataset == "Luquillo_2" ~ "mineral",
     # dataset == "Niwot_1" ~ "",
     # dataset == "Niwot_2" ~ "",
     # dataset == "Niwot_3" ~ "",
-    # dataset == "Sevilleta_1" ~ "",
-    # dataset == "Sevilleta_2" ~ "",
+    # dataset == "Niwot_4" ~ "",
+    dataset == "Sevilleta_1" ~ "mineral",
+    dataset == "Sevilleta_2" ~ "mineral",
     # If not in data and not known, fill with NA
     T ~ NA), .after = horizon_raw) %>%
   # Identify the source of this information
@@ -608,20 +613,24 @@ tidy_v3 <- tidy_v2e %>%
     !is.na(horizon_raw) & nchar(horizon_raw) != 0 ~ "in data",
     !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ "in data",
     # If filled conditionally, enter that 
-    # dataset == "Bonanza Creek_1" ~ "expert knowledge",
-    # dataset == "Bonanza Creek_2" ~ "expert knowledge",
-    # dataset == "Brazil" ~ "expert knowledge",
-    # dataset == "Calhoun" ~ "expert knowledge",
-    # dataset == "Coweeta" ~ "expert knowledge",
-    # dataset == "Jornada" ~ "expert knowledge",
+    # dataset == "HJAndrews_1" ~ "expert knowledge",
+    dataset == "Bonanza Creek_1" ~ "expert knowledge",
+    dataset == "Bonanza Creek_2" ~ "expert knowledge",
+    dataset == "Brazil" ~ "expert knowledge",
+    dataset == "Calhoun" ~ "expert knowledge",
+    dataset == "CedarCreek_1" ~ "expert knowledge",
+    dataset == "Coweeta" ~ "expert knowledge",
+    dataset == "Jornada_1" ~ "expert knowledge",
+    dataset == "Jornada_2" ~ "expert knowledge",
     # dataset == "Kellog_Biological_Station" ~ "expert knowledge",
-    # dataset == "Luquillo_1" ~ "expert knowledge",
-    # dataset == "Luquillo_2" ~ "expert knowledge",
+    dataset == "Luquillo_1" ~ "expert knowledge",
+    dataset == "Luquillo_2" ~ "expert knowledge",
     # dataset == "Niwot_1" ~ "expert knowledge",
     # dataset == "Niwot_2" ~ "expert knowledge",
     # dataset == "Niwot_3" ~ "expert knowledge",
-    # dataset == "Sevilleta_1" ~ "expert knowledge",
-    # dataset == "Sevilleta_2" ~ "expert knowledge",
+    # dataset == "Niwot_4" ~ "expert knowledge",
+    dataset == "Sevilleta_1" ~ "expert knowledge",
+    dataset == "Sevilleta_2" ~ "expert knowledge",
     # If no horizon information in this column, the source is NA
     is.na(horizon_actual) ~ NA,
     # Otherwise fill with NA
@@ -631,6 +640,7 @@ tidy_v3 <- tidy_v2e %>%
     horizon_actual %in% c("organic", "O", "Oi", "Oe", "Oa") ~ "organic",
     horizon_actual %in% c("mineral", "A", "B", "C", "AEB") ~ "mineral",
     horizon_actual == "T" ~ "hurricane",
+    horizon_actual == "mixed" ~ "mixed",
     T ~ NA), .after = horizon_source) %>%
   # Drop depth horizon column and original (un-tidied) horizon column
   dplyr::select(-depth_horizon, -horizon_simp) %>%
