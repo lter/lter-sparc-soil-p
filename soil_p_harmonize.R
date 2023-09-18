@@ -865,8 +865,33 @@ tidy_v5b %>%
                 dplyr::starts_with("Ni_"), dplyr::starts_with("Ci_")) %>% 
   dplyr::glimpse()
 
+# Also convert organic/inorganic N/C variants
+tidy_v5c <- tidy_v5b %>%
+  ## Organic N
+  dplyr::mutate(No_conc_percent = (No_conc_g.kg / 10^3) * 0.0001,
+                .after = N_conc_percent) %>%
+  ## Organic C
+  dplyr::mutate(Co_conc_percent = dplyr::case_when(
+    !is.na(Co_conc_percent) ~ Co_conc_percent,
+    !is.na(Co_conc_g.kg) ~ (Co_conc_g.kg / 10^3) * 0.0001,
+    T ~ NA), .after = C_conc_percent) %>%
+  ## Inorganic C
+  dplyr::mutate(Ci_conc_percent = dplyr::case_when(
+    !is.na(Ci_conc_percent) ~ Ci_conc_percent,
+    !is.na(Ci_conc_g.kg) ~ (Ci_conc_g.kg / 10^3) * 0.0001,
+    T ~ NA), .after = C_conc_percent) %>%
+  # Drop old variants of columns
+  dplyr::select(-No_conc_g.kg, -Co_conc_g.kg, -Ci_conc_g.kg)
+
+# Check it
+tidy_v5c %>%
+  dplyr::select(dataset, dplyr::starts_with("N_"), dplyr::starts_with("C_"),
+                dplyr::starts_with("No_"), dplyr::starts_with("Co_"),
+                dplyr::starts_with("Ni_"), dplyr::starts_with("Ci_")) %>% 
+  dplyr::glimpse()
+
 # Now let's handle different units for stock
-tidy_v6 <- tidy_v5b %>%
+tidy_v6 <- tidy_v5c %>%
   # Convert Nitrogen stock into one unit (mg/m2)
   dplyr::mutate(N_stock_actual = dplyr::case_when(
     !is.na(N_stock_mg.m2) ~ N_stock_mg.m2,
@@ -887,10 +912,10 @@ tidy_v6 <- tidy_v5b %>%
   dplyr::relocate(dplyr::contains(".by.depth"), .after = N_stock_mg.m2)
 
 # How many NAs did we fill for Nitrogran?
-summary(tidy_v5b$N_stock_mg.m2); summary(tidy_v6$N_stock_mg.m2)
+summary(tidy_v5c$N_stock_mg.m2); summary(tidy_v6$N_stock_mg.m2)
 
 # Check Carbon in the same way
-summary(tidy_v5b$C_stock_mg.m2); summary(tidy_v6$C_stock_mg.m2)
+summary(tidy_v5c$C_stock_mg.m2); summary(tidy_v6$C_stock_mg.m2)
 
 # Check remaining columns' structure again
 tidy_v6 %>%
