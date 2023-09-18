@@ -78,6 +78,8 @@ dplyr::glimpse(main_df)
 
 # Now create a version of this that is averaged within sites
 site_avgs <- main_df %>%
+  # Drop some sub-LTER columns
+  dplyr::select(-site, -treatment, -treatment.years) %>% 
   # Drop depth columns so we can reshape to get averages
   dplyr::select(-dplyr::contains("depth")) %>%
   # Flip all numeric variables into long format
@@ -86,7 +88,7 @@ site_avgs <- main_df %>%
                       values_to = 'values') %>%
   # Average within site-level information columns
   ## Note we'll implicitly drop any column not used in grouping or created by `summarize`
-  dplyr::group_by(lter, dataset, site, treatment, treatment.years, variables) %>%
+  dplyr::group_by(lter, dataset, variables) %>%
   dplyr::summarize(mean_val = mean(values, na.rm = T)) %>%
   dplyr::ungroup() %>%
   # Flip back to wide format
@@ -108,7 +110,6 @@ c_color2 <- "#264653"
 # Custom ggplot theme
 sparc_theme <- theme(panel.grid = element_blank(),
                      panel.background = element_blank(),
-                     legend.position = "none",
                      axis.line = element_line(color = "black"),
                      axis.text.y = element_text(size = 14),
                      axis.text.x = element_text(size = 13),
@@ -121,10 +122,10 @@ sparc_theme <- theme(panel.grid = element_blank(),
 # Make a N ~ total P graph
 (xsite_ntotp <- ggplot(data = site_avgs, aes(x = total.P_conc_mg.kg, y = N_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = 'x'), pch = 21, size = 3) +
+  geom_point(aes(fill = lter), pch = 21, size = 3) +
   # Custom labels / colors / theme
   labs(x = "Total P Conc. (mg/kg)", y = "N Conc. (%)") +
-  scale_fill_manual(values = n_color1) +
+  # scale_fill_manual(values = n_color1) +
   sparc_theme)
 
 # Export it
@@ -134,10 +135,10 @@ ggsave(filename = file.path("graphs", "xsite_nitrogen_total-P.png"),
 # Do the same for N ~ slow P
 (xsite_nslowp <- ggplot(data = site_avgs, aes(x = slow.P_conc_mg.kg, y = N_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = 'x'), pch = 21, size = 3) +
+  geom_point(aes(fill = lter), pch = 21, size = 3) +
   # Custom labels / colors / theme
   labs(x = "Slow P Conc. (mg/kg)", y = "N Conc. (%)") +
-  scale_fill_manual(values = n_color2) +
+  # scale_fill_manual(values = n_color2) +
   sparc_theme)
 
 # Export it
@@ -147,10 +148,10 @@ ggsave(filename = file.path("graphs", "xsite_nitrogen_slow-P.png"),
 # Make a C ~ total P graph
 (xsite_ctotp <- ggplot(data = site_avgs, aes(x = total.P_conc_mg.kg, y = C_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = 'x'), pch = 23, size = 3) +
+  geom_point(aes(fill = lter), pch = 23, size = 3) +
   # Custom labels / colors / theme
   labs(x = "Total P Conc. (mg/kg)", y = "C Conc. (%)") +
-  scale_fill_manual(values = c_color1) +
+  # scale_fill_manual(values = c_color1) +
   sparc_theme)
 
 # Export it
@@ -160,10 +161,10 @@ ggsave(filename = file.path("graphs", "xsite_carbon_total-P.png"),
 # Do the same for C ~ slow P
 (xsite_cslowp <- ggplot(data = site_avgs, aes(x = slow.P_conc_mg.kg, y = C_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = 'x'), pch = 23, size = 3) +
+  geom_point(aes(fill = lter), pch = 23, size = 3) +
   # Custom labels / colors / theme
   labs(x = "Slow P Conc. (mg/kg)", y = "C Conc. (%)") +
-  scale_fill_manual(values = c_color2) +
+  # scale_fill_manual(values = c_color2) +
   sparc_theme)
 
 # Export it
