@@ -102,6 +102,34 @@ avg_graph <- function(data = avgs_df, x_var, y_var,
   return(q) }
 
 # Within-dataset plots
+reg_graph <- function(data = main_df, x_var, y_var){
+  
+  # Error out if X axis isn't in data
+  if(!x_var %in% names(data))
+    stop("X variable not found in data. Check spelling")
+  
+  # Do the same for Y axis
+  if(!y_var %in% names(data))
+    stop("Y variable not found in data. Check spelling")
+  
+  # Figure out how many point shapes are needed
+  shps <- c(22, 24, 23, 21, 25)[1:length(unique(data$dataset_simp))]
+  
+  # Generate plot
+  p <- ggplot(data = data, aes(x = .data[[x_var]], y = .data[[y_var]], shape = dataset_simp)) +
+    # Best fit line
+    geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+    # Facet by LTER (just to get nice label)
+    facet_grid(. ~ lter) +
+    # Points/labels for each dataset
+    geom_point(aes(fill = lter), size = 3) +
+    # Customizing theme elements
+    scale_shape_manual(values = shps) +
+    sparc_theme +
+    guides(fill = "none")
+  
+  # Return that plot
+  return(p) }
 
 ## ------------------------------------------ ##
           # Site Average Graphs ----
@@ -178,34 +206,6 @@ ggplot(data = test, aes(x = slow.P_conc_mg.kg, y = C_conc_percent, shape = site)
 
 data <- test
 
-reg_graph <- function(data = main_df, x_var, y_var){
-  
-  # Error out if X axis isn't in data
-  if(!x_var %in% names(data))
-    stop("X variable not found in data. Check spelling")
-  
-  # Do the same for Y axis
-  if(!y_var %in% names(data))
-    stop("Y variable not found in data. Check spelling")
-  
-  # Figure out how many point shapes are needed
-  shps <- c(22, 24, 23, 21, 25)[1:length(unique(data$dataset_simp))]
-  
-  # Generate plot
-  p <- ggplot(data = data, aes(x = .data[[x_var]], y = .data[[y_var]], shape = dataset_simp)) +
-    # Best fit line
-    geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-    # Facet by LTER (just to get nice label)
-    facet_grid(. ~ lter) +
-    # Points/labels for each dataset
-    geom_point(aes(fill = lter), size = 3) +
-    # Customizing theme elements
-    scale_shape_manual(values = shps) +
-    sparc_theme +
-    guides(fill = "none")
-  
-  # Return that plot
-  return(p) }
 
 reg_graph(data = dplyr::filter(main_df, lter == "ARC"),
           x_var = "total.P_conc_mg.kg", y_var = "N_conc_percent")
