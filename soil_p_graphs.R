@@ -45,10 +45,11 @@ c_color2 <- "#264653"
 sparc_theme <- theme(panel.grid = element_blank(),
                      panel.background = element_blank(),
                      axis.line = element_line(color = "black"),
+                     # Legend components
+                     legend.title = element_blank(),
                      # Facet labels (where applicable)
                      strip.text = element_text(size = 16),
-                     strip.background = element_rect(color = "black",
-                                                     fill = "white",
+                     strip.background = element_rect(color = "black", fill = "white",
                                                      linewidth = 0.5),
                      # Axis tick mark / title elements
                      axis.text.y = element_text(size = 14),
@@ -149,7 +150,8 @@ main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
 # Check structure
 dplyr::glimpse(main_df)
 
-
+# Identify hollow shapes
+hollow_shps <- 21:25
 
 # Exploration...
 main_df %>%
@@ -159,9 +161,11 @@ main_df %>%
 
 
 # Make a test graph
-main_df %>% 
-  filter(lter == "ARC") %>%
-  ggplot(data = ., aes(x = slow.P_conc_mg.kg, y = C_conc_percent, shape = site)) +
+test <- main_df %>% 
+  filter(lter == "ARC")
+  
+
+ggplot(data = test, aes(x = slow.P_conc_mg.kg, y = C_conc_percent, shape = site)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Facet by LTER (just to get nice label)
   facet_grid(. ~ lter) +
@@ -171,5 +175,39 @@ main_df %>%
   sparc_theme +
   theme(legend.position = "none")
 
+
+data <- test
+
+reg_graph <- function(data = main_df, x_var, y_var){
+  
+  # Error out if X axis isn't in data
+  if(!x_var %in% names(data))
+    stop("X variable not found in data. Check spelling")
+  
+  # Do the same for Y axis
+  if(!y_var %in% names(data))
+    stop("Y variable not found in data. Check spelling")
+  
+  # Figure out how many point shapes are needed
+  shps <- c(22, 24, 23, 21, 25)[1:length(unique(data$dataset_simp))]
+  
+  # Generate plot
+  p <- ggplot(data = data, aes(x = .data[[x_var]], y = .data[[y_var]], shape = dataset_simp)) +
+    # Best fit line
+    geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+    # Facet by LTER (just to get nice label)
+    facet_grid(. ~ lter) +
+    # Points/labels for each dataset
+    geom_point(aes(fill = lter), size = 3) +
+    # Customizing theme elements
+    scale_shape_manual(values = shps) +
+    sparc_theme +
+    guides(fill = "none")
+  
+  # Return that plot
+  return(p) }
+
+reg_graph(data = dplyr::filter(main_df, lter == "ARC"),
+          x_var = "total.P_conc_mg.kg", y_var = "N_conc_percent")
 
 # End ----
