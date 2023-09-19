@@ -31,78 +31,20 @@ purrr::walk2(.x = file_ids$id, .y = file_ids$name,
 # Clear environment
 rm(list = ls())
 
-## ------------------------------------------ ##
-            # Pre-Viz Wrangling ----
-## ------------------------------------------ ##
-
-# Read in full megadata
-mega <- read.csv(file.path("tidy_data", "tidy_soil_p.csv"))
+# Read in stats/viz-ready file
+main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
 
 # Check structure
-dplyr::glimpse(mega)
-
-# Depth subsetting is used to restrict core depth of samples used in analysis
-## Decide how many centimeters from the first measured depth (of the A horizon) are allowed
-depth_cutoff <- 15
-
-# Megadata includes *a lot* of information and we only really need a subset of it for stats
-main_df <- mega %>%
-  # Pare down to only columns of interest
-  ## Unspecified columns are implicitly removed
-  dplyr::select(lter, dataset, site, plot, block, core, dplyr::starts_with("treatment"),
-                dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
-                core.length_cm, pH, dplyr::starts_with("bulk.density"),
-                dplyr::starts_with("slow.P"), dplyr::starts_with("total.P"),
-                C_conc_percent, N_conc_percent) %>%
-  # Drop non-unique rows
-  dplyr::distinct() %>%
-  # Only interested in mineral layer
-  ## Assuming that un-specified horizons are mineral layer
-  dplyr::filter(horizon_binary == "mineral" | nchar(horizon_binary) == 0) %>%
-  # Identify minimum depth of remaining data within sample info column groups
-  dplyr::group_by(dplyr::across(c(lter:block, treatment:treatment.years))) %>%
-  dplyr::mutate(min_depth = ifelse(!all(is.na(depth.start_cm)),
-                                   yes = min(depth.start_cm, na.rm = T),
-                                   no = NA),
-                max_allowed_depth = (min_depth + depth_cutoff),
-                .after = horizon_binary) %>%
-  dplyr::ungroup() %>%
-  # Filter to only samples in that range
-  dplyr::filter(depth.start_cm >= min_depth & depth.end_cm <= max_allowed_depth) %>%
-  # Drop columns needed for that filter but otherwise not needed
-  dplyr::select(-min_depth, -max_allowed_depth) %>%
-  # Now drop any columns that don't have at least one value
-  dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
-
-# Check to make sure we're okay with the columns we dropped
-supportR::diff_check(old = names(mega), new = names(main_df), sort = F)
-
-# Check out the structure of the data
 dplyr::glimpse(main_df)
 
-# Now create a version of this that is averaged within sites
-site_avgs <- main_df %>%
-  # Drop some sub-LTER columns
-  dplyr::select(-site, -treatment, -treatment.years) %>% 
-  # Drop depth columns so we can reshape to get averages
-  dplyr::select(-dplyr::contains("depth")) %>%
-  # Flip all numeric variables into long format
-  tidyr::pivot_longer(cols = -lter:-horizon_binary,
-                      names_to = 'variables',
-                      values_to = 'values') %>%
-  # Average within site-level information columns
-  ## Note we'll implicitly drop any column not used in grouping or created by `summarize`
-  dplyr::group_by(lter, dataset, variables) %>%
-  dplyr::summarize(mean_val = mean(values, na.rm = T)) %>%
-  dplyr::ungroup() %>%
-  # Flip back to wide format
-  tidyr::pivot_wider(names_from = variables, values_from = mean_val)
+# Read in site averages as well
+avgs_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv"))
 
-# Glimpse it
-dplyr::glimpse(site_avgs)
+# Check structure
+dplyr::glimpse(avgs_df)
 
 ## ------------------------------------------ ##
-# Graph Housekeeping ----
+            # Graph Housekeeping ----
 ## ------------------------------------------ ##
 
 # Define some useful graph aesthetic components
@@ -124,7 +66,7 @@ sparc_theme <- theme(panel.grid = element_blank(),
 ## ------------------------------------------ ##
 
 # Make a N ~ total P graph
-(xsite_ntotp <- ggplot(data = site_avgs, aes(x = total.P_conc_mg.kg, y = N_conc_percent)) +
+(xsite_ntotp <- ggplot(data = avgs_df, aes(x = total.P_conc_mg.kg, y = N_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   geom_point(aes(fill = lter), pch = 21, size = 3) +
   # Custom labels / colors / theme
@@ -137,7 +79,7 @@ ggsave(filename = file.path("graphs", "xsite_nitrogen_total-P.png"),
        width = 5, height = 5, units = "in")
 
 # Do the same for N ~ slow P
-(xsite_nslowp <- ggplot(data = site_avgs, aes(x = slow.P_conc_mg.kg, y = N_conc_percent)) +
+(xsite_nslowp <- ggplot(data = avgs_df, aes(x = slow.P_conc_mg.kg, y = N_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   geom_point(aes(fill = lter), pch = 21, size = 3) +
   # Custom labels / colors / theme
@@ -150,7 +92,7 @@ ggsave(filename = file.path("graphs", "xsite_nitrogen_slow-P.png"),
        width = 5, height = 5, units = "in")
 
 # Make a C ~ total P graph
-(xsite_ctotp <- ggplot(data = site_avgs, aes(x = total.P_conc_mg.kg, y = C_conc_percent)) +
+(xsite_ctotp <- ggplot(data = avgs_df, aes(x = total.P_conc_mg.kg, y = C_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   geom_point(aes(fill = lter), pch = 23, size = 3) +
   # Custom labels / colors / theme
@@ -163,7 +105,7 @@ ggsave(filename = file.path("graphs", "xsite_carbon_total-P.png"),
        width = 5, height = 5, units = "in")
 
 # Do the same for C ~ slow P
-(xsite_cslowp <- ggplot(data = site_avgs, aes(x = slow.P_conc_mg.kg, y = C_conc_percent)) +
+(xsite_cslowp <- ggplot(data = avgs_df, aes(x = slow.P_conc_mg.kg, y = C_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   geom_point(aes(fill = lter), pch = 23, size = 3) +
   # Custom labels / colors / theme
