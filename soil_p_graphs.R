@@ -178,41 +178,39 @@ main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
 # Check structure
 dplyr::glimpse(main_df)
 
-# Exploration...
-main_df %>%
-  dplyr::group_by(lter) %>%
-  dplyr::summarize(dataset_ct = length(unique(dataset_simp)),
-                   datasets = paste(unique(dataset_simp), collapse = "; "))
-
-LTER_site <- "ARC"
-
-# N% ~ total P
-(sub_ntotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
-                        x_var = "total.P_conc_mg.kg", y_var = "N_conc_percent") +
-    labs(x = "Total P (mg/kg)", y = "N (%)"))
-
-# N% ~ slow P
-(sub_nslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
-                         x_var = "slow.P_conc_mg.kg", y_var = "N_conc_percent") +
-    labs(x = "Slow P (mg/kg)", y = "N (%)"))
-
-# C% ~ total P
-(sub_ctotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
-                        x_var = "total.P_conc_mg.kg", y_var = "C_conc_percent") +
-    labs(x = "Total P (mg/kg)", y = "C (%)"))
-
-# C% ~ total P
-(sub_cslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
-                         x_var = "slow.P_conc_mg.kg", y_var = "C_conc_percent") +
-    labs(x = "Slow P (mg/kg)", y = "C (%)"))
-
-# Assemble into single graph
-cowplot::plot_grid(sub_ntotp, sub_nslowp, sub_ctotp, sub_cslowp,
-                   labels = "AUTO", nrow = 2, ncol = 2)
-
-# Export it
-ggsave(filename = file.path("graphs", paste0("figure-2_within-LTER_", LTER_site, ".png")),
-       width = 10, height = 10, units = "in")
-
+# Loop across LTERs
+for(LTER_site in unique(main_df$lter)){
+  
+  # Starting message
+  message("Beginning graphs for ", LTER_site)
+  
+  # N% ~ total P
+  (sub_ntotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
+                          x_var = "total.P_conc_mg.kg", y_var = "N_conc_percent") +
+      labs(x = "Total P (mg/kg)", y = "N (%)"))
+  
+  # N% ~ slow P
+  (sub_nslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
+                           x_var = "slow.P_conc_mg.kg", y_var = "N_conc_percent") +
+      labs(x = "Slow P (mg/kg)", y = "N (%)"))
+  
+  # C% ~ total P
+  (sub_ctotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
+                          x_var = "total.P_conc_mg.kg", y_var = "C_conc_percent") +
+      labs(x = "Total P (mg/kg)", y = "C (%)"))
+  
+  # C% ~ total P
+  (sub_cslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
+                           x_var = "slow.P_conc_mg.kg", y_var = "C_conc_percent") +
+      labs(x = "Slow P (mg/kg)", y = "C (%)"))
+  
+  # Assemble into single graph
+  cowplot::plot_grid(sub_ntotp, sub_nslowp, sub_ctotp, sub_cslowp,
+                     labels = "AUTO", nrow = 2, ncol = 2)
+  
+  # Export it
+  ggsave(filename = file.path("graphs", paste0("figure-2_within-LTER_", LTER_site, ".png")),
+         width = 10, height = 10, units = "in")
+  }
 
 # End ----
