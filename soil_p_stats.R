@@ -19,13 +19,17 @@ librarian::shelf(tidyverse, googledrive, scicomptools, supportR)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
 dir.create(path = file.path("stat_results"), showWarnings = F)
 
+# Identify the needed data file(s) in the Drive
+( file_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")) %>%
+  dplyr::filter(name %in% c("stats-ready_tidy-soil-p.csv", "site-avgs_tidy-soil-p.csv")) )
+
+# Download those files
+purrr::walk2(.x = file_ids$id, .y = file_ids$name,
+             .f = ~ googledrive::drive_download(file = .x, overwrite = T, 
+                                                path = file.path("tidy_data", .y)))
+  
 # Clear environment
 rm(list = ls())
-
-# Identify and download the tidied megadata object from the Drive
-googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")) %>%
-  dplyr::filter(name == "tidy_soil_p.csv") %>%
-  googledrive::drive_download(file = .$id, path = file.path("tidy_data", .$name), overwrite = T)
 
 # Identify Drive folder to upload stat results
 stat_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1it7t9b3JF9V2Tdnt10lR130-CLs0Nxub")
