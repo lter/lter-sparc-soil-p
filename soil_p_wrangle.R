@@ -157,7 +157,7 @@ summary(sparc_v4$total.P_stock_g.m2)
 dplyr::glimpse(sparc_v4[1:35])
 
 ## ------------------------------------------ ##
-        # Export SPARC-Ready Data ----
+        # Export Full SPARC Data ----
 ## ------------------------------------------ ##
 
 # Create a final data object
@@ -177,8 +177,101 @@ write.csv(x = full_sparc, file = file.path("tidy_data", tidy_name),
 googledrive::drive_upload(media = file.path("tidy_data", tidy_name), 
                           overwrite = T, path = tidy_drive)
 
+## ------------------------------------------ ##
+    # Statistics / Visualization Prep ----
+## ------------------------------------------ ##
+
+# We definitely want the data we just exported BUT
+## we also want a really simplified version for stats/visualization
+## this will make it much easier to navigate the really fundamental parts of the data
+## while still having easy access to the most granular version of the data (exported above)
+
+# Megadata includes *a lot* of information and we only really need a subset of it for stats
+stats_v1 <- full_sparc %>%
+  # Pare down to only columns of interest
+  ## Unspecified columns are implicitly removed
+  dplyr::select(lter, dataset, site, plot, block, core,
+                dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
+                core.length_cm, bulk.density_g.cm3,
+                dplyr::ends_with(".P_conc_mg.kg"),
+                C_conc_percent, N_conc_percent) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
+
+# How do the dataframe dimensions change?
+dim(full_sparc); dim(stats_v1)
+## Lose many columns but no rows? Good!
+
+# Check structure
+dplyr::glimpse(stats_v1)
+
+# Need to subset to only certain horizons/depths
+stats_v2 <- stats_v1 %>%
+  # Keep only mineral layer (and mixed mineral/organic) data 
+  dplyr::filter(horizon_binary %in% c("mineral", "mixed") |
+                  # Also keep unspecified horizon information (assumes mineral)
+                  nchar(horizon_binary) == 0) %>%
+  # Further subset to only cores beginning at the top of the horizon
+  dplyr::filter(depth.start_cm == 0 | 
+                  # Again, keep missing depths on assumption they start at 0
+                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
+  
+# How do the dataframe dimensions change?
+dim(stats_v1); dim(stats_v2)
+## Lose many rows but no columns? Good!
+
+# Check structure
+dplyr::glimpse(stats_v2)
+
+  
+
+
+
+
+
+
+
+
+
+
+
 # End ----
 
+## ------------------------------------------ ##
+# Basement ----
+## ------------------------------------------ ##
 
+# Putting some possibly useful code here for posterity
+
+
+# Depth subsetting is used to restrict core depth of samples used in analysis
+## How many *centimeters* from the first measured depth (of the mineral/A horizon) are allowed?
+depth_cutoff <- 15
+
+
+# Identify minimum depth of remaining data within sample info column groups
+dplyr::group_by(dplyr::across(c(lter:block, treatment:treatment.years))) %>%
+  dplyr::mutate(min_depth = ifelse(!all(is.na(depth.start_cm)),
+                                   yes = min(depth.start_cm, na.rm = T),
+                                   no = NA),
+                max_allowed_depth = (min_depth + depth_cutoff),
+                .after = horizon_binary) %>%
+  dplyr::ungroup() %>%
+  # Filter to only samples in that range
+  dplyr::filter(depth.start_cm >= min_depth & depth.end_cm <= max_allowed_depth) %>%
+  # Drop columns needed for that filter but otherwise not needed
+  dplyr::select(-min_depth, -max_allowed_depth) %>%
+  
+  
+  # Check to make sure we're okay with the columns we dropped
+  supportR::diff_check(old = names(mega), new = names(stat_df), sort = F)
+
+# Check out the structure of the data
+dplyr::glimpse(stat_df)
+
+
+# Now drop any columns that don't have at least one value
+## Shouldn't be any but doesn't hurt to check
+dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
 
 
