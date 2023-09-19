@@ -45,6 +45,12 @@ c_color2 <- "#264653"
 sparc_theme <- theme(panel.grid = element_blank(),
                      panel.background = element_blank(),
                      axis.line = element_line(color = "black"),
+                     # Facet labels (where applicable)
+                     strip.text = element_text(size = 16),
+                     strip.background = element_rect(color = "black",
+                                                     fill = "white",
+                                                     linewidth = 0.5),
+                     # Axis tick mark / title elements
                      axis.text.y = element_text(size = 14),
                      axis.text.x = element_text(size = 13),
                      axis.title = element_text(size = 16))
@@ -60,7 +66,7 @@ sparc_theme <- theme(panel.grid = element_blank(),
 
 # Across-dataset averages graph
 avg_graph <- function(data = avgs_df, x_var, y_var, 
-                      text_nudge_x = -0.1, text_nudge_y = 0.05){
+                      text_nudge_x = -0.1, text_nudge_y = 0.2){
   
   # Error out if X axis isn't in data
   if(!x_var %in% names(data))
@@ -87,7 +93,7 @@ avg_graph <- function(data = avgs_df, x_var, y_var,
     # Points/labels for each dataset
     geom_point(aes(fill = lter), pch = 21, size = 3) +
     geom_text(aes(label = dataset_simp), nudge_y = text_nudge_y, nudge_x = text_nudge_x) +
-    # scale_fill_manual(values = n_color1) +
+    # Customizing theme elements
     sparc_theme +
     theme(legend.position = "none")
   
@@ -134,7 +140,7 @@ ggsave(filename = file.path("graphs", "figure-1_across-datasets.png"),
        width = 10, height = 10, units = "in")
 
 ## ------------------------------------------ ##
-# Within-Site Graphs ----
+            # Within-Site Graphs ----
 ## ------------------------------------------ ##
 
 # Read in more granular (spatially) data
@@ -148,13 +154,22 @@ dplyr::glimpse(main_df)
 # Exploration...
 main_df %>%
   dplyr::group_by(lter) %>%
-  dplyr::summarize(dataset_ct = length(unique(dataset)),
-                   datasets = paste(unique(dataset), collapse = "; "))
+  dplyr::summarize(dataset_ct = length(unique(dataset_simp)),
+                   datasets = paste(unique(dataset_simp), collapse = "; "))
 
 
 # Make a test graph
-filter <- main_df
-
+main_df %>% 
+  filter(lter == "ARC") %>%
+  ggplot(data = ., aes(x = slow.P_conc_mg.kg, y = C_conc_percent, shape = site)) +
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Facet by LTER (just to get nice label)
+  facet_grid(. ~ lter) +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter), size = 3) +
+  scale_shape_manual(values = 21:22) +
+  sparc_theme +
+  theme(legend.position = "none")
 
 
 # End ----
