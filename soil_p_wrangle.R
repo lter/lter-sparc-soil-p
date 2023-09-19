@@ -161,16 +161,16 @@ dplyr::glimpse(sparc_v4[1:35])
 ## ------------------------------------------ ##
 
 # Create a final data object
-full_sparc <- sparc_v4
+sparc_tidy <- sparc_v4
 
 # Check its structure
-dplyr::glimpse(full_sparc)
+dplyr::glimpse(sparc_tidy)
 
 # Define the tidy file name
 tidy_name <- "full-data_tidy-soil-p.csv"
 
 # Save out the final data object
-write.csv(x = full_sparc, file = file.path("tidy_data", tidy_name), 
+write.csv(x = sparc_tidy, file = file.path("tidy_data", tidy_name), 
           row.names = F, na = "")
 
 # Upload to GoogleDrive
@@ -187,7 +187,7 @@ googledrive::drive_upload(media = file.path("tidy_data", tidy_name),
 ## while still having easy access to the most granular version of the data (exported above)
 
 # Megadata includes *a lot* of information and we only really need a subset of it for stats
-stats_v1 <- full_sparc %>%
+stats_v1 <- sparc_tidy %>%
   # Pare down to only columns of interest
   ## Unspecified columns are implicitly removed
   dplyr::select(lter, dataset, site, plot, block, core,
@@ -199,7 +199,7 @@ stats_v1 <- full_sparc %>%
   dplyr::distinct()
 
 # How do the dataframe dimensions change?
-dim(full_sparc); dim(stats_v1)
+dim(sparc_tidy); dim(stats_v1)
 ## Lose many columns but no rows? Good!
 
 # Check structure
