@@ -91,77 +91,21 @@ p_sums <- sparc_v2 %>%
   dplyr::filter(!is.na(values) & nchar(values) != 0) %>%
   ## Pivot back to wide format and fill empty cells with 0
   tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
-  # Calculate slow P conditionally
-  ## NOTE: using placeholder (obviously wrong) while we await complete methods data knowledge / inclusion in data key
-  dplyr::mutate(slow.P_conc_mg.kg = 1) %>%
-  # dplyr::mutate(slow.P_mg_kg = dplyr::case_when(
-  #   dataset == "HJAndrews_1" ~ (P_conc_HCl_mg_kg),
-  #   dataset == "Bonanza Creek_1" ~ NA,
-  #   dataset == "Bonanza Creek_2" ~ NA,
-  #   dataset == "Brazil" ~ NA,
-  #   dataset == "Calhoun" ~ (P_conc_HCl_mg_kg),
-  #   # (vvv) Data seem to only have total P but searching for Hedley fraction
-  #   dataset == "CedarCreek_1" ~ NA, 
-  #   dataset == "Coweeta" ~ (P_conc_HCl_mg_kg), 
-  #   # (vvv) Only have a neutral salt extraction (available P). May remove dataset entirely
-  #   dataset == "Fernow" ~ NA,
-#   dataset == "FloridaCoastal" ~ (P_conc_HCl_mg_kg),
-#   dataset == "Hubbard Brook" ~ (P_conc_HNO3_cold_mg_kg),
-#   dataset == "Jornada" ~ NA,
-#   dataset == "Kellog_Biological_Station" ~ (Pi_conc_HCl_mg_kg),
-#   # (vvv) Based on 2 different methodologies
-#   dataset == "Konza_1" ~ (P_conc_Ca_bound_mg_kg),
-#   dataset == "Luquillo_1" ~ NA,
-#   # (vvv) Re-check! assuming these are the correct units, and dilute HCl is 1M step from Hedley
-#   dataset == "Luquillo_2" ~ (P_conc_dilHCl_mg_kg),
-#   dataset == "Niwot_1" ~ (P_conc_HCl_mg_kg),
-#   dataset == "Niwot_2" ~ (P_conc_HCl_mg_kg),
-#   dataset == "Niwot_3" ~ NA,
-#   dataset == "Sevilleta_1" ~ (P_conc_HCl_mg_kg),
-#   dataset == "Sevilleta_2" ~ NA,
-#   # (vvv) If resulting number is negative it gets set to zero
-#   dataset == "Toolik" ~ ifelse((P_conc_HCl_mg_kg - P_conc_citrate_mg_kg) < 0,
-#                                yes = 0, 
-#                                no = P_conc_HCl_mg_kg - P_conc_citrate_mg_kg), 
-#   TRUE ~ NA )) %>%
-# Also total P
-## NOTE: using slow P as placeholder while we wait for identification of P fractions / site
-dplyr::mutate(total.P_conc_mg.kg = dplyr::case_when(
-  # dataset == "HJAndrews_1" ~ (P_conc_total_mg_kg),
-  #   dataset == "Bonanza Creek_1" ~ (P_conc_total_mg_kg),
-  #   dataset == "Bonanza Creek_2" ~ (P_conc_total_mg_kg),
-  #   dataset == "Brazil" ~ (P_conc_total_mg_kg),
-  #   dataset == "Calhoun" ~ (P_conc_total_mg_kg),
-  #   # (vvv) Data seem to only have total P but searching for Hedley fraction
-  #   dataset == "CedarCreek_1" ~ NA, 
-  #   dataset == "Coweeta" ~ (P_conc_NH4Cl_mg_kg_1M + P_conc_HCO3_mg_kg_0.1M + P_conc_NaOH_mg_kg_0.1M + P_conc_HCl_mg_kg_0.5M + P_conc_residual), 
-  #   # (vvv) Only have a neutral salt extraction (available P). May remove dataset entirely
-  #   dataset == "Fernow" ~ NA,
-  #   dataset == "FloridaCoastal" ~ (P_stock_resin_mg_cm3 + P_stock_HCO3_mg_cm3_0.5M + P_stock_NaOH_mg_cm3_0.1M + P_stock_HCl_mg_cm3_1M  + P_stock_residual_mg_cm3),
-  #   dataset == "Hubbard Brook" ~ (P_conc_HNO3__mg_kg_1M),
-  #   dataset == "Jornada_1" ~ (P_conc_total_mg_kg),
-  #   dataset == "Jornada_2" ~ (P_conc_MgCl2_mg_kg + P_conc_NaOH_mg_kg_0.1M + P_conc_HCl_mg_kg_1M + P_conc_residual),
-  #   dataset == "Kellog_Biological_Station" ~ (Pi_conc_resin_mg_kg + Pi_conc_NaHCO3_mg_kg_0.5M + Po_conc_NaHCO3_mg_kg_0.5M + Pi_conc_microbial_mg_kg + Po_conc_microbial_mg_kg + Pi_conc_NaOH_mg_kg_0.1M + Po_conc_NaOH_mg_kg_0.1M + Pi_conc_sonic_NaOH_mg_kg_0.1M + Po_conc_sonic_NaOH_mg_kg_0.1M + Pi_conc_HCl_mg_kg_1M + Po_conc_residual_mg_kg),
-  #   # (vvv) Based on 2 different methodologies
-  #   dataset == "Konza_1" ~ (P_conc_Al_Fe_mg_kg + P_conc_occluded_mg_kg + P_conc_Ca_bound_mg_kg),
-  #   dataset == "Luquillo_1" ~ NA,
-  #   # (vvv) Re-check! assuming these are the correct units, and dilute HCl is 1M step from Hedley
-  #   dataset == "Luquillo_2" ~ (P_conc_total_mg_kg),
-  #   dataset == "Niwot_1" ~ (P_conc_resin_mg_kg + Po_conc_HCO3_mg_kg_0.5M + Pi_conc_HCO3_mg_kg_0.5M+ Po_conc_NaOH_mg_kg_0.1M + Pi_conc_NaOH_mg_kg_0.1M + P_conc_HCl_mg_kg_1M + Po_conc_sonic_HCl_mg_kg_1M + Pi_conc_sonic_HCl_mg_kg_1M + P_conc_residual_mg_kg),
-  #   dataset == "Niwot_2" ~ (P_conc_resin_mg_kg + Po_conc_HCO3_mg_kg + Pi_conc_HCO3_mg_kg + Po_conc_NaOH_mg_kg + Pi_conc_NaOH_mg_kg + P_conc_HCl_mg_kg + P_conc_residual_mg_kg),
-  #   dataset == "Niwot_3" ~ (P_conc_total_mg_kg),
-  #   dataset == "Niwot_4" ~ (P_conc_total_mg_kg),
-  #   dataset == "Sevilleta_1" ~ (P_conc_total_mg_kg),
-  #   dataset == "Sevilleta_2" ~ (P_conc_total_mg_kg),
-  #   # (vvv) If resulting number is negative it gets set to zero
-  #   dataset == "Toolik_1" ~ NA,              
-                
-                
-                
-                
-T ~ NA)) %>%
-  # After summing, remove all columns where we changed NAs to 0s
-  dplyr::select(lter:soil.mass_g.m2, slow.P_conc_mg.kg, total.P_conc_mg.kg) %>%
+  # Placeholder slow/total P
+  dplyr::mutate(slow.P_conc_mg.kg = 1:nrow(.),
+                total.P_conc_mg.kg = 1:nrow(.)) %>%
+  # # Calculate slow P conditionally
+  # dplyr::mutate(slow.P_conc_mg.kg = dplyr::case_when(
+  #   T ~ NA)) %>%
+  # # Do the same for total P
+  # dplyr::mutate(total.P_conc_mg.kg = dplyr::case_when(
+  #   T ~ NA)) %>%
+  # And for any other P fraction sum groups
+  # dplyr::mutate(___.P_conc_mg.kg = dplyr::case_when(
+  #   T ~ NA)) %>%
+  # After summing, remove all P fraction columns (because we changed real NAs to convenient 0s)
+  dplyr::select(-dplyr::starts_with("P_"), -dplyr::starts_with("Po_"), 
+                -dplyr::starts_with("Pi_")) %>%
   # Keep only unique rows
   dplyr::distinct()
 
@@ -182,7 +126,8 @@ sparc_v3 <- sparc_v2 %>%
   # By not specifying which columns to join by, all shared columns will be used
   dplyr::left_join(y = p_sums) %>%
   # Move our P sums to the left for more easy reference
-  dplyr::relocate(slow.P_conc_mg.kg, total.P_conc_mg.kg, .after = bulk.density_kg.ha)
+  dplyr::relocate(dplyr::ends_with(".P_conc_mg.kg"),
+                  .after = bulk.density_kg.ha)
 
 # Check structure
 dplyr::glimpse(sparc_v3)
@@ -233,3 +178,7 @@ googledrive::drive_upload(media = file.path("tidy_data", tidy_name),
                           overwrite = T, path = tidy_drive)
 
 # End ----
+
+
+
+
