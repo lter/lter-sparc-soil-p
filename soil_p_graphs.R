@@ -86,7 +86,7 @@ avg_graph <- function(data = avgs_df, x_var, y_var,
     geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
     # Points/labels for each dataset
     geom_point(aes(fill = lter), pch = 21, size = 3) +
-    geom_text(aes(label = dataset), nudge_y = text_nudge_y, nudge_x = text_nudge_x) +
+    geom_text(aes(label = dataset_simp), nudge_y = text_nudge_y, nudge_x = text_nudge_x) +
     # scale_fill_manual(values = n_color1) +
     sparc_theme +
     theme(legend.position = "none")
@@ -101,23 +101,13 @@ avg_graph <- function(data = avgs_df, x_var, y_var,
 ## ------------------------------------------ ##
 
 # Read in site averages data file
-avgs_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv")) %>%
-  # Simplify dataset names to make plot labels neater
-  dplyr::mutate(dataset = gsub(pattern = "Bonanza Creek", replacement = "BNZ", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Coweeta", replacement = "CWT", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Hubbard Brook", replacement = "HBR", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Jornada", replacement = "JRN", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Konza", replacement = "KNZ", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Luquillo", replacement = "LUQ", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Niwot", replacement = "NWT", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Sevilleta", replacement = "SEV", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Toolik", replacement = "ARC", x = dataset))
+avgs_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv"))
 
 # Check structure
 dplyr::glimpse(avgs_df)
 
 # Check simplified dataset names
-sort(unique(avgs_df$dataset))
+sort(unique(avgs_df$dataset_simp))
 
 # N% ~ total P
 (xsite_ntotp <- avg_graph(x_var = "mean_total.P_conc_mg.kg", y_var = "mean_N_conc_percent") +
@@ -148,13 +138,32 @@ ggsave(filename = file.path("graphs", "figure-1_across-datasets.png"),
 ## ------------------------------------------ ##
 
 # Read in more granular (spatially) data
-main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
+main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv")) %>%
+  # Simplify dataset names to make plot labels neater
+  dplyr::mutate(dataset = gsub(pattern = "Bonanza Creek", replacement = "BNZ", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Coweeta", replacement = "CWT", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Hubbard Brook", replacement = "HBR", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Jornada", replacement = "JRN", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Konza", replacement = "KNZ", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Luquillo", replacement = "LUQ", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Niwot", replacement = "NWT", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Sevilleta", replacement = "SEV", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Toolik", replacement = "ARC", x = dataset))
 
 # Check structure
 dplyr::glimpse(main_df)
 
 
-# [ UNDER CONSTRUCTION ]
+
+# Exploration...
+main_df %>%
+  dplyr::group_by(lter) %>%
+  dplyr::summarize(dataset_ct = length(unique(dataset)),
+                   datasets = paste(unique(dataset), collapse = "; "))
+
+
+# Make a test graph
+filter <- main_df
 
 
 
