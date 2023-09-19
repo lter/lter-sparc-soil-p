@@ -38,10 +38,23 @@ main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
 dplyr::glimpse(main_df)
 
 # Read in site averages as well
-avgs_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv"))
+avgs_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv")) %>%
+  # Simplify dataset names to make plot labels neater
+  dplyr::mutate(dataset = gsub(pattern = "Bonanza Creek", replacement = "BNZ", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Coweeta", replacement = "CWT", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Hubbard Brook", replacement = "HBR", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Jornada", replacement = "JRN", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Konza", replacement = "KNZ", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Luquillo", replacement = "LUQ", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Niwot", replacement = "NWT", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Sevilleta", replacement = "SEV", x = dataset)) %>%
+  dplyr::mutate(dataset = gsub(pattern = "Toolik", replacement = "ARC", x = dataset))
 
 # Check structure
 dplyr::glimpse(avgs_df)
+
+# Check simplified dataset names
+sort(unique(avgs_df$dataset))
 
 ## ------------------------------------------ ##
             # Graph Housekeeping ----
@@ -60,6 +73,18 @@ sparc_theme <- theme(panel.grid = element_blank(),
                      axis.text.y = element_text(size = 14),
                      axis.text.x = element_text(size = 13),
                      axis.title = element_text(size = 16))
+
+## ------------------------------------------ ##
+            # Custom Functions ----
+## ------------------------------------------ ##
+
+# Making the same graphs repeatedly with different X/Ys
+## Makes sense to make them into functions in order to:
+### 1. Centralize plotting aesthetics / structure
+### 2. Avoid re-typing code for every graph
+
+
+
 
 ## ------------------------------------------ ##
           # Site Average Graphs ----
@@ -82,9 +107,10 @@ ggplot(data = avgs_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)
   # geom_label(aes(label = dataset), position = position_dodge(width = 0.5)) +
   geom_text(aes(label = dataset), nudge_y = 0.05, nudge_x = -0.1) +
   # Custom labels / colors / theme
-  labs(x = "Mean Total P (mg/kg)", y = "Mean N (%)") +
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
   # scale_fill_manual(values = n_color1) +
-  sparc_theme
+  sparc_theme +
+  theme(legend.position = "none")
 
 
 # Make a N ~ total P graph
