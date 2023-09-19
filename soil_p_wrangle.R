@@ -223,10 +223,26 @@ dim(stats_v1); dim(stats_v2)
 # Check structure
 dplyr::glimpse(stats_v2)
 
-  
+## ------------------------------------------ ##
+          # Export Statistics Data ----
+## ------------------------------------------ ##
 
+# Create a final data object
+sparc_stats <- stats_v2
 
+# Check its structure
+dplyr::glimpse(sparc_stats)
 
+# Define the tidy file name
+stats_name <- "stats-ready_tidy-soil-p.csv"
+
+# Save out the final data object
+write.csv(x = sparc_stats, file = file.path("tidy_data", stats_name), 
+          row.names = F, na = "")
+
+# Upload to GoogleDrive
+googledrive::drive_upload(media = file.path("tidy_data", stats_name), 
+                          overwrite = T, path = tidy_drive)
 
 
 
