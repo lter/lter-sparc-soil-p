@@ -141,69 +141,12 @@ avg_graph <- function(data = avgs_df, x_var, y_var,
 (xsite_cslowp <- avg_graph(x_var = "mean_slow.P_conc_mg.kg", y_var = "mean_C_conc_percent") +
   labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE"))
 
-
-# Make a N ~ total P graph
-(xsite_ntotp <- ggplot(data = avgs_df, aes(x = total.P_conc_mg.kg, y = N_conc_percent)) +
-  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = lter), pch = 21, size = 3) +
-  # Custom labels / colors / theme
-  labs(x = "Total P Conc. (mg/kg)", y = "N Conc. (%)") +
-  # scale_fill_manual(values = n_color1) +
-  sparc_theme)
-
-# Export it
-ggsave(filename = file.path("graphs", "xsite_nitrogen_total-P.png"),
-       width = 5, height = 5, units = "in")
-
-# Do the same for N ~ slow P
-(xsite_nslowp <- ggplot(data = avgs_df, aes(x = slow.P_conc_mg.kg, y = N_conc_percent)) +
-  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = lter), pch = 21, size = 3) +
-  # Custom labels / colors / theme
-  labs(x = "Slow P Conc. (mg/kg)", y = "N Conc. (%)") +
-  # scale_fill_manual(values = n_color2) +
-  sparc_theme)
-
-# Export it
-ggsave(filename = file.path("graphs", "xsite_nitrogen_slow-P.png"),
-       width = 5, height = 5, units = "in")
-
-# Make a C ~ total P graph
-(xsite_ctotp <- ggplot(data = avgs_df, aes(x = total.P_conc_mg.kg, y = C_conc_percent)) +
-  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = lter), pch = 23, size = 3) +
-  # Custom labels / colors / theme
-  labs(x = "Total P Conc. (mg/kg)", y = "C Conc. (%)") +
-  # scale_fill_manual(values = c_color1) +
-  sparc_theme)
-
-# Export it
-ggsave(filename = file.path("graphs", "xsite_carbon_total-P.png"),
-       width = 5, height = 5, units = "in")
-
-# Do the same for C ~ slow P
-(xsite_cslowp <- ggplot(data = avgs_df, aes(x = slow.P_conc_mg.kg, y = C_conc_percent)) +
-  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  geom_point(aes(fill = lter), pch = 23, size = 3) +
-  # Custom labels / colors / theme
-  labs(x = "Slow P Conc. (mg/kg)", y = "C Conc. (%)") +
-  # scale_fill_manual(values = c_color2) +
-  sparc_theme)
-
-# Export it
-ggsave(filename = file.path("graphs", "xsite_carbon_slow-P.png"),
-       width = 5, height = 5, units = "in")
-
-## ------------------------------------------ ##
-        # Site Average Combo Graph ----
-## ------------------------------------------ ##
-
 # Assemble a multi-panel figure!
 cowplot::plot_grid(xsite_ntotp, xsite_nslowp, xsite_ctotp, xsite_cslowp,
                    labels = "AUTO", nrow = 2, ncol = 2)
 
 # Export it
-ggsave(filename = file.path("graphs", "multipanel_xsite_carbon_slow-P.png"),
+ggsave(filename = file.path("graphs", "figure-1_across-datasets.png"),
        width = 10, height = 10, units = "in")
 
 ## ------------------------------------------ ##
