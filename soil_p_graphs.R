@@ -138,17 +138,7 @@ ggsave(filename = file.path("graphs", "figure-1_across-datasets.png"),
 ## ------------------------------------------ ##
 
 # Read in more granular (spatially) data
-main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv")) %>%
-  # Simplify dataset names to make plot labels neater
-  dplyr::mutate(dataset = gsub(pattern = "Bonanza Creek", replacement = "BNZ", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Coweeta", replacement = "CWT", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Hubbard Brook", replacement = "HBR", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Jornada", replacement = "JRN", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Konza", replacement = "KNZ", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Luquillo", replacement = "LUQ", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Niwot", replacement = "NWT", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Sevilleta", replacement = "SEV", x = dataset)) %>%
-  dplyr::mutate(dataset = gsub(pattern = "Toolik", replacement = "ARC", x = dataset))
+main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
 
 # Check structure
 dplyr::glimpse(main_df)
