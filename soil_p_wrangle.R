@@ -161,7 +161,32 @@ dplyr::glimpse(sparc_v4[1:35])
 ## ------------------------------------------ ##
 
 # Create a final data object
-sparc_tidy <- sparc_v4
+sparc_tidy <- sparc_v4 %>%
+  # Simplify dataset names to make plot labels neater
+  dplyr::mutate(dataset_simp = gsub(pattern = "Bonanza Creek", replacement = "BNZ", 
+                                    x = dataset), .before = dataset) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "CedarCreek", replacement = "CDR", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Coweeta", replacement = "CWT", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "HJAndrews", replacement = "AND", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Hubbard Brook", replacement = "HBR", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Jornada", replacement = "JRN", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Kellogg_Bio_Station", replacement = "KBS", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Konza", replacement = "KNZ", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Luquillo", replacement = "LUQ", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Niwot", replacement = "NWT", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Sevilleta", replacement = "SEV", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Toolik", replacement = "ARC", 
+                                    x = dataset_simp))
 
 # Check its structure
 dplyr::glimpse(sparc_tidy)
@@ -186,7 +211,7 @@ write.csv(x = sparc_tidy, file = file.path("tidy_data", tidy_name),
 stats_v1 <- sparc_tidy %>%
   # Pare down to only columns of interest
   ## Unspecified columns are implicitly removed
-  dplyr::select(lter, dataset, site, plot, block, core,
+  dplyr::select(lter, dataset_simp, dataset, site, plot, block, core,
                 dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
                 core.length_cm, bulk.density_g.cm3,
                 dplyr::ends_with(".P_conc_mg.kg"),
@@ -265,7 +290,7 @@ write.csv(x = sparc_stats, file = file.path("tidy_data", stats_name),
 # Prepare for calculation of summary statistics
 avgs_v1 <- sparc_stats %>%
   # Drop all information we're not interested in
-  dplyr::select(lter, dataset, dplyr::ends_with(".P_conc_mg.kg"),
+  dplyr::select(lter, dataset_simp, dataset, dplyr::ends_with(".P_conc_mg.kg"),
                 C_conc_percent, N_conc_percent) %>%
   # Pivot to long format
   tidyr::pivot_longer(cols = -lter:-dataset,
@@ -276,7 +301,8 @@ avgs_v1 <- sparc_stats %>%
 dplyr::glimpse(avgs_v1)
 
 # Compute mean / SD / SE
-avgs_v2 <- supportR::summary_table(data = avgs_v1, groups = c("lter", "dataset", "variable"),
+avgs_v2 <- supportR::summary_table(data = avgs_v1, 
+                                   groups = c("lter", "dataset_simp", "dataset", "variable"),
                                    response = "values", drop_na = T, round_digits = 6)
 
 # Check that out
