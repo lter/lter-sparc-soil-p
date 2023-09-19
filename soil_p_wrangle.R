@@ -161,16 +161,16 @@ dplyr::glimpse(sparc_v4[1:35])
 ## ------------------------------------------ ##
 
 # Create a final data object
-final_sparc <- sparc_v4
+full_sparc <- sparc_v4
 
 # Check its structure
-dplyr::glimpse(final_sparc)
+dplyr::glimpse(full_sparc)
 
 # Define the tidy file name
-tidy_name <- "tidy_soil_p.csv"
+tidy_name <- "full-data_tidy-soil-p.csv"
 
 # Save out the final data object
-write.csv(x = final_sparc, file = file.path("tidy_data", tidy_name), 
+write.csv(x = full_sparc, file = file.path("tidy_data", tidy_name), 
           row.names = F, na = "")
 
 # Upload to GoogleDrive
