@@ -305,6 +305,28 @@ avgs_v3 <- avgs_v2 %>%
 dplyr::glimpse(avgs_v3)
 ## tibble::view(avgs_v3)
 
+## ------------------------------------------ ##
+        # Export Across Site Averages ----
+## ------------------------------------------ ##
+
+# Create a final data object
+sparc_avgs <- avgs_v3
+
+# Check its structure
+dplyr::glimpse(sparc_avgs)
+
+# Define the tidy file name
+avgs_name <- "site-avgs_tidy-soil-p.csv"
+
+# Save out the final data object
+write.csv(x = sparc_avgs, file = file.path("tidy_data", avgs_name), 
+          row.names = F, na = "")
+
+# Upload to GoogleDrive
+googledrive::drive_upload(media = file.path("tidy_data", avgs_name), 
+                          overwrite = T, path = tidy_drive)
+
+
 # End ----
 
 ## ------------------------------------------ ##
