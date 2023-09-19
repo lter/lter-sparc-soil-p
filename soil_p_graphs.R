@@ -178,36 +178,41 @@ main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
 # Check structure
 dplyr::glimpse(main_df)
 
-# Identify hollow shapes
-hollow_shps <- 21:25
-
 # Exploration...
 main_df %>%
   dplyr::group_by(lter) %>%
   dplyr::summarize(dataset_ct = length(unique(dataset_simp)),
                    datasets = paste(unique(dataset_simp), collapse = "; "))
 
+LTER_site <- "ARC"
 
-# Make a test graph
-test <- main_df %>% 
-  filter(lter == "ARC")
-  
+# N% ~ total P
+(sub_ntotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
+                        x_var = "total.P_conc_mg.kg", y_var = "N_conc_percent") +
+    labs(x = "Total P (mg/kg)", y = "N (%)"))
 
-ggplot(data = test, aes(x = slow.P_conc_mg.kg, y = C_conc_percent, shape = site)) +
-  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  # Facet by LTER (just to get nice label)
-  facet_grid(. ~ lter) +
-  # Points/labels for each dataset
-  geom_point(aes(fill = lter), size = 3) +
-  scale_shape_manual(values = 21:22) +
-  sparc_theme +
-  theme(legend.position = "none")
+# N% ~ slow P
+(sub_nslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
+                         x_var = "slow.P_conc_mg.kg", y_var = "N_conc_percent") +
+    labs(x = "Slow P (mg/kg)", y = "N (%)"))
 
+# C% ~ total P
+(sub_ctotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
+                        x_var = "total.P_conc_mg.kg", y_var = "C_conc_percent") +
+    labs(x = "Total P (mg/kg)", y = "C (%)"))
 
-data <- test
+# C% ~ total P
+(sub_cslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
+                         x_var = "slow.P_conc_mg.kg", y_var = "C_conc_percent") +
+    labs(x = "Slow P (mg/kg)", y = "C (%)"))
 
+# Assemble into single graph
+cowplot::plot_grid(sub_ntotp, sub_nslowp, sub_ctotp, sub_cslowp,
+                   labels = "AUTO", nrow = 2, ncol = 2)
 
-reg_graph(data = dplyr::filter(main_df, lter == "ARC"),
-          x_var = "total.P_conc_mg.kg", y_var = "N_conc_percent")
+# Export it
+ggsave(filename = file.path("graphs", paste0("figure-2_within-LTER_", LTER_site, ".png")),
+       width = 10, height = 10, units = "in")
+
 
 # End ----
