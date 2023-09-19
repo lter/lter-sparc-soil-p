@@ -125,13 +125,21 @@ avg_graph <- function(data = avgs_df, x_var, y_var,
           # Site Average Graphs ----
 ## ------------------------------------------ ##
 
-# N % ~ total P
-avg_graph(x_var = "mean_total.P_conc_mg.kg", y_var = "mean_N_conc_percent") +
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE")
+# N% ~ total P
+(xsite_ntotp <- avg_graph(x_var = "mean_total.P_conc_mg.kg", y_var = "mean_N_conc_percent") +
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE"))
 
-# N % ~ slow P
-avg_graph(x_var = "mean_slow.P_conc_mg.kg", y_var = "mean_N_conc_percent") +
-  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE")
+# N% ~ slow P
+(xsite_nslowp <- avg_graph(x_var = "mean_slow.P_conc_mg.kg", y_var = "mean_N_conc_percent") +
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE"))
+
+# C% ~ total P
+(xsite_ctotp <- avg_graph(x_var = "mean_total.P_conc_mg.kg", y_var = "mean_C_conc_percent") +
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE"))
+
+# C% ~ total P
+(xsite_cslowp <- avg_graph(x_var = "mean_slow.P_conc_mg.kg", y_var = "mean_C_conc_percent") +
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE"))
 
 
 # Make a N ~ total P graph
