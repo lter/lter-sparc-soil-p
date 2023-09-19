@@ -188,6 +188,9 @@ sparc_tidy <- sparc_v4 %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Toolik", replacement = "ARC", 
                                     x = dataset_simp))
 
+# Check simplified dataset names
+sort(unique(sparc_tidy$dataset_simp))
+
 # Check its structure
 dplyr::glimpse(sparc_tidy)
 

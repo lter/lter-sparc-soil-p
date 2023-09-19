@@ -352,7 +352,7 @@ tidy_v2 <- tidy_v1 %>%
     raw_filename == "HJAndrews_Spears.et.al_2000.csv" ~ "AND",
     lter %in% c("Bonanza Creek_1", "Bonanza Creek_2") ~ "BNZ",
     lter %in% c("Cedar Creek ") ~ "CDR",
-    lter %in% c("Chichaqua Bottoms ") ~ "Chichaqua Bottoms",
+    lter %in% c("Chichaqua Bottoms ") ~ "Chichaqua",
     lter %in% c("Coweeta") ~ "CWT",
     lter %in% c("FloridaCoastal") ~ "FCE",
     lter %in% c("Hubbard Brook") ~ "HBR",
@@ -368,7 +368,14 @@ tidy_v2 <- tidy_v1 %>%
     lter %in% c("Calhoun") ~ "Calhoun",
     lter %in% c("Fernow") ~ "Fernow",
     # Otherwise retain whatever was in that column originally
-    T ~ lter))
+    T ~ lter)) %>%
+  # Clarify Chichaqua Bottoms dataset
+  dplyr::mutate(dataset = ifelse(lter == "Chichaqua",
+                                 yes = "CedarCreek_2",
+                                 no = dataset)) %>%
+  # And simplify LTER for that dataset
+  dplyr::mutate(lter = ifelse(lter == "Chichaqua",
+                                 yes = "CDR", no = lter)) 
 
 # Check out new LTER column
 sort(unique(tidy_v2$lter))
