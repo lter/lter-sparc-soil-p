@@ -336,44 +336,46 @@ write.csv(x = sparc_avgs, file = file.path("tidy_data", avgs_name),
 googledrive::drive_upload(media = file.path("tidy_data", avgs_name), 
                           overwrite = T, path = tidy_drive)
 
-
-# End ----
-
 ## ------------------------------------------ ##
-# Basement ----
+# Bonus - Nuanced Depth Subsetting ----
 ## ------------------------------------------ ##
 
-# Putting some possibly useful code here for posterity
+# We may eventually want a more nuanced depth subset operation
+## I figured this out when it seemed like what we wanted first
+## and am preserving it here if/when we need it later
 
+# Check structure of pre-depth subset version of the stats object
+dplyr::glimpse(stats_v2)
 
-# Depth subsetting is used to restrict core depth of samples used in analysis
-## How many *centimeters* from the first measured depth (of the mineral/A horizon) are allowed?
+# How many *centimeters* from the first measured depth (of the mineral/A horizon) are allowed?
 depth_cutoff <- 15
 
-
-# Identify minimum depth of remaining data within sample info column groups
-dplyr::group_by(dplyr::across(c(lter:block, treatment:treatment.years))) %>%
+# Start with the 
+stats_bonus <- stats_v2 %>%
+  # Group by site-information columns
+  dplyr::group_by(dplyr::across(lter:block)) %>%
+  # Calculate minimum depth within those columns
   dplyr::mutate(min_depth = ifelse(!all(is.na(depth.start_cm)),
                                    yes = min(depth.start_cm, na.rm = T),
-                                   no = NA),
-                max_allowed_depth = (min_depth + depth_cutoff),
-                .after = horizon_binary) %>%
+                                   no = NA)) %>%
+  # Also calculate the maximum 'allowed' depth using the cutoff defined above
+  dplyr::mutate(max_allowed_depth = (min_depth + depth_cutoff)) %>%
+  # Ungroup
   dplyr::ungroup() %>%
-  # Filter to only samples in that range
+  # Now filter to only samples between those bookends
   dplyr::filter(depth.start_cm >= min_depth & depth.end_cm <= max_allowed_depth) %>%
   # Drop columns needed for that filter but otherwise not needed
-  dplyr::select(-min_depth, -max_allowed_depth) %>%
-  
-  
-  # Check to make sure we're okay with the columns we dropped
-  supportR::diff_check(old = names(mega), new = names(stat_df), sort = F)
+  dplyr::select(-min_depth, -max_allowed_depth)
 
-# Check out the structure of the data
-dplyr::glimpse(stat_df)
+# How many rows does that drop?
+nrow(stats_v2); nrow(stats_bonus)
 
+# More or less data in this subset than the simpler 'depth starting at 0' subset?
+nrow(stats_v3); nrow(stats_bonus)
+## *Much* less data with this approach
 
-# Now drop any columns that don't have at least one value
-## Shouldn't be any but doesn't hurt to check
-dplyr::select(dplyr::where(~ !(all(is.na(.)) | all(. == ""))))
+# Re-check structure
+dplyr::glimpse(stats_bonus)
 
+# End ----
 
