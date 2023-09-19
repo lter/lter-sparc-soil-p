@@ -205,16 +205,12 @@ dim(sparc_tidy); dim(stats_v1)
 # Check structure
 dplyr::glimpse(stats_v1)
 
-# Need to subset to only certain horizons/depths
+# Need to subset to only certain horizons and where N/C data are present
 stats_v2 <- stats_v1 %>%
   # Keep only mineral layer (and mixed mineral/organic) data 
   dplyr::filter(horizon_binary %in% c("mineral", "mixed") |
                   # Also keep unspecified horizon information (assumes mineral)
                   nchar(horizon_binary) == 0) %>%
-  # Further subset to only cores beginning at the top of the horizon
-  dplyr::filter(depth.start_cm == 0 | 
-                  # Again, keep missing depths on assumption they start at 0
-                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm)) %>%
   # Coerce empty N/C percents into true NAs
   dplyr::mutate(C_conc_percent = ifelse(nchar(C_conc_percent) == 0,
                                         yes = NA, no = C_conc_percent),
@@ -229,14 +225,28 @@ dim(stats_v1); dim(stats_v2)
 
 # Check structure
 dplyr::glimpse(stats_v2)
-## tibble::view(stats_v2)
+
+# Finally, we want to subset to only particular depths within those horizons
+stats_v3 <- stats_v2 %>%
+# Keep only cores beginning at the top of the horizon
+dplyr::filter(depth.start_cm == 0 | 
+                # Again, keep missing depths on assumption they start at 0
+                nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
+
+# How do the dataframe dimensions change?
+dim(stats_v2); dim(stats_v3)
+## Lose some rows but no columns? Good!
+
+# Check structure
+dplyr::glimpse(stats_v3)
+## tibble::view(stats_v3)
 
 ## ------------------------------------------ ##
           # Export Statistics Data ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-sparc_stats <- stats_v2
+sparc_stats <- stats_v3
 
 # Check its structure
 dplyr::glimpse(sparc_stats)
