@@ -173,10 +173,6 @@ tidy_name <- "full-data_tidy-soil-p.csv"
 write.csv(x = sparc_tidy, file = file.path("tidy_data", tidy_name), 
           row.names = F, na = "")
 
-# Upload to GoogleDrive
-googledrive::drive_upload(media = file.path("tidy_data", tidy_name), 
-                          overwrite = T, path = tidy_drive)
-
 ## ------------------------------------------ ##
     # Statistics / Visualization Prep ----
 ## ------------------------------------------ ##
@@ -258,10 +254,6 @@ stats_name <- "stats-ready_tidy-soil-p.csv"
 write.csv(x = sparc_stats, file = file.path("tidy_data", stats_name), 
           row.names = F, na = "")
 
-# Upload to GoogleDrive
-googledrive::drive_upload(media = file.path("tidy_data", stats_name), 
-                          overwrite = T, path = tidy_drive)
-
 ## ------------------------------------------ ##
      # Calculate Across Site Averages ----
 ## ------------------------------------------ ##
@@ -332,12 +324,26 @@ avgs_name <- "site-avgs_tidy-soil-p.csv"
 write.csv(x = sparc_avgs, file = file.path("tidy_data", avgs_name), 
           row.names = F, na = "")
 
-# Upload to GoogleDrive
+## ------------------------------------------ ##
+          # Google Drive Uploads ----
+## ------------------------------------------ ##
+
+# Centralizing Drive upload steps to make it easier to re-run processing bits iteratively
+
+# Upload tidy wide-format SPARC data
+googledrive::drive_upload(media = file.path("tidy_data", tidy_name), 
+                          overwrite = T, path = tidy_drive)
+
+# Upload simplifid, stats-ready data
+googledrive::drive_upload(media = file.path("tidy_data", stats_name), 
+                          overwrite = T, path = tidy_drive)
+
+# Upload site averages
 googledrive::drive_upload(media = file.path("tidy_data", avgs_name), 
                           overwrite = T, path = tidy_drive)
 
 ## ------------------------------------------ ##
-# Bonus - Nuanced Depth Subsetting ----
+    # Bonus - Nuanced Depth Subsetting ----
 ## ------------------------------------------ ##
 
 # We may eventually want a more nuanced depth subset operation
@@ -378,4 +384,3 @@ nrow(stats_v3); nrow(stats_bonus)
 dplyr::glimpse(stats_bonus)
 
 # End ----
-
