@@ -83,6 +83,7 @@ sparc_theme <- theme(panel.grid = element_blank(),
 ### 1. Centralize plotting aesthetics / structure
 ### 2. Avoid re-typing code for every graph
 
+# Across-dataset averages graph
 avg_graph <- function(data = avgs_df, x_var, y_var, 
                       text_nudge_x = -0.1, text_nudge_y = 0.05){
   
@@ -118,8 +119,7 @@ avg_graph <- function(data = avgs_df, x_var, y_var,
   # Return that plot
   return(q) }
 
-
-
+# Within-dataset plots
 
 ## ------------------------------------------ ##
           # Site Average Graphs ----
