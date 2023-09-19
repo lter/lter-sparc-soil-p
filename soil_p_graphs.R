@@ -65,6 +65,28 @@ sparc_theme <- theme(panel.grid = element_blank(),
           # Site Average Graphs ----
 ## ------------------------------------------ ##
 
+
+
+
+ggplot(data = avgs_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
+  # Y-axis error bars
+  geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
+                    ymin = mean_N_conc_percent - std.error_N_conc_percent)) +
+  # X-axis error bars
+  geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
+                     xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg)) +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = dataset), pch = 21, size = 3) +
+  # geom_label(aes(label = dataset), position = position_dodge(width = 0.5)) +
+  geom_text(aes(label = dataset), nudge_y = 0.05, nudge_x = -0.1) +
+  # Custom labels / colors / theme
+  labs(x = "Mean Total P (mg/kg)", y = "Mean N (%)") +
+  # scale_fill_manual(values = n_color1) +
+  sparc_theme
+
+
 # Make a N ~ total P graph
 (xsite_ntotp <- ggplot(data = avgs_df, aes(x = total.P_conc_mg.kg, y = N_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
