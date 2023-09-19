@@ -214,7 +214,14 @@ stats_v2 <- stats_v1 %>%
   # Further subset to only cores beginning at the top of the horizon
   dplyr::filter(depth.start_cm == 0 | 
                   # Again, keep missing depths on assumption they start at 0
-                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
+                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm)) %>%
+  # Coerce empty N/C percents into true NAs
+  dplyr::mutate(C_conc_percent = ifelse(nchar(C_conc_percent) == 0,
+                                        yes = NA, no = C_conc_percent),
+                N_conc_percent = ifelse(nchar(N_conc_percent) == 0,
+                                        yes = NA, no = N_conc_percent)) %>%
+  # Also we need **either** N or C information in addition to P data for statistics
+  dplyr::filter(!is.na(C_conc_percent) | !is.na(N_conc_percent))
   
 # How do the dataframe dimensions change?
 dim(stats_v1); dim(stats_v2)
@@ -222,6 +229,7 @@ dim(stats_v1); dim(stats_v2)
 
 # Check structure
 dplyr::glimpse(stats_v2)
+## tibble::view(stats_v2)
 
 ## ------------------------------------------ ##
           # Export Statistics Data ----
