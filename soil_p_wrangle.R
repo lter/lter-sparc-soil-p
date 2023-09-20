@@ -55,13 +55,17 @@ sparc_v2 <- sparc_v1 %>%
                          yes = "data.type", no = measurement),
     units = ifelse(is.na(units) | nchar(units) == 0, 
                    yes = "units", no = units),
-    order = ifelse(is.na(order) | nchar(order) == 0, 
+    order = ifelse((is.na(order) | nchar(order) == 0), 
                    yes = "order", no = order),
     reagent = ifelse(is.na(reagent) | nchar(reagent) == 0, 
                      yes = "reagent", no = reagent)
   ) %>%
   # Recombine them into a single column
-  dplyr::mutate(P_fractions = paste(p_type, measurement, units, order, reagent, sep = "_")) %>%
+  dplyr::mutate(P_fractions = ifelse(!reagent %in% c("total"),
+                                     yes = paste(p_type, measurement, units, order, 
+                                                 reagent, sep = "_"),
+                                     no = paste(p_type, measurement, units,
+                                                reagent, sep = "_"))) %>%
   # Drop the separate pieces of information
   dplyr::select(-p_type, -measurement, -units, -order, -reagent) %>%
   # Reclaim wide format!
@@ -79,8 +83,8 @@ dplyr::glimpse(sparc_v2)
 # Glimpse the entire dataset
 dplyr::glimpse(sparc_v2)
 
-# Now we'll want to add together our various types of P (conditionally)
-p_sums <- sparc_v2 %>%
+# Need to replace all NAs in P fraction columns with 0s to do addition
+p_sums_v1 <- sparc_v2 %>%
   # First need to fill NAs with 0s to avoid making NA sums
   ## Pivot longer
   tidyr::pivot_longer(cols = c(dplyr::starts_with("P_"),
@@ -90,13 +94,89 @@ p_sums <- sparc_v2 %>%
   ## Remove NA / missing values
   dplyr::filter(!is.na(values) & nchar(values) != 0) %>%
   ## Pivot back to wide format and fill empty cells with 0
-  tidyr::pivot_wider(names_from = names, values_from = values, values_fill = 0) %>%
-  # Placeholder slow/total P
-  dplyr::mutate(slow.P_conc_mg.kg = 1:nrow(.),
-                total.P_conc_mg.kg = 1:nrow(.)) %>%
-  # # Calculate slow P conditionally
-  # dplyr::mutate(slow.P_conc_mg.kg = dplyr::case_when(
-  #   T ~ NA)) %>%
+  tidyr::pivot_wider(names_from = names, values_from = values) %>%
+  # Also drop P stocks (mg/m2)
+  dplyr::select(-dplyr::contains("_stock_"))
+
+# Check that out
+dplyr::glimpse(p_sums_v1)
+
+# For the below to work we need to easily reference which P fractions exist for each dataset
+for(data_obj in sort(unique(p_sums_v1$dataset))){
+  
+  # Want to know which P fractions are actually in the data
+  sub <- p_sums_v1 %>%
+    # Filter to this dataset
+    dplyr::filter(dataset == data_obj) %>%
+    # Drop completely NA/empty columns
+    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
+    # Keep only P concentration columns
+    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
+    # What is left?
+    names()
+  
+  # Message that out for later use
+  message("Following fractions found for dataset '", data_obj, 
+          "': ", paste(sub, collapse = "; ")) }
+
+# Now we'll want to add together our various types of P (conditionally)
+p_sums_v2 <- p_sums_v1 %>%
+  # Calculate slow P conditionally
+  dplyr::mutate(slow.P_conc_mg.kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ NA,
+    dataset == "Bonanza Creek_2" ~ NA,
+    dataset == "Brazil" ~ NA,
+    dataset == "Calhoun" ~ (P_conc_mg.kg_4_HCl),
+    dataset == "CedarCreek_1" ~ NA,
+    dataset == "Coweeta" ~ (P_conc_mg.kg_4_HCl),
+    dataset == "HJAndrews_1" ~ (P_conc_mg.kg_4_HCl),
+    dataset == "Hubbard Brook" ~ (P_conc_mg.kg_3_HNO3),
+    dataset == "Jornada_1" ~ NA,
+    dataset == "Jornada_2" ~ (P_conc_mg.kg_3_HCl),
+    dataset == "Kellog_Biological_Station" ~ (Pi_conc_mg.kg_6_HCl),
+    dataset == "Konza_1" ~ (P_conc_mg.kg_3_Ca.bound),
+    dataset == "Luquillo_1" ~ NA,
+    dataset == "Luquillo_2" ~ (P_conc_mg.kg_4_HCl),
+    dataset == "Niwot_1" ~ (P_conc_mg.kg_4_HCl),
+    dataset == "Niwot_2" ~ (P_conc_mg.kg_4_HCl),
+    dataset == "Niwot_3" ~ NA,
+    dataset == "Niwot_4" ~ NA,
+    dataset == "Sevilleta_1" ~ (P_conc_mg.kg_5_HCl),
+    dataset == "Sevilleta_2" ~ NA,
+    # (vvv) If resulting number is negative it gets set to zero
+    dataset == "Toolik_1" ~ ifelse((P_conc_mg.kg_order_HCl - P_conc_mg.kg_order_citrate) < 0,
+                                   yes = 0,
+                                   no = P_conc_mg.kg_order_HCl - P_conc_mg.kg_order_citrate),
+    dataset == "Toolik_2" ~ NA,
+    T ~ NA))
+
+# Recall P fractions for calculating total P
+for(data_obj in sort(unique(p_sums_v2$dataset))){
+  
+  # Want to know which P fractions are actually in the data
+  sub <- p_sums_v2 %>%
+    # Filter to this dataset
+    dplyr::filter(dataset == data_obj) %>%
+    # Drop completely NA/empty columns
+    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
+    # Keep only P concentration columns
+    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
+    # What is left?
+    names()
+  
+  # Message that out for later use
+  message("Following fractions found for dataset '", data_obj, 
+          "': ", paste(sub, collapse = "; ")) }
+
+
+
+
+
+p_sums %>%
+  select(contains("P_conc_mg.kg")) %>%
+  names()
+
+  
   # # Do the same for total P
   # dplyr::mutate(total.P_conc_mg.kg = dplyr::case_when(
   #   T ~ NA)) %>%
