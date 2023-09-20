@@ -168,22 +168,60 @@ for(data_obj in sort(unique(p_sums_v2$dataset))){
   message("Following fractions found for dataset '", data_obj, 
           "': ", paste(sub, collapse = "; ")) }
 
+# Calculate total P next
+p_sums_v3 <- p_sums_v2 %>%
+  # Do the same for total P
+  dplyr::mutate(total.P_conc_mg.kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ (P_conc_mg.kg_total),
+    dataset == "Bonanza Creek_2" ~ (P_conc_mg.kg_total),
+    dataset == "Brazil" ~ (P_conc_mg.kg_total),
+    dataset == "Calhoun" ~ (P_conc_mg.kg_total),
+    dataset == "CedarCreek_1" ~ NA,
+    dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH +
+                              P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
+    dataset == "HJAndrews_1" ~ (P_conc_mg.kg_total),
+    # (vvv) Need to double check this (unclear which HNO3 should be used [3 is cold, 4 is hot])
+    dataset == "Hubbard Brook" ~ (P_conc_mg.kg_3_HNO3 + P_conc_mg.kg_4_HNO3),
+    dataset == "Jornada_1" ~ (P_conc_mg.kg_total),
+    dataset == "Jornada_2" ~ (P_conc_mg.kg_1_MgCl2 + P_conc_mg.kg_2_NaOH + P_conc_mg.kg_3_HCl +
+                                P_conc_mg.kg_4_residual),
+    dataset == "Kellog_Biological_Station" ~ (Pi_conc_mg.kg_1_resin + 
+                                                Pi_conc_mg.kg_2_NaHCO3 + 
+                                                Po_conc_mg.kg_2_NaHCO3 +
+                                                Pi_conc_mg.kg_3_microbial + 
+                                                Po_conc_mg.kg_3_microbial +
+                                                Pi_conc_mg.kg_4_NaOH + Po_conc_mg.kg_4_NaOH +
+                                                Pi_conc_mg.kg_5_sonic.NaOH + 
+                                                Po_conc_mg.kg_5_sonic.NaOH + 
+                                                Pi_conc_mg.kg_6_HCl + P_conc_mg.kg_7_residual),
+    dataset == "Konza_1" ~ (P_conc_mg.kg_1_Al.Fe + P_conc_mg.kg_2_occluded + 
+                              P_conc_mg.kg_3_Ca.bound),
+    dataset == "Luquillo_1" ~ NA,
+    ## (vvv) Need to re-check this summing step too (no pre-existing 'total P' column)
+    dataset == "Luquillo_2" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3 + 
+                                 P_conc_mg.kg_3_NaOH +  P_conc_mg.kg_4_HCl + 
+                                 P_conc_mg.kg_5_residual),
+    dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin + 
+                              Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 + 
+                              Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_3_NaOH +
+                              P_conc_mg.kg_4_HCl +
+                              Pi_conc_mg.kg_5_sonic.HCl + Po_conc_mg.kg_5_sonic.HCl +
+                              P_conc_mg.kg_6_residual),
+    # (vvv) Check here as well (missing resin)
+    dataset == "Niwot_2" ~ (Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 +
+                              Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_3_NaOH +
+                              P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
+    dataset == "Niwot_3" ~ (P_conc_mg.kg_total),
+    dataset == "Niwot_4" ~ (P_conc_mg.kg_total),
+    dataset == "Sevilleta_1" ~ (P_conc_mg.kg_total),
+    dataset == "Sevilleta_2" ~ (P_conc_mg.kg_total),
+    dataset == "Toolik_1" ~ NA,
+    dataset == "Toolik_2" ~ (P_conc_mg.kg_total),
+    T ~ NA))
 
-
-
-
-p_sums %>%
-  select(contains("P_conc_mg.kg")) %>%
-  names()
-
-  
-  # # Do the same for total P
-  # dplyr::mutate(total.P_conc_mg.kg = dplyr::case_when(
-  #   T ~ NA)) %>%
-  # And for any other P fraction sum groups
-  # dplyr::mutate(___.P_conc_mg.kg = dplyr::case_when(
-  #   T ~ NA)) %>%
-  # After summing, remove all P fraction columns (because we changed real NAs to convenient 0s)
+# Make a final version of the p_sums object that is as simple as possible
+p_sums <- p_sums_v3 %>%
+  # Remove all P fraction columns (because we changed real NAs to convenient 0s)
   dplyr::select(-dplyr::starts_with("P_"), -dplyr::starts_with("Po_"), 
                 -dplyr::starts_with("Pi_")) %>%
   # Keep only unique rows
@@ -192,7 +230,9 @@ p_sums %>%
 # Any datasets missing?
 p_sums %>%
   dplyr::filter(is.na(slow.P_conc_mg.kg) | is.na(total.P_conc_mg.kg)) %>%
-  dplyr::select(dataset, slow.P_conc_mg.kg, total.P_conc_mg.kg) %>%
+  dplyr::group_by(dataset) %>%
+  dplyr::summarize(slow_mean = mean(slow.P_conc_mg.kg, na.rm = F),
+                   total_mean = mean(total.P_conc_mg.kg, na.rm = F)) %>%
   dplyr::distinct()
 
 # Check structure
