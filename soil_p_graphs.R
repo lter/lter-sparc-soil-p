@@ -35,11 +35,11 @@ rm(list = ls())
             # Graph Housekeeping ----
 ## ------------------------------------------ ##
 
-# Define some useful graph aesthetic components
-n_color1 <- "#f4a261"
-n_color2 <- "#e76f51"
-c_color1 <- "#2a9d8f"
-c_color2 <- "#264653"
+# Pick a color palette for LTERs
+lter_colors <- c("ARC" = "#264653", "BNZ" = "#2a9d8f", "Brazil" = "#e9c46a", 
+                 "Calhoun" = "#f4a261", "CWT" = "#f4a261", "HBR" = "#e76f51", 
+                 "JRN"  = "#606c38", "KNZ" = "#ffafcc", "LUQ" = "#d9ed92", 
+                 "NWT" = "#06d6a0", "SEV" = "#d62828")
 
 # Custom ggplot theme
 sparc_theme <- theme(panel.grid = element_blank(),
@@ -146,19 +146,23 @@ sort(unique(avgs_df$dataset_simp))
 
 # N% ~ total P
 (xsite_ntotp <- avg_graph(x_var = "mean_total.P_conc_mg.kg", y_var = "mean_N_conc_percent") +
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE"))
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+    scale_fill_manual(values = lter_colors))
 
 # N% ~ slow P
 (xsite_nslowp <- avg_graph(x_var = "mean_slow.P_conc_mg.kg", y_var = "mean_N_conc_percent") +
-  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE"))
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+    scale_fill_manual(values = lter_colors))
 
 # C% ~ total P
 (xsite_ctotp <- avg_graph(x_var = "mean_total.P_conc_mg.kg", y_var = "mean_C_conc_percent") +
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE"))
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
+    scale_fill_manual(values = lter_colors))
 
 # C% ~ total P
 (xsite_cslowp <- avg_graph(x_var = "mean_slow.P_conc_mg.kg", y_var = "mean_C_conc_percent") +
-  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE"))
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
+    scale_fill_manual(values = lter_colors))
 
 # Assemble a multi-panel figure!
 cowplot::plot_grid(xsite_ntotp, xsite_nslowp, xsite_ctotp, xsite_cslowp,
@@ -187,22 +191,26 @@ for(LTER_site in unique(main_df$lter)){
   # N% ~ total P
   (sub_ntotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
                           x_var = "total.P_conc_mg.kg", y_var = "N_conc_percent") +
-      labs(x = "Total P (mg/kg)", y = "N (%)"))
+      labs(x = "Total P (mg/kg)", y = "N (%)") +
+      scale_fill_manual(values = lter_colors))
   
   # N% ~ slow P
   (sub_nslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
                            x_var = "slow.P_conc_mg.kg", y_var = "N_conc_percent") +
-      labs(x = "Slow P (mg/kg)", y = "N (%)"))
+      labs(x = "Slow P (mg/kg)", y = "N (%)") +
+      scale_fill_manual(values = lter_colors))
   
   # C% ~ total P
   (sub_ctotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
                           x_var = "total.P_conc_mg.kg", y_var = "C_conc_percent") +
-      labs(x = "Total P (mg/kg)", y = "C (%)"))
+      labs(x = "Total P (mg/kg)", y = "C (%)") +
+      scale_fill_manual(values = lter_colors))
   
   # C% ~ total P
   (sub_cslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
                            x_var = "slow.P_conc_mg.kg", y_var = "C_conc_percent") +
-      labs(x = "Slow P (mg/kg)", y = "C (%)"))
+      labs(x = "Slow P (mg/kg)", y = "C (%)") +
+      scale_fill_manual(values = lter_colors))
   
   # Assemble into single graph
   cowplot::plot_grid(sub_ntotp, sub_nslowp, sub_ctotp, sub_cslowp,
