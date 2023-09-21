@@ -116,8 +116,8 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
     names()
   
   # Message that out for later use
-  message("Following fractions found for dataset '", data_obj, 
-          "': ", paste(sub, collapse = "; ")) }
+  message("Following fractions found for dataset '", data_obj, "': ")
+  print(paste(sub, collapse = "; ")) }
 
 # Now we'll want to add together our various types of P (conditionally)
 p_sums_v2 <- p_sums_v1 %>%
@@ -125,12 +125,14 @@ p_sums_v2 <- p_sums_v1 %>%
   dplyr::mutate(slow.P_conc_mg.kg = dplyr::case_when(
     dataset == "Bonanza Creek_1" ~ NA,
     dataset == "Bonanza Creek_2" ~ NA,
+    dataset == "Bonanza Creek_3" ~ NA,
     dataset == "Brazil" ~ NA,
     dataset == "Calhoun" ~ (P_conc_mg.kg_4_HCl),
     dataset == "CedarCreek_1" ~ NA,
     dataset == "Coweeta" ~ (P_conc_mg.kg_4_HCl),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Hubbard Brook" ~ (P_conc_mg.kg_3_HNO3),
+    dataset == "FloridaCoastal" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Jornada_1" ~ NA,
     dataset == "Jornada_2" ~ (P_conc_mg.kg_3_HCl),
     dataset == "Kellog_Biological_Station" ~ (Pi_conc_mg.kg_6_HCl),
@@ -165,8 +167,8 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
     names()
   
   # Message that out for later use
-  message("Following fractions found for dataset '", data_obj, 
-          "': ", paste(sub, collapse = "; ")) }
+  message("Following fractions found for dataset '", data_obj, "': ")
+  print(paste(sub, collapse = "; ")) }
 
 # Calculate total P next
 p_sums_v3 <- p_sums_v2 %>%
@@ -174,6 +176,7 @@ p_sums_v3 <- p_sums_v2 %>%
   dplyr::mutate(total.P_conc_mg.kg = dplyr::case_when(
     dataset == "Bonanza Creek_1" ~ (P_conc_mg.kg_total),
     dataset == "Bonanza Creek_2" ~ (P_conc_mg.kg_total),
+    dataset == "Bonanza Creek_3" ~ (P_conc_mg.kg_total),
     dataset == "Brazil" ~ (P_conc_mg.kg_total),
     dataset == "Calhoun" ~ (P_conc_mg.kg_total),
     dataset == "CedarCreek_1" ~ NA,
@@ -183,6 +186,9 @@ p_sums_v3 <- p_sums_v2 %>%
     # (vvv) Both HNO3s should be used (3 is cold, 4 is hot)
     dataset == "Hubbard Brook" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_H2O2 +
                                     P_conc_mg.kg_3_HNO3 + P_conc_mg.kg_4_HNO3),
+    dataset == "FloridaCoastal" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3 +
+                                     P_conc_mg.kg_3_NaOH + P_conc_mg.kg_4_HCl +
+                                     P_conc_mg.kg_5_residual),
     dataset == "Jornada_1" ~ (P_conc_mg.kg_total),
     dataset == "Jornada_2" ~ (P_conc_mg.kg_1_MgCl2 + P_conc_mg.kg_2_NaOH + P_conc_mg.kg_3_HCl +
                                 P_conc_mg.kg_4_residual),
@@ -290,8 +296,10 @@ sparc_tidy <- sparc_v4 %>%
                                     x = dataset_simp)) %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Coweeta", replacement = "CWT", 
                                     x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "HJAndrews", replacement = "AND", 
+  dplyr::mutate(dataset_simp = gsub(pattern = "FloridaCoastal", replacement = "FCE", 
                                     x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "HJAndrews", replacement = "AND", 
+                                  x = dataset_simp)) %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Hubbard Brook", replacement = "HBR", 
                                     x = dataset_simp)) %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Jornada", replacement = "JRN", 
@@ -484,7 +492,7 @@ write.csv(x = sparc_avgs, file = file.path("tidy_data", avgs_name),
 googledrive::drive_upload(media = file.path("tidy_data", tidy_name), 
                           overwrite = T, path = tidy_drive)
 
-# Upload simplifid, stats-ready data
+# Upload simplified, stats-ready data
 googledrive::drive_upload(media = file.path("tidy_data", stats_name), 
                           overwrite = T, path = tidy_drive)
 
