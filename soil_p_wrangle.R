@@ -299,7 +299,26 @@ sparc_v4 %>%
   dplyr::select(lter, dataset, site, block, plot, core) %>%
   dplyr::glimpse()
 
-sparc_v5 <- sparc_v4
+# Standardize missing information
+sparc_v5 <- sparc_v4 %>%
+  # Fill missing entries in a dataset-specific way
+  dplyr::mutate()
+  
+  
+  # Fill missing entries with a filler character
+  dplyr::mutate(dplyr::across(.cols = c(site, block, plot, core),
+                              .fns = ~ ifelse(is.na(.) | nchar(.) == 0,
+                                              yes = "x", no = .)))
+
+
+# Re-check structure
+sparc_v5 %>%
+  dplyr::select(lter, dataset, site, block, plot, core) %>%
+  dplyr::glimpse()
+
+# Collapse spatial organization to get a quick sense of how many granularity is available
+
+
 
 
 ## ------------------------------------------ ##
@@ -307,7 +326,7 @@ sparc_v5 <- sparc_v4
 ## ------------------------------------------ ##
 
 # Create a final data object
-sparc_tidy <- sparc_v4 %>%
+sparc_tidy <- sparc_v5 %>%
   # Simplify dataset names to make plot labels neater
   dplyr::mutate(dataset_simp = gsub(pattern = "Bonanza Creek", replacement = "BNZ", 
                                     x = dataset), .before = dataset) %>%
