@@ -35,7 +35,9 @@ googledrive::drive_ls(path = tidy_drive) %>%
                               path = file.path("tidy_data", .$name))
 
 # Read that file in
-sparc_v1 <- read.csv(file = file.path("tidy_data", "sparc-soil-p_archival-data.csv"))
+sparc_v1 <- read.csv(file = file.path("tidy_data", "sparc-soil-p_archival-data.csv")) %>%
+  # Drop row number column
+  dplyr::select(-row_num)
 
 # Glimpse it!
 dplyr::glimpse(sparc_v1)
@@ -282,6 +284,23 @@ summary(sparc_v4$total.P_stock_g.m2)
 
 # Re-check structure
 dplyr::glimpse(sparc_v4[1:35])
+
+## ------------------------------------------ ##
+        # Standardize Spatial Info ----
+## ------------------------------------------ ##
+
+# Not all datasets are collected at the same level of spatial granularity
+## Those that don't have a given level (e.g., data only at plot level not specific cores)...
+## ...have NA in the levels of information that they are missing
+# We'll fill those with a standard character here so that we can use it for stats/graphing purposes
+
+# Check structure of the relevant columns
+sparc_v4 %>%
+  dplyr::select(lter, dataset, site, block, plot, core) %>%
+  dplyr::glimpse()
+
+sparc_v5 <- sparc_v4
+
 
 ## ------------------------------------------ ##
         # Export Full SPARC Data ----
