@@ -484,7 +484,7 @@ dplyr::glimpse(avgs_prep)
 # Begin with averaging across cores within plots
 plot_avgs <- avgs_prep %>%
   # Group by everything and average the response variables
-  dplyr::group_by(lter, dataset_simp, dataset, site, block, plot) %>%
+  dplyr::group_by(lter, dataset_simp, dataset, site, block, plot, variables) %>%
   dplyr::summarize(mean = mean(vals, na.rm = T),
                    std.dev = sd(vals, na.rm = T),
                    sample.size = dplyr::n(),
@@ -505,7 +505,7 @@ block_avgs <- plot_avgs %>%
                 prev_std.error = std.error,
                 vals = mean) %>%
   # Group by everything *except* plot
-  dplyr::group_by(lter, dataset_simp, dataset, site, block) %>%
+  dplyr::group_by(lter, dataset_simp, dataset, site, block, variables) %>%
   # And get averages (and variation metrics) again
   dplyr::summarize(sample.size = dplyr::n(),
                    mean = ifelse(test = all(sample.size) == 1,
@@ -532,7 +532,7 @@ site_avgs <- block_avgs %>%
   dplyr::rename(prev_std.dev = std.dev, prev_sample.size = sample.size,
                 prev_std.error = std.error, vals = mean) %>%
   # Group by everything *except* block
-  dplyr::group_by(lter, dataset_simp, dataset, site) %>%
+  dplyr::group_by(lter, dataset_simp, dataset, site, variables) %>%
   # And get averages (and variation metrics) again
   dplyr::summarize(sample.size = dplyr::n(),
                    mean = ifelse(test = all(sample.size) == 1,
@@ -553,9 +553,41 @@ dplyr::glimpse(site_avgs)
 # Check dimension change from that step
 dim(block_avgs); dim(site_avgs)
 
+# Tweak 'shape' of plot and site averages for viz/stats use
+plots_actual <- plot_avgs %>%
+  # Drop sample size column
+  dplyr::select(-sample.size) %>%
+  # Pivot remaining columns into long format
+  tidyr::pivot_longer(cols = mean:std.error,
+                      names_to = "stat", values_to = "value") %>%
+  # Combine statistic with variable
+  dplyr::mutate(name_actual = paste0(stat, "_", variables)) %>%
+  # Drop now-superseded columns
+  dplyr::select(-stat, -variables) %>%
+  # Flip back to wide format
+  tidyr::pivot_wider(names_from = name_actual,
+                     values_from = value)
 
+# Check structure
+glimpse(plots_actual)
 
+# Do the same for the site-level averages
+sites_actual <- site_avgs %>%
+  # Drop sample size column
+  dplyr::select(-sample.size) %>%
+  # Pivot remaining columns into long format
+  tidyr::pivot_longer(cols = mean:std.error,
+                      names_to = "stat", values_to = "value") %>%
+  # Combine statistic with variable
+  dplyr::mutate(name_actual = paste0(stat, "_", variables)) %>%
+  # Drop now-superseded columns
+  dplyr::select(-stat, -variables) %>%
+  # Flip back to wide format
+  tidyr::pivot_wider(names_from = name_actual,
+                     values_from = value)
 
+# Re-check structure
+dplyr::glimpse(sites_actual)
 
 ## ------------------------------------------ ##
      # Calculate Across Site Averages ----
