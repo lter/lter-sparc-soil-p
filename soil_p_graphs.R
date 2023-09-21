@@ -21,7 +21,7 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 
 # Identify the needed data file(s) in the Drive
 ( file_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")) %>%
-    dplyr::filter(name %in% c("stats-ready_tidy-soil-p.csv", "site-avgs_tidy-soil-p.csv")) )
+    dplyr::filter(name %in% c("site-avgs_tidy-soil-p.csv", "plot-avgs_tidy-soil-p.csv")) )
 
 # Download those files
 purrr::walk2(.x = file_ids$id, .y = file_ids$name,
