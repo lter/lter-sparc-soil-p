@@ -482,7 +482,7 @@ avgs_prep <- sparc_stats %>%
 dplyr::glimpse(avgs_prep)
 
 # Begin with averaging across cores within plots
-plot_avgs <- avgs_prep %>%
+plots_v1 <- avgs_prep %>%
   # Group by everything and average the response variables
   dplyr::group_by(lter, dataset_simp, dataset, site, block, plot, variables) %>%
   dplyr::summarize(mean = mean(vals, na.rm = T),
@@ -492,13 +492,13 @@ plot_avgs <- avgs_prep %>%
   dplyr::ungroup()
 
 # Check structure
-dplyr::glimpse(plot_avgs)
+dplyr::glimpse(plots_v1)
 
 # Check dimension change from that step
-dim(avgs_prep); dim(plot_avgs)
+dim(avgs_prep); dim(plots_v1)
 
 # Next, average across plots within blocks
-block_avgs <- plot_avgs %>%
+blocks_v1 <- plots_v1 %>%
   # Rename summary metrics columns
   dplyr::rename(prev_std.dev = std.dev,
                 prev_sample.size = sample.size,
@@ -521,13 +521,13 @@ block_avgs <- plot_avgs %>%
   dplyr::ungroup()
 
 # Check structure
-dplyr::glimpse(block_avgs)
+dplyr::glimpse(blocks_v1)
 
 # Check dimension change from that step
-dim(plot_avgs); dim(block_avgs)
+dim(plots_v1); dim(blocks_v1)
 
 # Finally, average across blocks within sites
-site_avgs <- block_avgs %>%
+sites_v1 <- blocks_v1 %>%
   # Rename summary metrics columns
   dplyr::rename(prev_std.dev = std.dev, prev_sample.size = sample.size,
                 prev_std.error = std.error, vals = mean) %>%
@@ -548,13 +548,13 @@ site_avgs <- block_avgs %>%
   dplyr::ungroup()
 
 # Check structure of *that*
-dplyr::glimpse(site_avgs)
+dplyr::glimpse(sites_v1)
 
 # Check dimension change from that step
-dim(block_avgs); dim(site_avgs)
+dim(blocks_v1); dim(sites_v1)
 
 # Tweak 'shape' of plot and site averages for viz/stats use
-plots_actual <- plot_avgs %>%
+plots_v2 <- plots_v1 %>%
   # Drop sample size column
   dplyr::select(-sample.size) %>%
   # Pivot remaining columns into long format
@@ -569,10 +569,10 @@ plots_actual <- plot_avgs %>%
                      values_from = value)
 
 # Check structure
-glimpse(plots_actual)
+glimpse(plots_v2)
 
 # Do the same for the site-level averages
-sites_actual <- site_avgs %>%
+sites_v2 <- sites_v1 %>%
   # Drop sample size column
   dplyr::select(-sample.size) %>%
   # Pivot remaining columns into long format
@@ -587,78 +587,27 @@ sites_actual <- site_avgs %>%
                      values_from = value)
 
 # Re-check structure
-dplyr::glimpse(sites_actual)
+dplyr::glimpse(sites_v2)
 
 ## ------------------------------------------ ##
-     # Calculate Across Site Averages ----
+        # Export Spatial Aggergations ----
 ## ------------------------------------------ ##
 
-# The version of the data with granular (i.e., within dataset) is useful BUT
-## there are also hypotheses requiring among-site averages.
-## We might as well do that here!
-
-# Prepare for calculation of summary statistics
-avgs_v1 <- sparc_stats %>%
-  # Drop all information we're not interested in
-  dplyr::select(lter, dataset_simp, dataset, dplyr::ends_with(".P_conc_mg.kg"),
-                C_conc_percent, N_conc_percent) %>%
-  # Pivot to long format
-  tidyr::pivot_longer(cols = -lter:-dataset,
-                      names_to = "variable",
-                      values_to = "values")
-
-# Check the structure of that
-dplyr::glimpse(avgs_v1)
-
-# Compute mean / SD / SE
-avgs_v2 <- supportR::summary_table(data = avgs_v1, 
-                                   groups = c("lter", "dataset_simp", "dataset", "variable"),
-                                   response = "values", drop_na = T, round_digits = 6)
-
-# Check that out
-dplyr::glimpse(avgs_v2)
-
-# Process that into a better format for graphing / statistics
-avgs_v3 <- avgs_v2 %>%
-  # Pivot remaining columns into long format
-  tidyr::pivot_longer(cols = mean:std_error,
-                      names_to = "stat", 
-                      values_to = "value") %>%
-  # Replace underscores with periods in statistic ID columns
-  dplyr::mutate(stat = gsub(pattern = "_", replacement = ".", x = stat)) %>%
-  # Combine statistic with variable
-  dplyr::mutate(name_actual = paste0(stat, "_", variable)) %>%
-  # Drop now-superseded columns
-  dplyr::select(-stat, -variable) %>%
-  # Flip back to wide format
-  tidyr::pivot_wider(names_from = name_actual,
-                    values_from = value) %>%
-  # Drop any instances where the sample size is 1
-  dplyr::filter(dplyr::if_any(.cols = dplyr::starts_with("sample.size_"),
-                              .fns = ~ .x != 1)) %>%
-  # Now ditch all of the sample size columns
-  dplyr::select(-dplyr::starts_with("sample.size_"))
-
-# Re-check structure
-dplyr::glimpse(avgs_v3)
-## tibble::view(avgs_v3)
-
-## ------------------------------------------ ##
-        # Export Across Site Averages ----
-## ------------------------------------------ ##
-
-# Create a final data object
-sparc_avgs <- avgs_v3
+# Create a final data object for both
+sparc_site_avgs <- sites_v2
+sparc_plot_avgs <- plots_v2
 
 # Check its structure
-dplyr::glimpse(sparc_avgs)
+dplyr::glimpse(sparc_site_avgs)
+dplyr::glimpse(sparc_plot_avgs)
 
-# Define the tidy file name
-avgs_name <- "site-avgs_tidy-soil-p.csv"
+# Define the tidy file names
+sites_name <- "site-avgs_tidy-soil-p.csv"
+plots_name <- "plot-avgs_tidy-soil-p.csv"
 
-# Save out the final data object
-write.csv(x = sparc_avgs, file = file.path("tidy_data", avgs_name), 
-          row.names = F, na = "")
+# Save out the final data objects
+write.csv(x = sparc_site_avgs, file = file.path("tidy_data", sites_name), row.names = F, na = "")
+write.csv(x = sparc_plot_avgs, file = file.path("tidy_data", plots_name), row.names = F, na = "")
 
 ## ------------------------------------------ ##
           # Google Drive Uploads ----
