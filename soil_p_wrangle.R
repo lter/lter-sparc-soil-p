@@ -460,7 +460,7 @@ write.csv(x = sparc_stats, file = file.path("tidy_data", stats_name),
           row.names = F, na = "")
 
 ## ------------------------------------------ ##
-# Spatial Aggregation ----
+            # Spatial Aggregation ----
 ## ------------------------------------------ ##
 
 # We also want to average data within progressively coarser units of spatial organization
@@ -468,30 +468,78 @@ write.csv(x = sparc_stats, file = file.path("tidy_data", stats_name),
 ## Second, average across plots within blocks
 ## Third, average across blocks within sites
 
-# Begin with averaging across cores within plots
-avgs_plots <- sparc_stats
-
+# Prepare to take averages by:
+avgs_prep <- sparc_stats %>%
+  # Dropping core-specific depth/horizon columns
+  dplyr::select(-core, -dplyr::starts_with("horizon"),
+                -dplyr::starts_with("depth."), -core.length_cm,
+                -bulk.density_g.cm3) %>%
+  # Flipping to long format
+  tidyr::pivot_longer(cols = slow.P_conc_mg.kg:N_conc_percent,
+                      names_to = "variables", values_to = "vals")
 
 # Check structure
-dplyr::glimpse(avgs_plots)
+dplyr::glimpse(avgs_prep)
 
+# Begin with averaging across cores within plots
+plot_avgs <- avgs_prep %>%
+  # Group by everything and average the response variables
+  dplyr::group_by(lter, dataset_simp, dataset, site, block, plot) %>%
+  dplyr::summarize(mean = mean(vals, na.rm = T),
+                   std.dev = sd(vals, na.rm = T),
+                   sample.size = dplyr::n(),
+                   std.error = std.dev / sqrt(sample.size)) %>%
+  dplyr::ungroup()
+
+# Check structure
+dplyr::glimpse(plot_avgs)
+
+# Check dimension change from that step
+dim(avgs_prep); dim(plot_avgs)
 
 # Next, average across plots within blocks
-avgs_blocks <- avgs_plots
-
-
+block_avgs <- plot_avgs %>%
+  # Drop quantification of variation in previous average
+  dplyr::select(-std.dev, -sample.size, -std.error) %>%
+  # Rename mean column
+  dplyr::rename(vals = mean) %>%
+  # Group by everything *except* plot
+  dplyr::group_by(lter, dataset_simp, dataset, site, block) %>%
+  # And get averages (and variation metrics) again
+  dplyr::summarize(mean = mean(vals, na.rm = T),
+                   std.dev = sd(vals, na.rm = T),
+                   sample.size = dplyr::n(),
+                   std.error = std.dev / sqrt(sample.size)) %>%
+  # And ungroup
+  dplyr::ungroup()
 
 # Check structure
-dplyr::glimpse(avgs_blocks)
+dplyr::glimpse(block_avgs)
 
+# Check dimension change from that step
+dim(plot_avgs); dim(block_avgs)
 
 # Finally, average across blocks within sites
-avgs_sites <- avg_blocks
-
+site_avgs <- block_avgs %>%
+  # Drop quantification of variation in previous average
+  dplyr::select(-std.dev, -sample.size, -std.error) %>%
+  # Rename mean column
+  dplyr::rename(vals = mean) %>%
+  # Group by everything *except* block
+  dplyr::group_by(lter, dataset_simp, dataset, site) %>%
+  # And get averages (and variation metrics) again
+  dplyr::summarize(mean = mean(vals, na.rm = T),
+                   std.dev = sd(vals, na.rm = T),
+                   sample.size = dplyr::n(),
+                   std.error = std.dev / sqrt(sample.size)) %>%
+  # And ungroup
+  dplyr::ungroup()
 
 # Check structure of *that*
-dplyr::glimpse(sites_blocks)
+dplyr::glimpse(site_avgs)
 
+# Check dimension change from that step
+dim(block_avgs); dim(site_avgs)
 
 
 
