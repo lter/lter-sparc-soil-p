@@ -350,7 +350,7 @@ tidy_v2 <- tidy_v1 %>%
   dplyr::mutate(lter = dplyr::coalesce(lter, dataset)) %>%
   dplyr::mutate(lter = dplyr::case_when(
     raw_filename == "HJAndrews_Spears.et.al_2000.csv" ~ "AND",
-    lter %in% c("Bonanza Creek_1", "Bonanza Creek_2") ~ "BNZ",
+    lter %in% c("Bonanza Creek_1", "Bonanza Creek_2", "Bonanza Creek_3") ~ "BNZ",
     lter %in% c("Cedar Creek ") ~ "CDR",
     lter %in% c("Chichaqua Bottoms ") ~ "Chichaqua",
     lter %in% c("Coweeta") ~ "CWT",
@@ -403,7 +403,7 @@ tidy_v2b <- tidy_v2 %>%
     tolower(horizon) %in% c("mineral") ~ "mineral",
     T ~ horizon), .after = horizon) %>%
   # Standardize range formatting
-  dplyr::mutate(depth_raw = gsub(pattern = "_", replacement = "-", x = depth_cm)) %>%
+  dplyr::mutate(depth_raw = gsub(pattern = "_|--", replacement = "-", x = depth_cm)) %>%
   # Remove any spaces in these values
   dplyr::mutate(depth_raw = gsub(pattern = " ", replacement = "", x = depth_raw)) %>%
   # Create a version of the depth column that only includes any embedded horizon info
@@ -424,12 +424,6 @@ tidy_v2b %>%
   dplyr::select(dataset, raw_filename, depth_raw) %>%
   dplyr::distinct()
 
-# Also need to identify values that have more than one hyphen
-tidy_v2b %>%
-  dplyr::filter(stringr::str_count(string = depth_raw, pattern = "-") > 1) %>%
-  dplyr::select(dataset, raw_filename, depth_raw) %>%
-  dplyr::distinct()
-
 # Wrangle depth into actual numbers
 tidy_v2c <- tidy_v2b %>%
   dplyr::mutate(depth_range_raw = dplyr::case_when(
@@ -445,6 +439,8 @@ tidy_v2c <- tidy_v2b %>%
     ## Bonanza (2)
     ### Starting depth listed in separate column
     dataset == "Bonanza Creek_2" ~ paste0("0-", depth_raw),
+    ## Bonanza (3)
+    # dataset == "Bonanza Creek_3" ~ "0-10",
     ## Brazil
     dataset == "Brazil" & depth_raw == "0--10" ~ "0-10",
     dataset == "Brazil" & depth_raw == "10--30" ~ "10-30",
@@ -497,12 +493,6 @@ tidy_v2c <- tidy_v2b %>%
 # Re-check for malformed depth ranges
 tidy_v2c %>%
   dplyr::filter(stringr::str_detect(string = depth_range_raw, pattern = "-") != T) %>%
-  dplyr::select(dataset, raw_filename, depth_raw, depth_range_raw, horizon_raw) %>%
-  dplyr::distinct()
-
-# And too many hyphens
-tidy_v2c %>%
-  dplyr::filter(stringr::str_count(string = depth_range_raw, pattern = "-") > 1) %>%
   dplyr::select(dataset, raw_filename, depth_raw, depth_range_raw, horizon_raw) %>%
   dplyr::distinct()
 
@@ -595,11 +585,13 @@ tidy_v2f <- tidy_v2e %>%
     dataset == "Bonanza Creek_1" & depth.start_cm == 0 ~ "O",
     dataset == "Bonanza Creek_1" & depth.start_cm != 0 ~ "mineral",
     dataset == "Bonanza Creek_2" ~ "mixed",
-    dataset %in% c("Brazil", "Calhoun", "CedarCreek_1",
-                   "Coweeta", "Jornada_1", "Jornada_2",
-                   "Luquillo_1", "Luquillo_2", "Sevilleta_1",
-                   "Sevilleta_2"
-                   ) ~ "mineral", # Need to double check Brazil, Calhoun, and CDR
+    dataset %in% c("Brazil", "Calhoun", "CedarCreek_1", "CedarCreek_2",
+                   "Coweeta", "Jornada_1", "Jornada_2", "Kellogg_Bio_Station", 
+                   "Luquillo_1", "Luquillo_2", 
+                   "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
+                   "Sevilleta_1", "Sevilleta_2"
+                   ) ~ "mineral", # Need to double check Brazil & Calhoun
+    dataset == "FloridaCoastal" ~ "mixed",
     # dataset == "HJAndrews_1" ~ "",
     # dataset == "Kellogg_Bio_Station" ~ "",
     # dataset == "Niwot_1" ~ "",
@@ -615,10 +607,11 @@ tidy_v2f <- tidy_v2e %>%
     !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ "in data",
     # If filled conditionally, enter that 
     dataset %in% c("Bonanza Creek_1", "Bonanza Creek_2" ,
-                   "Brazil", "Calhoun", "CedarCreek_1",
-                   "Coweeta", "Jornada_1", "Jornada_2",
-                   "Luquillo_1", "Luquillo_2", "Sevilleta_1",
-                   "Sevilleta_2"
+                   "Brazil", "Calhoun", "CedarCreek_1", "CedarCreek_2",
+                   "Coweeta", "FloridaCoastal", "Jornada_1", "Jornada_2",
+                   "Kellogg_Bio_Station", "Luquillo_1", "Luquillo_2", 
+                   "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
+                   "Sevilleta_1", "Sevilleta_2"
     ) ~ "expert knowledge", # Need to double check Brazil, Calhoun, and CDR
     # dataset == "HJAndrews_1" ~ "",
     # dataset == "Kellogg_Bio_Station" ~ "",
@@ -699,7 +692,7 @@ tidy_v3c <- tidy_v3b %>%
   # Conditionally handle remaining issues
   dplyr::mutate(value_actual = dplyr::case_when(
     ## Missing values should be NA
-    value_clean %in% c("M", ".", "NaN", "NA000") ~ NA,
+    value_clean %in% c("M", ".", "NaN", "NA000", "0_10", "hurricane_sediment") ~ NA,
     nchar(value_clean) == 0 ~ NA,
     ## Handle 'less than' indications (note judgement call)
     value_clean == "< 0.5" ~ "0.25",
@@ -782,9 +775,11 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "HJAndrews_1" ~ 0.9,
     dataset == "Bonanza Creek_1" ~ 0.9,
     dataset == "Bonanza Creek_2" ~ 0.9,
+    dataset == "Bonanza Creek_3" ~ 0.9,
     dataset == "Brazil" ~ 0.9,
     dataset == "Calhoun" ~ 0.9,
     dataset == "CedarCreek_1" ~ 0.9,
+    dataset == "CedarCreek_2" ~ 0.9,
     dataset == "Coweeta" ~ 0.9,
     dataset == "Fernow" ~ 0.9,
     dataset == "FloridaCoastal" ~ 0.9,
