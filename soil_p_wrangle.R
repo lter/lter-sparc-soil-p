@@ -613,19 +613,15 @@ write.csv(x = sparc_plot_avgs, file = file.path("tidy_data", plots_name), row.na
           # Google Drive Uploads ----
 ## ------------------------------------------ ##
 
-# Centralizing Drive upload steps to make it easier to re-run processing bits iteratively
+# Identify tidy files (other than archival data made by 'harmonize' script)
+( ready_files <- setdiff(x = dir(path = file.path("tidy_data")), y = "sparc-soil-p_archival-data.csv") )
 
-# Upload tidy wide-format SPARC data
-googledrive::drive_upload(media = file.path("tidy_data", tidy_name), 
-                          overwrite = T, path = tidy_drive)
-
-# Upload simplified, stats-ready data
-googledrive::drive_upload(media = file.path("tidy_data", stats_name), 
-                          overwrite = T, path = tidy_drive)
-
-# Upload site averages
-googledrive::drive_upload(media = file.path("tidy_data", avgs_name), 
-                          overwrite = T, path = tidy_drive)
+# Loop across these files...
+for(file in ready_files){
+  
+  #...and upload to the Drive
+  googledrive::drive_upload(media = file.path("tidy_data", file), 
+                            overwrite = T, path = tidy_drive) }
 
 ## ------------------------------------------ ##
     # Bonus - Nuanced Depth Subsetting ----
