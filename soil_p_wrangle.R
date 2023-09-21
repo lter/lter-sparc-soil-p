@@ -299,17 +299,20 @@ sparc_v4 %>%
   dplyr::select(lter, dataset, site, block, plot, core) %>%
   dplyr::glimpse()
 
-# Standardize missing information
+# Fill missing entries in a dataset-specific way
 sparc_v5 <- sparc_v4 %>%
-  # Fill missing entries in a dataset-specific way
-  dplyr::mutate()
-  
-  
-  # Fill missing entries with a filler character
-  dplyr::mutate(dplyr::across(.cols = c(site, block, plot, core),
-                              .fns = ~ ifelse(is.na(.) | nchar(.) == 0,
-                                              yes = "x", no = .)))
-
+  # If site is missing, fill with dataset name
+  dplyr::mutate(site = ifelse(test = (is.na(site) | nchar(site) == 0),
+                              yes = dataset, no = site)) %>%
+  # If block is missing, fill with site
+  dplyr::mutate(block = ifelse(test = (is.na(block) | nchar(block) == 0),
+                               yes = site, no = block)) %>%
+  # If plot is missing, fill with block
+  dplyr::mutate(plot = ifelse(test = (is.na(plot) | nchar(plot) == 0),
+                               yes = block, no = plot)) %>%
+  # If core is missing, fill with plot
+  dplyr::mutate(core = ifelse(test = (is.na(core) | nchar(core) == 0),
+                              yes = plot, no = core))
 
 # Re-check structure
 sparc_v5 %>%
@@ -317,9 +320,16 @@ sparc_v5 %>%
   dplyr::glimpse()
 
 # Collapse spatial organization to get a quick sense of how many granularity is available
-
-
-
+sparc_v5 %>%
+  dplyr::group_by(lter, dataset) %>%
+  dplyr::summarize(site_ct = length(unique(site)),
+                   sites = paste(unique(site), collapse = "; "),
+                   block_ct = length(unique(block)),
+                   blocks = paste(unique(block), collapse = "; "),
+                   plot_ct = length(unique(plot)),
+                   plots = paste(unique(plot), collapse = "; "),
+                   core_ct = length(unique(core)),
+                   cores = paste(unique(core), collapse = "; "))
 
 ## ------------------------------------------ ##
         # Export Full SPARC Data ----
@@ -381,7 +391,7 @@ write.csv(x = sparc_tidy, file = file.path("tidy_data", tidy_name),
 stats_v1 <- sparc_tidy %>%
   # Pare down to only columns of interest
   ## Unspecified columns are implicitly removed
-  dplyr::select(lter, dataset_simp, dataset, site, plot, block, core,
+  dplyr::select(lter, dataset_simp, dataset, site, block, plot, core,
                 dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
                 core.length_cm, bulk.density_g.cm3,
                 dplyr::ends_with(".P_conc_mg.kg"),
