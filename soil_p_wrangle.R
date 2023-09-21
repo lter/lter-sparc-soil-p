@@ -151,10 +151,10 @@ p_sums_v2 <- p_sums_v1 %>%
     T ~ NA))
 
 # Recall P fractions for calculating total P
-for(data_obj in sort(unique(p_sums_v2$dataset))){
+for(data_obj in sort(unique(p_sums_v1$dataset))){
   
   # Want to know which P fractions are actually in the data
-  sub <- p_sums_v2 %>%
+  sub <- p_sums_v1 %>%
     # Filter to this dataset
     dplyr::filter(dataset == data_obj) %>%
     # Drop completely NA/empty columns
@@ -180,8 +180,9 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH +
                               P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_total),
-    # (vvv) Need to double check this (unclear which HNO3 should be used [3 is cold, 4 is hot])
-    dataset == "Hubbard Brook" ~ (P_conc_mg.kg_3_HNO3 + P_conc_mg.kg_4_HNO3),
+    # (vvv) Both HNO3s should be used (3 is cold, 4 is hot)
+    dataset == "Hubbard Brook" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_H2O2 +
+                                    P_conc_mg.kg_3_HNO3 + P_conc_mg.kg_4_HNO3),
     dataset == "Jornada_1" ~ (P_conc_mg.kg_total),
     dataset == "Jornada_2" ~ (P_conc_mg.kg_1_MgCl2 + P_conc_mg.kg_2_NaOH + P_conc_mg.kg_3_HCl +
                                 P_conc_mg.kg_4_residual),
@@ -197,9 +198,9 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Konza_1" ~ (P_conc_mg.kg_1_Al.Fe + P_conc_mg.kg_2_occluded + 
                               P_conc_mg.kg_3_Ca.bound),
     dataset == "Luquillo_1" ~ NA,
-    ## (vvv) Need to re-check this summing step too (no pre-existing 'total P' column)
+    ## (vvv) May exchange for pre-existing 'total P' column in raw data
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3 + 
-                                 P_conc_mg.kg_3_NaOH +  P_conc_mg.kg_4_HCl + 
+                                 P_conc_mg.kg_3_NaOH + P_conc_mg.kg_4_HCl + 
                                  P_conc_mg.kg_5_residual),
     dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin + 
                               Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 + 
@@ -207,8 +208,8 @@ p_sums_v3 <- p_sums_v2 %>%
                               P_conc_mg.kg_4_HCl +
                               Pi_conc_mg.kg_5_sonic.HCl + Po_conc_mg.kg_5_sonic.HCl +
                               P_conc_mg.kg_6_residual),
-    # (vvv) Check here as well (missing resin)
-    dataset == "Niwot_2" ~ (Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 +
+    dataset == "Niwot_2" ~ (P_conc_mg.kg_1_resin +
+                              Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 +
                               Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_3_NaOH +
                               P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
     dataset == "Niwot_3" ~ (P_conc_mg.kg_total),
@@ -231,8 +232,8 @@ p_sums <- p_sums_v3 %>%
 p_sums %>%
   dplyr::filter(is.na(slow.P_conc_mg.kg) | is.na(total.P_conc_mg.kg)) %>%
   dplyr::group_by(dataset) %>%
-  dplyr::summarize(slow_mean = mean(slow.P_conc_mg.kg, na.rm = F),
-                   total_mean = mean(total.P_conc_mg.kg, na.rm = F)) %>%
+  dplyr::summarize(slow_mean = mean(slow.P_conc_mg.kg, na.rm = T),
+                   total_mean = mean(total.P_conc_mg.kg, na.rm = T)) %>%
   dplyr::distinct()
 
 # Check structure
@@ -372,10 +373,10 @@ dplyr::glimpse(stats_v2)
 
 # Finally, we want to subset to only particular depths within those horizons
 stats_v3 <- stats_v2 %>%
-# Keep only cores beginning at the top of the horizon
-dplyr::filter(depth.start_cm == 0 | 
-                # Again, keep missing depths on assumption they start at 0
-                nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
+  # Keep only cores beginning at the top of the horizon
+  dplyr::filter(depth.start_cm == 0 | 
+                  # Again, keep missing depths on assumption they start at 0
+                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
 
 # How do the dataframe dimensions change?
 dim(stats_v2); dim(stats_v3)
