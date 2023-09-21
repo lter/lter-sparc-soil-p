@@ -499,17 +499,24 @@ dim(avgs_prep); dim(plot_avgs)
 
 # Next, average across plots within blocks
 block_avgs <- plot_avgs %>%
-  # Drop quantification of variation in previous average
-  dplyr::select(-std.dev, -sample.size, -std.error) %>%
-  # Rename mean column
-  dplyr::rename(vals = mean) %>%
+  # Rename summary metrics columns
+  dplyr::rename(prev_std.dev = std.dev,
+                prev_sample.size = sample.size,
+                prev_std.error = std.error,
+                vals = mean) %>%
   # Group by everything *except* plot
   dplyr::group_by(lter, dataset_simp, dataset, site, block) %>%
   # And get averages (and variation metrics) again
-  dplyr::summarize(mean = mean(vals, na.rm = T),
-                   std.dev = sd(vals, na.rm = T),
-                   sample.size = dplyr::n(),
-                   std.error = std.dev / sqrt(sample.size)) %>%
+  dplyr::summarize(sample.size = dplyr::n(),
+                   mean = ifelse(test = all(sample.size) == 1,
+                                 yes = unique(vals),
+                                 no = mean(vals, na.rm = T)),
+                   std.dev = ifelse(test = all(sample.size) == 1,
+                                    yes = unique(prev_std.dev),
+                                    no = sd(vals, na.rm = T)),
+                   std.error = ifelse(test = all(sample.size) == 1,
+                                    yes = unique(prev_std.error),
+                                    no = std.dev / sqrt(sample.size)) ) %>%
   # And ungroup
   dplyr::ungroup()
 
@@ -521,17 +528,22 @@ dim(plot_avgs); dim(block_avgs)
 
 # Finally, average across blocks within sites
 site_avgs <- block_avgs %>%
-  # Drop quantification of variation in previous average
-  dplyr::select(-std.dev, -sample.size, -std.error) %>%
-  # Rename mean column
-  dplyr::rename(vals = mean) %>%
+  # Rename summary metrics columns
+  dplyr::rename(prev_std.dev = std.dev, prev_sample.size = sample.size,
+                prev_std.error = std.error, vals = mean) %>%
   # Group by everything *except* block
   dplyr::group_by(lter, dataset_simp, dataset, site) %>%
   # And get averages (and variation metrics) again
-  dplyr::summarize(mean = mean(vals, na.rm = T),
-                   std.dev = sd(vals, na.rm = T),
-                   sample.size = dplyr::n(),
-                   std.error = std.dev / sqrt(sample.size)) %>%
+  dplyr::summarize(sample.size = dplyr::n(),
+                   mean = ifelse(test = all(sample.size) == 1,
+                                 yes = unique(vals),
+                                 no = mean(vals, na.rm = T)),
+                   std.dev = ifelse(test = all(sample.size) == 1,
+                                    yes = unique(prev_std.dev),
+                                    no = sd(vals, na.rm = T)),
+                   std.error = ifelse(test = all(sample.size) == 1,
+                                      yes = unique(prev_std.error),
+                                      no = std.dev / sqrt(sample.size)) ) %>%
   # And ungroup
   dplyr::ungroup()
 
