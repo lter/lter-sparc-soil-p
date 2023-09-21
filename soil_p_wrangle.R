@@ -412,6 +412,44 @@ write.csv(x = sparc_stats, file = file.path("tidy_data", stats_name),
           row.names = F, na = "")
 
 ## ------------------------------------------ ##
+# Spatial Aggregation ----
+## ------------------------------------------ ##
+
+# We also want to average data within progressively coarser units of spatial organization
+## First, average across cores within plots
+## Second, average across plots within blocks
+## Third, average across blocks within sites
+
+# Begin with averaging across cores within plots
+avgs_plots <- sparc_stats
+
+
+# Check structure
+dplyr::glimpse(avgs_plots)
+
+
+# Next, average across plots within blocks
+avgs_blocks <- avgs_plots
+
+
+
+# Check structure
+dplyr::glimpse(avgs_blocks)
+
+
+# Finally, average across blocks within sites
+avgs_sites <- avg_blocks
+
+
+# Check structure of *that*
+dplyr::glimpse(sites_blocks)
+
+
+
+
+
+
+## ------------------------------------------ ##
      # Calculate Across Site Averages ----
 ## ------------------------------------------ ##
 
