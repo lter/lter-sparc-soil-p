@@ -53,7 +53,12 @@ site_n <- dplyr::filter(.data = site_df, !is.na(mean_N_conc_percent))
 site_c <- dplyr::filter(.data = site_df, !is.na(mean_C_conc_percent))
 
 # Read in more granular (spatially) data
-plot_df <- read.csv(file.path("tidy_data", "plot-avgs_tidy-soil-p.csv"))
+plot_df <- read.csv(file.path("tidy_data", "plot-avgs_tidy-soil-p.csv")) %>%
+  # Do dataset number processing here too
+  tidyr::separate_wider_delim(cols = dataset_simp, delim = "_", too_few = "align_start",
+                              names = c("dataset_dup", "dataset_num"), cols_remove = F) %>%
+  dplyr::select(-dataset_dup) %>%
+  dplyr::mutate(dataset_num = ifelse(is.na(dataset_num), yes = 1, no = dataset_num))
 
 # Check structure
 dplyr::glimpse(plot_df)
@@ -82,7 +87,7 @@ sparc_theme <- theme(panel.grid = element_blank(),
                      # Facet labels (where applicable)
                      strip.text = element_text(size = 16),
                      strip.background = element_rect(color = "black", fill = "white",
-                                                     linewidth = 0.5),
+                                                     linewidth = 1),
                      # Axis tick mark / title elements
                      axis.text.y = element_text(size = 14),
                      axis.text.x = element_text(size = 13),
@@ -240,8 +245,65 @@ ggsave(filename = file.path("graphs", "figure-1_across-sites.png"),
             # Within-Site Graphs ----
 ## ------------------------------------------ ##
 
+# testing ground
+c_error <- geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
+                             ymin = mean_C_conc_percent - std.error_C_conc_percent))
+n_error <- geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
+                             ymin = mean_N_conc_percent - std.error_N_conc_percent))
+
+slowp_error <- geom_errorbarh(aes(xmax = mean_slow.P_conc_mg.kg + std.error_slow.P_conc_mg.kg,
+                                  xmin = mean_slow.P_conc_mg.kg - std.error_slow.P_conc_mg.kg))
+
+totp_error <- geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
+                                  xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg))
 # Check structure
 dplyr::glimpse(plot_df)
+
+# Check out unique datasets
+unique(plot_df$dataset_simp)
+
+# Define a dataset to use
+focal_dataset <- "BNZ_1"
+
+# Subset N & C data to only a particular dataset
+plot_nsub <- dplyr::filter(.data = plot_n, dataset_simp == focal_dataset)
+plot_csub <- dplyr::filter(.data = plot_c, dataset_simp == focal_dataset)
+
+# Identify correct point shape (in order to match figure 1)
+pt_shp <- data_shapes[unique(c(plot_nsub$dataset_num, plot_csub$dataset_num))]
+
+# Make N graphs
+
+## N ~ total P
+ggplot(data = plot_nsub, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  n_error + totp_error +
+  geom_point(aes(fill = lter), size = 3, pch = pt_shp) +
+  scale_fill_manual(values = lter_colors) +
+  facet_grid(. ~ dataset_simp) +
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+  sparc_theme +
+  theme(legend.position = "none")
+
+
+# xxxxxxx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Loop across LTERs
 for(LTER_site in unique(plot_df$lter)){
