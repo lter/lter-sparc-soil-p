@@ -241,8 +241,8 @@ unique(plot_df$dataset_simp)
 # Loop across datasets and create the four desired plots for each
 ## Note that not all datasets have both slow and total P
 ## Entirely missing P types are skipped and the resulting graphs account for this
-# for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
-for(focal_dataset in "BNZ_1"){ # Test loop
+for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
+# for(focal_dataset in "BNZ_1"){ # Test loop
   
   # Starting message
   message("Beginning across-plots figure creation for dataset: ", focal_dataset)
