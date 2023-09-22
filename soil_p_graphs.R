@@ -121,28 +121,6 @@ sparc_theme <- theme(panel.grid = element_blank(),
 # Check structure of relevant data
 dplyr::glimpse(site_df)
 
-# Early version of graph
-xsite_ntotp <- ggplot(data = site_n, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
-  # Error bars (defined above)
-  n_se + totp_se +
-  # Best fit line
-  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  # Points/labels for each dataset
-  geom_point(aes(fill = lter), pch = 21, size = 3) +
-  geom_text(aes(label = dataset_simp), nudge_y = -0.1, nudge_x = 0.2) +
-  # Custom colors / axis labels
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
-  scale_fill_manual(values = lter_colors) +
-  # Customizing theme elements
-  sparc_theme +
-  theme(legend.position = "none"); xsite_ntotp
-
-# Export this for comparison purposes
-ggsave(filename = file.path("graphs", "figure-1_varA.png"),
-       height = 7.5, width = 7.5, units = "in")
-
-
-
 # N% ~ total P
 xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
   # Error bars (defined above)
@@ -161,9 +139,6 @@ xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   sparc_theme +
   theme(legend.position = "top"); xsite_ntotp
   
-# Export an experimental version too
-ggsave(filename = file.path("graphs", "figure-1_varB.png"),
-       height = 7.5, width = 7.5, units = "in")
 
 
 
