@@ -122,7 +122,7 @@ sparc_theme <- theme(panel.grid = element_blank(),
 dplyr::glimpse(site_df)
 
 # N% ~ total P
-xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
+xsite_ntotp <- ggplot(data = site_n, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
   # Error bars (defined above)
   n_se + totp_se +
   # Best fit line
@@ -140,7 +140,7 @@ xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   theme(legend.position = "none"); xsite_ntotp
   
 # N% ~ slow P
-xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
+xsite_nslowp <- ggplot(data = site_n, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
   # Error bars (defined above)
   n_se + slowp_se +
   # Best fit line
@@ -158,7 +158,7 @@ xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_
   theme(legend.position = "none"); xsite_nslowp
 
 # C% ~ total P
-xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
+xsite_ctotp <- ggplot(data = site_c, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
   # Error bars (defined above)
   c_se + totp_se +
   # Best fit line
@@ -178,7 +178,7 @@ xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
         legend.direction = "horizontal"); xsite_ctotp
 
 # C% ~ slow P
-xsite_cslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
+xsite_cslowp <- ggplot(data = site_c, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
   # Error bars (defined above)
   c_se + slowp_se +
   # Best fit line
@@ -195,7 +195,7 @@ xsite_cslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_
   sparc_theme +
   guides(fill = F) +
   sparc_theme +
-  theme(legend.position = c(0.6, 0.85),
+  theme(legend.position = c(0.6, 0.9),
         legend.direction = "horizontal"); xsite_cslowp
 
 # Assemble a multi-panel figure!
