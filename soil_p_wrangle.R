@@ -614,7 +614,8 @@ write.csv(x = sparc_plot_avgs, file = file.path("tidy_data", plots_name), row.na
 ## ------------------------------------------ ##
 
 # Identify tidy files (other than archival data made by 'harmonize' script)
-( ready_files <- setdiff(x = dir(path = file.path("tidy_data")), y = "sparc-soil-p_archival-data.csv") )
+( ready_files <- setdiff(x = dir(path = file.path("tidy_data")), 
+                         y = "sparc-soil-p_archival-data.csv") )
 
 # Loop across these files...
 for(file in ready_files){
