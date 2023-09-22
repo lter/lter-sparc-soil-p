@@ -57,59 +57,20 @@ sparc_theme <- theme(panel.grid = element_blank(),
                      axis.title = element_text(size = 16))
 
 ## ------------------------------------------ ##
-            # Custom Functions ----
-## ------------------------------------------ ##
-
-# Making the same graphs repeatedly with different X/Ys
-## Makes sense to make them into functions in order to:
-### 1. Centralize plotting aesthetics / structure
-### 2. Avoid re-typing code for every graph
-
-# Within-dataset plots
-reg_graph <- function(data = main_df, x_var, y_var){
-  
-  # Error out if X axis isn't in data
-  if(!x_var %in% names(data))
-    stop("X variable not found in data. Check spelling")
-  
-  # Do the same for Y axis
-  if(!y_var %in% names(data))
-    stop("Y variable not found in data. Check spelling")
-  
-  # Figure out how many point shapes are needed
-  shps <- c(22, 24, 23, 21, 25)[1:length(unique(data$dataset_simp))]
-  
-  # Generate plot
-  p <- ggplot(data = data, aes(x = .data[[x_var]], y = .data[[y_var]], shape = dataset_simp)) +
-    # Best fit line
-    geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-    # Facet by LTER (just to get nice label)
-    facet_grid(. ~ lter) +
-    # Points/labels for each dataset
-    geom_point(aes(fill = lter), size = 3) +
-    # Customizing theme elements
-    scale_shape_manual(values = shps) +
-    sparc_theme +
-    guides(fill = "none")
-  
-  # Return that plot
-  return(p) }
-
-## ------------------------------------------ ##
           # Site Average Graphs ----
 ## ------------------------------------------ ##
 
 # Read in site averages data file
-avgs_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv"))
+site_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv"))
 
 # Check structure
-dplyr::glimpse(avgs_df)
+dplyr::glimpse(site_df)
 
 # Check simplified dataset names
-sort(unique(avgs_df$dataset_simp))
+sort(unique(site_df$dataset_simp))
 
 # N% ~ total P
-xsite_ntotp <- ggplot(data = avgs_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
+xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
   # Y-axis error bars
   geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
                     ymin = mean_N_conc_percent - std.error_N_conc_percent)) +
@@ -129,7 +90,7 @@ xsite_ntotp <- ggplot(data = avgs_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   theme(legend.position = "none"); xsite_ntotp
   
 # N% ~ slow P
-xsite_nslowp <- ggplot(data = avgs_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
+xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
   # Y-axis error bars
   geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
                     ymin = mean_N_conc_percent - std.error_N_conc_percent)) +
@@ -149,7 +110,7 @@ xsite_nslowp <- ggplot(data = avgs_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_
   theme(legend.position = "none"); xsite_nslowp
   
 # C% ~ total P
-xsite_ctotp <- ggplot(data = avgs_df, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
+xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
   # Y-axis error bars
   geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
                     ymin = mean_C_conc_percent - std.error_C_conc_percent)) +
@@ -169,7 +130,7 @@ xsite_ctotp <- ggplot(data = avgs_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   theme(legend.position = "none"); xsite_ctotp
 
 # C% ~ slow P
-xsite_cslowp <- ggplot(data = avgs_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
+xsite_cslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
   # Y-axis error bars
   geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
                     ymin = mean_C_conc_percent - std.error_C_conc_percent)) +
@@ -193,7 +154,7 @@ cowplot::plot_grid(xsite_ntotp, xsite_nslowp, xsite_ctotp, xsite_cslowp,
                    labels = "AUTO", nrow = 2, ncol = 2)
 
 # Export it
-ggsave(filename = file.path("graphs", "figure-1_across-datasets.png"),
+ggsave(filename = file.path("graphs", "figure-1_across-sites.png"),
        width = 10, height = 10, units = "in")
 
 ## ------------------------------------------ ##
@@ -201,48 +162,91 @@ ggsave(filename = file.path("graphs", "figure-1_across-datasets.png"),
 ## ------------------------------------------ ##
 
 # Read in more granular (spatially) data
-main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
+plot_df <- read.csv(file.path("tidy_data", "plot-avgs_tidy-soil-p.csv"))
 
 # Check structure
-dplyr::glimpse(main_df)
+dplyr::glimpse(plot_df)
 
 # Loop across LTERs
-for(LTER_site in unique(main_df$lter)){
+for(LTER_site in unique(plot_df$lter)){
   
   # Starting message
   message("Beginning graphs for ", LTER_site)
   
+  # Filter the data to just that site
+  plot_sub <- plot_df %>%
+    dplyr::filter(lter == LTER_site)
+  
   # N% ~ total P
-  (sub_ntotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
-                          x_var = "total.P_conc_mg.kg", y_var = "N_conc_percent") +
+  (sub_ntotp <- ggplot(data = plot_sub, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent,
+                                            shape = dataset_simp)) +
+      # Best fit line
+      geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+      # Facet by LTER (just to get nice label)
+      facet_grid(. ~ lter) +
+      # Points/labels for each dataset
+      geom_point(aes(fill = lter), size = 3) +
+      # Customize color / axis labels
       labs(x = "Total P (mg/kg)", y = "N (%)") +
-      scale_fill_manual(values = lter_colors))
+      scale_fill_manual(values = lter_colors) +
+      # Customizing theme elements
+      sparc_theme +
+      guides(fill = "none") )
   
   # N% ~ slow P
-  (sub_nslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
-                           x_var = "slow.P_conc_mg.kg", y_var = "N_conc_percent") +
+  (sub_nslowp <- ggplot(data = plot_sub, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent,
+                                             shape = dataset_simp)) +
+      # Best fit line
+      geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+      # Facet by LTER (just to get nice label)
+      facet_grid(. ~ lter) +
+      # Points/labels for each dataset
+      geom_point(aes(fill = lter), size = 3) +
+      # Customize color / axis labels
       labs(x = "Slow P (mg/kg)", y = "N (%)") +
-      scale_fill_manual(values = lter_colors))
+      scale_fill_manual(values = lter_colors) +
+      # Customizing theme elements
+      sparc_theme +
+      guides(fill = "none") )
   
   # C% ~ total P
-  (sub_ctotp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
-                          x_var = "total.P_conc_mg.kg", y_var = "C_conc_percent") +
+  (sub_ctotp <- ggplot(data = plot_sub, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent,
+                                            shape = dataset_simp)) +
+      # Best fit line
+      geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+      # Facet by LTER (just to get nice label)
+      facet_grid(. ~ lter) +
+      # Points/labels for each dataset
+      geom_point(aes(fill = lter), size = 3) +
+      # Customize color / axis labels
       labs(x = "Total P (mg/kg)", y = "C (%)") +
-      scale_fill_manual(values = lter_colors))
+      scale_fill_manual(values = lter_colors) +
+      # Customizing theme elements
+      sparc_theme +
+      guides(fill = "none") )
   
   # C% ~ total P
-  (sub_cslowp <- reg_graph(data = dplyr::filter(main_df, lter == LTER_site),
-                           x_var = "slow.P_conc_mg.kg", y_var = "C_conc_percent") +
+  (sub_cslowp <- ggplot(data = plot_sub, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent,
+                                             shape = dataset_simp)) +
+      # Best fit line
+      geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+      # Facet by LTER (just to get nice label)
+      facet_grid(. ~ lter) +
+      # Points/labels for each dataset
+      geom_point(aes(fill = lter), size = 3) +
+      # Customize color / axis labels
       labs(x = "Slow P (mg/kg)", y = "C (%)") +
-      scale_fill_manual(values = lter_colors))
+      scale_fill_manual(values = lter_colors) +
+      # Customizing theme elements
+      sparc_theme +
+      guides(fill = "none") )
   
   # Assemble into single graph
   cowplot::plot_grid(sub_ntotp, sub_nslowp, sub_ctotp, sub_cslowp,
                      labels = "AUTO", nrow = 2, ncol = 2)
   
   # Export it
-  ggsave(filename = file.path("graphs", paste0("figure-2_within-LTER_", LTER_site, ".png")),
-         width = 10, height = 10, units = "in")
-  }
+  ggsave(filename = file.path("graphs", paste0("figure-2_", LTER_site, "_across-plots.png")),
+         width = 10, height = 10, units = "in") }
 
 # End ----
