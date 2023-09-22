@@ -80,6 +80,20 @@ lter_colors <- c("ARC" = "#264653", "BNZ" = "#2a9d8f", "Brazil" = "#e9c46a",
 # Shapes for dataset numbers
 data_shapes <- c("1" = 21, "2" = 22, "3" = 24, "4" = 23)
 
+# Define error bars for metrics we're sure to graph
+## Carbon SE
+c_se <- geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
+                             ymin = mean_C_conc_percent - std.error_C_conc_percent))
+## Nitrogen SE
+n_se <- geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
+                             ymin = mean_N_conc_percent - std.error_N_conc_percent))
+## Slow P SE
+slowp_se <- geom_errorbarh(aes(xmax = mean_slow.P_conc_mg.kg + std.error_slow.P_conc_mg.kg,
+                                  xmin = mean_slow.P_conc_mg.kg - std.error_slow.P_conc_mg.kg))
+## Total P SE
+totp_se <- geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
+                                 xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg))
+
 # Custom ggplot theme
 sparc_theme <- theme(panel.grid = element_blank(),
                      panel.background = element_blank(),
@@ -105,14 +119,8 @@ dplyr::glimpse(site_df)
 
 # Early version of graph
 xsite_ntotp <- ggplot(data = site_n, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
-  # Y-axis error bars
-  geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
-                    ymin = mean_N_conc_percent - std.error_N_conc_percent),
-                alpha = 0.6) +
-  # X-axis error bars
-  geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
-                     xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg),
-                 alpha = 0.6) +
+  # Error bars (defined above)
+  n_se + totp_se +
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
@@ -133,14 +141,8 @@ ggsave(filename = file.path("graphs", "figure-1_varA.png"),
 
 # N% ~ total P
 xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
-  # Y-axis error bars
-  geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
-                    ymin = mean_N_conc_percent - std.error_N_conc_percent),
-                alpha = 0.6) +
-  # X-axis error bars
-  geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
-                     xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg),
-                 alpha = 0.6) +
+  # Error bars (defined above)
+  n_se + totp_se +
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
@@ -172,12 +174,8 @@ ggsave(filename = file.path("graphs", "figure-1_varB.png"),
 
 # N% ~ slow P
 xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
-  # Y-axis error bars
-  geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
-                    ymin = mean_N_conc_percent - std.error_N_conc_percent)) +
-  # X-axis error bars
-  geom_errorbarh(aes(xmax = mean_slow.P_conc_mg.kg + std.error_slow.P_conc_mg.kg,
-                     xmin = mean_slow.P_conc_mg.kg - std.error_slow.P_conc_mg.kg)) +
+  # Error bars (defined above)
+  n_se + slowp_se +
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
@@ -190,17 +188,10 @@ xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_
   sparc_theme +
   theme(legend.position = "none"); xsite_nslowp
   
-
-
-
 # C% ~ total P
 xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
-  # Y-axis error bars
-  geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
-                    ymin = mean_C_conc_percent - std.error_C_conc_percent)) +
-  # X-axis error bars
-  geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
-                     xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg)) +
+  # Error bars (defined above)
+  c_se + totp_se +
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
@@ -215,12 +206,8 @@ xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
 
 # C% ~ slow P
 xsite_cslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
-  # Y-axis error bars
-  geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
-                    ymin = mean_C_conc_percent - std.error_C_conc_percent)) +
-  # X-axis error bars
-  geom_errorbarh(aes(xmax = mean_slow.P_conc_mg.kg + std.error_slow.P_conc_mg.kg,
-                     xmin = mean_slow.P_conc_mg.kg - std.error_slow.P_conc_mg.kg)) +
+  # Error bars (defined above)
+  c_se + slowp_se +
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
@@ -245,17 +232,6 @@ ggsave(filename = file.path("graphs", "figure-1_across-sites.png"),
             # Within-Site Graphs ----
 ## ------------------------------------------ ##
 
-# testing ground
-c_error <- geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
-                             ymin = mean_C_conc_percent - std.error_C_conc_percent))
-n_error <- geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
-                             ymin = mean_N_conc_percent - std.error_N_conc_percent))
-
-slowp_error <- geom_errorbarh(aes(xmax = mean_slow.P_conc_mg.kg + std.error_slow.P_conc_mg.kg,
-                                  xmin = mean_slow.P_conc_mg.kg - std.error_slow.P_conc_mg.kg))
-
-totp_error <- geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
-                                  xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg))
 # Check structure
 dplyr::glimpse(plot_df)
 
@@ -277,7 +253,7 @@ pt_shp <- data_shapes[unique(c(plot_nsub$dataset_num, plot_csub$dataset_num))]
 ## N ~ total P
 ggplot(data = plot_nsub, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  n_error + totp_error +
+  n_se + totp_se +
   geom_point(aes(fill = lter), size = 3, pch = pt_shp) +
   scale_fill_manual(values = lter_colors) +
   facet_grid(. ~ dataset_simp) +
