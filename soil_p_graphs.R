@@ -71,8 +71,6 @@ data_shapes <- c("1" = 21, "2" = 22, "3" = 24, "4" = 23)
 sparc_theme <- theme(panel.grid = element_blank(),
                      panel.background = element_blank(),
                      axis.line = element_line(color = "black"),
-                     # Legend components
-                     legend.title = element_blank(),
                      # Facet labels (where applicable)
                      strip.text = element_text(size = 16),
                      strip.background = element_rect(color = "black", fill = "white",
@@ -82,35 +80,43 @@ sparc_theme <- theme(panel.grid = element_blank(),
                      axis.text.x = element_text(size = 13),
                      axis.title = element_text(size = 16))
 
+# Custom 'guts' of the site plots
+
+
 ## ------------------------------------------ ##
           # Site Average Graphs ----
 ## ------------------------------------------ ##
 
-
-# Check structure
+# Check structure of relevant data
 dplyr::glimpse(site_df)
-
 
 # N% ~ total P
 xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
   # Y-axis error bars
   geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
-                    ymin = mean_N_conc_percent - std.error_N_conc_percent)) +
+                    ymin = mean_N_conc_percent - std.error_N_conc_percent),
+                alpha = 0.6) +
   # X-axis error bars
   geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
-                     xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg)) +
+                     xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg),
+                 alpha = 0.6) +
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
-  geom_point(aes(fill = lter), pch = 21, size = 3) +
-  geom_text(aes(label = dataset_simp), nudge_y = -0.1, nudge_x = 0.2) +
-  # Custom colors / axis labels
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
-  scale_fill_manual(values = lter_colors) +
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3) +
   # Customizing theme elements
-  sparc_theme +
-  theme(legend.position = "none"); xsite_ntotp
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE",
+       fill = "LTER", shape = "Dataset Number") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  # guides(fill = guide_legend(override.aes= data_shapes)) +
+  sparc_theme; xsite_ntotp
   
+
+
+
+
 # N% ~ slow P
 xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
   # Y-axis error bars
