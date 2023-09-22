@@ -361,4 +361,69 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
   
 } # Close loop
 
+## ------------------------------------------ ##
+          # Bonus Within-Site Graph ----
+## ------------------------------------------ ##
+
+# Glimpse plot data
+dplyr::glimpse(plot_df)
+
+# Make the experimental 'bonus' graph
+## Panel 1 - N ~ total P
+exp1 <- ggplot(data = plot_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent, 
+                                   color = lter)) +
+  # Best-fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F) +
+  # Y limits
+  ylim(0, 1.7) +
+  # Custom color, axis labels, and theme elements
+  scale_color_manual(values = lter_colors) +
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+  sparc_theme +
+  theme(legend.position = c(0.5, 0.95), 
+        legend.title = element_blank(),
+        legend.direction = "horizontal"); exp1
+
+## Panel 2 - N ~ slow P
+exp2 <- ggplot(data = plot_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent, 
+                                   color = lter)) +
+  geom_smooth(method = "lm", formula = "y ~ x", se = F) +
+  ylim(0, 1.7) +
+  scale_color_manual(values = lter_colors) +
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+  sparc_theme +
+  theme(legend.position = "none"); exp2
+
+## Panel 3 - C ~ total P
+exp3 <- ggplot(data = plot_df, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent, 
+                                   color = lter)) +
+  # Best-fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F) +
+  # Y limit
+  ylim(c(min(plot_df$mean_C_conc_percent, na.rm = T),
+         max(plot_df$mean_C_conc_percent, na.rm = T))) +
+  # Custom color, axis labels, and theme elements
+  scale_color_manual(values = lter_colors) +
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
+  sparc_theme +
+  theme(legend.position = "none"); exp3
+
+## Panel 4 - C ~ slow P
+exp4 <- ggplot(data = plot_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent, 
+                                   color = lter)) +
+  geom_smooth(method = "lm", formula = "y ~ x", se = F) +
+  ylim(c(min(plot_df$mean_C_conc_percent, na.rm = T),
+         max(plot_df$mean_C_conc_percent, na.rm = T))) +
+  scale_color_manual(values = lter_colors) +
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
+  sparc_theme +
+  theme(legend.position = "none"); exp4
+
+# Assemble into a multi-panel graph
+cowplot::plot_grid(exp1, exp2, exp3, exp4, labels = "AUTO", nrow = 2)
+
+# Export
+ggsave(filename = file.path("graphs", "figure-2_All-Datasets_across-plots.png"), 
+       width = 10, height = 10, units = "in")
+
 # End ----
