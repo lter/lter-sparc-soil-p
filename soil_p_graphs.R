@@ -340,6 +340,21 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
 } # Close loop
 
 ## ------------------------------------------ ##
+            # Upload to Drive ----
+## ------------------------------------------ ##
+
+# Identify current graphs
+( done_graphs <- dir(path = file.path("graphs")) )
+
+# Identify the relevant Drive folder
+graph_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1CXWTX_d78w3o02lcd4LloRaii6CT7QLB")
+
+# Loop across them and upload to the Google Drive
+for(png in done_graphs){
+  googledrive::drive_upload(media = file.path("graphs", png),
+                            path = graph_drive, overwrite = T) }
+
+## ------------------------------------------ ##
           # Bonus Within-Site Graph ----
 ## ------------------------------------------ ##
 
