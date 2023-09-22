@@ -242,7 +242,7 @@ unique(plot_df$dataset_simp)
 ## Note that not all datasets have both slow and total P
 ## Entirely missing P types are skipped and the resulting graphs account for this
 for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
-# for(focal_dataset in "BNZ_1"){ # Test loop
+  # for(focal_dataset in "BNZ_1"){ # Test loop
   
   # Starting message
   message("Beginning across-plots figure creation for dataset: ", focal_dataset)
@@ -297,7 +297,8 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
   
   # Assemble this into a two-panel graph
   if(length(n_graphs) != 0){
-    n_bipanel <- cowplot::plot_grid(plotlist = n_graphs, ncol = 2, labels = n_labs) }
+    n_bipanel <- cowplot::plot_grid(plotlist = n_graphs, ncol = 2, labels = n_labs) } else {
+      n_bipanel <- NULL }
   
   # Now make a list for the C graphs
   c_graphs <- list()
@@ -342,7 +343,8 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
   
   # Assemble this into a two-panel graph
   if(length(c_graphs) != 0){
-    c_bipanel <- cowplot::plot_grid(plotlist = c_graphs, ncol = 2, labels = c_labs) }
+    c_bipanel <- cowplot::plot_grid(plotlist = c_graphs, ncol = 2, labels = c_labs) } else {
+      c_bipanel <- NULL }
   
   # If either N or C graphs can exist, finalize and export the figure!
   if(length(n_graphs) != 0 | length(c_graphs) != 0){
@@ -357,7 +359,7 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
     # Export with an informative file name
     ggsave(filename = file.path("graphs", focal_name), width = 10, height = 10, units = "in") } 
   
-  } # Close loop
+} # Close loop
 
 
 
