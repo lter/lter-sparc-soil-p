@@ -356,7 +356,7 @@ exp1 <- ggplot(data = plot_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_
   ylim(0, 1.7) +
   # Custom color, axis labels, and theme elements
   scale_color_manual(values = lter_colors) +
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+  labs(x = "Mean Total P (mg/kg)", y = "Mean N (%)") +
   sparc_theme +
   theme(legend.position = c(0.5, 0.95), 
         legend.title = element_blank(),
@@ -368,7 +368,7 @@ exp2 <- ggplot(data = plot_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_p
   geom_smooth(method = "lm", formula = "y ~ x", se = F) +
   ylim(0, 1.7) +
   scale_color_manual(values = lter_colors) +
-  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+  labs(x = "Mean Slow P (mg/kg)", y = "Mean N (%)") +
   sparc_theme +
   theme(legend.position = "none"); exp2
 
@@ -382,7 +382,7 @@ exp3 <- ggplot(data = plot_df, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_
          max(plot_df$mean_C_conc_percent, na.rm = T))) +
   # Custom color, axis labels, and theme elements
   scale_color_manual(values = lter_colors) +
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
+  labs(x = "Mean Total P (mg/kg)", y = "Mean C (%)") +
   sparc_theme +
   theme(legend.position = "none"); exp3
 
@@ -393,7 +393,7 @@ exp4 <- ggplot(data = plot_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_p
   ylim(c(min(plot_df$mean_C_conc_percent, na.rm = T),
          max(plot_df$mean_C_conc_percent, na.rm = T))) +
   scale_color_manual(values = lter_colors) +
-  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
+  labs(x = "Mean Slow P (mg/kg)", y = "Mean C (%)") +
   sparc_theme +
   theme(legend.position = "none"); exp4
 
