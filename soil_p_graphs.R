@@ -296,7 +296,8 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
   n_labs <- c("A", "B")[length(n_graphs)]
   
   # Assemble this into a two-panel graph
-  n_bipanel <- cowplot::plot_grid(plotlist = n_graphs, ncol = 2, labels = n_labs)
+  if(length(n_graphs) != 0){
+    n_bipanel <- cowplot::plot_grid(plotlist = n_graphs, ncol = 2, labels = n_labs) }
   
   # Now make a list for the C graphs
   c_graphs <- list()
@@ -340,17 +341,23 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
   c_labs <- c("C", "D")[length(c_graphs)]
   
   # Assemble this into a two-panel graph
-  c_bipanel <- cowplot::plot_grid(plotlist = c_graphs, ncol = 2, labels = c_labs)
+  if(length(c_graphs) != 0){
+    c_bipanel <- cowplot::plot_grid(plotlist = c_graphs, ncol = 2, labels = c_labs) }
   
-  # Combine the two bi-panel graphs into a single quad panel graph
-  focal_figure <- cowplot::plot_grid(n_bipanel, c_bipanel, nrow = 2, labels = NULL)
+  # If either N or C graphs can exist, finalize and export the figure!
+  if(length(n_graphs) != 0 | length(c_graphs) != 0){
+    
+    # Combine the two bi-panel graphs into a single quad panel graph
+    focal_figure <- cowplot::plot_grid(n_bipanel, c_bipanel, nrow = 2, labels = NULL)
+    
+    # Make a nice filename for this particular sub-figure
+    focal_name <- paste0("figure-2_", gsub(pattern = "_", replacement = "-", 
+                                           x = focal_dataset), "_across-plots.png")
+    
+    # Export with an informative file name
+    ggsave(filename = file.path("graphs", focal_name), width = 10, height = 10, units = "in") } 
   
-  # Make a nice filename for this particular sub-figure
-  focal_name <- paste0("figure-2_", gsub(pattern = "_", replacement = "-", 
-                                         x = focal_dataset), "_across-plots.png")
-  
-  # Export with an informative file name
-  ggsave(filename = file.path("graphs", focal_name), width = 10, height = 10, units = "in") }
+  } # Close loop
 
 
 
