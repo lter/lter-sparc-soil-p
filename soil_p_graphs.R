@@ -137,7 +137,7 @@ xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
-  theme(legend.position = "top"); xsite_ntotp
+  theme(legend.position = "none"); xsite_ntotp
   
 # N% ~ slow P
 xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
@@ -155,7 +155,7 @@ xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
-  theme(legend.position = "top"); xsite_nslowp
+  theme(legend.position = "none"); xsite_nslowp
 
 # C% ~ total P
 xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
@@ -172,8 +172,10 @@ xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   scale_fill_manual(values = lter_colors) +
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
+  guides(shape = F) +
   sparc_theme +
-  theme(legend.position = "top"); xsite_ctotp
+  theme(legend.position = c(0.6, 0.85),
+        legend.direction = "horizontal"); xsite_ctotp
 
 # C% ~ slow P
 xsite_cslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
@@ -191,7 +193,10 @@ xsite_cslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
-  theme(legend.position = "top"); xsite_cslowp
+  guides(fill = F) +
+  sparc_theme +
+  theme(legend.position = c(0.6, 0.85),
+        legend.direction = "horizontal"); xsite_cslowp
 
 # Assemble a multi-panel figure!
 cowplot::plot_grid(xsite_ntotp, xsite_nslowp, xsite_ctotp, xsite_cslowp,
