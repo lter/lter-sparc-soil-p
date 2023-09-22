@@ -84,19 +84,19 @@ data_shapes <- c("1" = 21, "2" = 22, "3" = 24, "4" = 23)
 ## Carbon SE
 c_se <- geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
                              ymin = mean_C_conc_percent - std.error_C_conc_percent),
-                      width = 0.1)
+                      width = 0, na.rm = T)
 ## Nitrogen SE
 n_se <- geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
                              ymin = mean_N_conc_percent - std.error_N_conc_percent),
-                      width = 0.1)
+                      width = 0, na.rm = T)
 ## Slow P SE
 slowp_se <- geom_errorbarh(aes(xmax = mean_slow.P_conc_mg.kg + std.error_slow.P_conc_mg.kg,
                                   xmin = mean_slow.P_conc_mg.kg - std.error_slow.P_conc_mg.kg),
-                           height = 0.1)
+                           height = 0, na.rm = T)
 ## Total P SE
 totp_se <- geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
                                  xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg),
-                          height = 0.1)
+                          height = 0, na.rm = T)
 
 # Custom ggplot theme
 sparc_theme <- theme(panel.grid = element_blank(),
