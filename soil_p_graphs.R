@@ -248,16 +248,132 @@ plot_csub <- dplyr::filter(.data = plot_c, dataset_simp == focal_dataset)
 # Identify correct point shape (in order to match figure 1)
 pt_shp <- data_shapes[unique(c(plot_nsub$dataset_num, plot_csub$dataset_num))]
 
-# Make N graphs
+# Make a list for N graphs
+n_graphs <- list()
 
-## N ~ total P
-ggplot(data = plot_nsub, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
+# If there is any total P data in this dataset:
+if(any(!is.na(plot_nsub$mean_total.P_conc_mg.kg))){
+  
+  # Graph N% ~ total P and add to the plot list
+  n_graphs[[1]] <- ggplot(data = plot_nsub, aes(x = mean_total.P_conc_mg.kg,
+                                                 y = mean_N_conc_percent)) +
+     # Best-fit line
+     geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+     # Error bars for Y and X (behind points)
+     n_se + totp_se +
+     # Points
+     geom_point(aes(fill = lter), size = 3, pch = pt_shp) +
+     # Facet by dataset to get nice label
+     facet_grid(. ~ dataset_simp) +
+     # Custom color, axis labels, and theme elements
+     scale_fill_manual(values = lter_colors) +
+     labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+     sparc_theme +
+     theme(legend.position = "none") }
+
+# If there is any *slow* P in this dataset:
+if(any(!is.na(plot_nsub$mean_slow.P_conc_mg.kg))){
+  
+  # Graph N% ~ total P and add to the plot list
+  n_graphs[[2]] <- ggplot(data = plot_nsub, aes(x = mean_slow.P_conc_mg.kg,
+                                                y = mean_N_conc_percent)) +
+    geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+    n_se + slowp_se +
+    geom_point(aes(fill = lter), size = 3, pch = pt_shp) +
+    facet_grid(. ~ dataset_simp) +
+    scale_fill_manual(values = lter_colors) +
+    labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+    sparc_theme +
+    theme(legend.position = "none") }
+
+# Define panel labels based on how many we need
+n_labs <- c("A", "B")[length(n_graphs)]
+
+# Assemble this into a two-panel graph
+n_bipanel <- cowplot::plot_grid(plotlist = n_graphs, ncol = 2, labels = n_labs)
+
+# Now make a list for the C graphs
+c_graphs <- list()
+
+# If there is any total P data in this dataset:
+if(any(!is.na(plot_csub$mean_total.P_conc_mg.kg))){
+  
+  # Graph N% ~ total P and add to the plot list
+  c_graphs[[1]] <- ggplot(data = plot_csub, aes(x = mean_total.P_conc_mg.kg,
+                                                y = mean_C_conc_percent)) +
+    # Best-fit line
+    geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+    # Error bars for Y and X (behind points)
+    c_se + totp_se +
+    # Points
+    geom_point(aes(fill = lter), size = 3, pch = pt_shp) +
+    # Facet by dataset to get nice label
+    facet_grid(. ~ dataset_simp) +
+    # Custom color, axis labels, and theme elements
+    scale_fill_manual(values = lter_colors) +
+    labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
+    sparc_theme +
+    theme(legend.position = "none") }
+
+# If there is any *slow* P in this dataset:
+if(any(!is.na(plot_csub$mean_slow.P_conc_mg.kg))){
+  
+  # Graph N% ~ total P and add to the plot list
+  c_graphs[[2]] <- ggplot(data = plot_csub, aes(x = mean_slow.P_conc_mg.kg,
+                                                y = mean_C_conc_percent)) +
+    geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+    c_se + slowp_se +
+    geom_point(aes(fill = lter), size = 3, pch = pt_shp) +
+    facet_grid(. ~ dataset_simp) +
+    scale_fill_manual(values = lter_colors) +
+    labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
+    sparc_theme +
+    theme(legend.position = "none") }
+
+# Define panel labels based on how many we need
+c_labs <- c("C", "D")[length(c_graphs)]
+
+# Assemble this into a two-panel graph
+c_bipanel <- cowplot::plot_grid(plotlist = c_graphs, ncol = 2, labels = c_labs)
+
+# Combine the two bi-panel graphs into a single quad panel graph
+focal_figure <- cowplot::plot_grid(n_bipanel, c_bipanel, nrow = 2, labels = NULL)
+
+# Export with an informative file name
+ggsave(filename = file.path("graphs", 
+                            paste0("figure-2_", gsub("_", "-", focal_dataset), "_across-plots.png")),
+       width = 10, height = 10, units = "in")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# basement ----
+
+## N ~ slow P
+ggplot(data = plot_nsub, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
+  # Best-fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-  n_se + totp_se +
+  # Error bars for Y and X (behind points)
+  n_se + slowp_se +
+  # Points
   geom_point(aes(fill = lter), size = 3, pch = pt_shp) +
-  scale_fill_manual(values = lter_colors) +
+  # Facet by dataset to get nice label
   facet_grid(. ~ dataset_simp) +
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
+  # Custom color, axis labels, and theme elements
+  scale_fill_manual(values = lter_colors) +
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
   sparc_theme +
   theme(legend.position = "none")
 
