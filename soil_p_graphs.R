@@ -32,6 +32,29 @@ purrr::walk2(.x = file_ids$id, .y = file_ids$name,
 rm(list = ls())
 
 ## ------------------------------------------ ##
+                # Load Data ----
+## ------------------------------------------ ##
+
+# Read in site averages data file
+site_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv")) %>%
+  # Get a column that is the dataset number
+  tidyr::separate_wider_delim(cols = dataset_simp, delim = "_", too_few = "align_start",
+                              names = c("dataset_dup", "dataset_num")) %>%
+  # Drop now-duplicated dataset column
+  dplyr::select(-dataset_dup) %>%
+  # If no number, fill with 1
+  dplyr::mutate(dataset_num = ifelse(is.na(dataset_num), yes = 1, no = dataset_num))
+
+# Check structure
+dplyr::glimpse(site_df)
+
+# Read in more granular (spatially) data
+plot_df <- read.csv(file.path("tidy_data", "plot-avgs_tidy-soil-p.csv"))
+
+# Check structure
+dplyr::glimpse(plot_df)
+
+## ------------------------------------------ ##
             # Graph Housekeeping ----
 ## ------------------------------------------ ##
 
@@ -40,6 +63,9 @@ lter_colors <- c("ARC" = "#264653", "BNZ" = "#2a9d8f", "Brazil" = "#e9c46a",
                  "Calhoun" = "#f4a261", "CWT" = "#f4a261", "HBR" = "#e76f51", 
                  "JRN"  = "#606c38", "KNZ" = "#ffafcc", "LUQ" = "#d9ed92", 
                  "NWT" = "#06d6a0", "SEV" = "#d62828")
+
+# Shapes for dataset numbers
+data_shapes <- c("1" = 21, "2" = 22, "3" = 24, "4" = 23)
 
 # Custom ggplot theme
 sparc_theme <- theme(panel.grid = element_blank(),
@@ -60,14 +86,10 @@ sparc_theme <- theme(panel.grid = element_blank(),
           # Site Average Graphs ----
 ## ------------------------------------------ ##
 
-# Read in site averages data file
-site_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv"))
 
 # Check structure
 dplyr::glimpse(site_df)
 
-# Check simplified dataset names
-sort(unique(site_df$dataset_simp))
 
 # N% ~ total P
 xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
@@ -160,9 +182,6 @@ ggsave(filename = file.path("graphs", "figure-1_across-sites.png"),
 ## ------------------------------------------ ##
             # Within-Site Graphs ----
 ## ------------------------------------------ ##
-
-# Read in more granular (spatially) data
-plot_df <- read.csv(file.path("tidy_data", "plot-avgs_tidy-soil-p.csv"))
 
 # Check structure
 dplyr::glimpse(plot_df)
