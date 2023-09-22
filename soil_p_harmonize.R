@@ -592,12 +592,7 @@ tidy_v2f <- tidy_v2e %>%
                    "Sevilleta_1", "Sevilleta_2"
                    ) ~ "mineral", # Need to double check Brazil & Calhoun
     dataset == "FloridaCoastal" ~ "mixed",
-    # dataset == "HJAndrews_1" ~ "",
-    # dataset == "Kellogg_Bio_Station" ~ "",
-    # dataset == "Niwot_1" ~ "",
-    # dataset == "Niwot_2" ~ "",
-    # dataset == "Niwot_3" ~ "",
-    # dataset == "Niwot_4" ~ "",
+    ### dataset == "HJAndrews_1" ~ "",
     # If not in data and not known, fill with NA
     T ~ NA), .after = horizon_raw) %>%
   # Identify the source of this information
@@ -613,12 +608,7 @@ tidy_v2f <- tidy_v2e %>%
                    "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
                    "Sevilleta_1", "Sevilleta_2"
     ) ~ "expert knowledge", # Need to double check Brazil, Calhoun, and CDR
-    # dataset == "HJAndrews_1" ~ "",
-    # dataset == "Kellogg_Bio_Station" ~ "",
-    # dataset == "Niwot_1" ~ "",
-    # dataset == "Niwot_2" ~ "",
-    # dataset == "Niwot_3" ~ "",
-    # dataset == "Niwot_4" ~ "",
+    ### dataset == "HJAndrews_1" ~ "",
     # If no horizon information in this column, the source is NA
     is.na(horizon_actual) ~ NA,
     # Otherwise fill with NA
@@ -752,6 +742,7 @@ dplyr::glimpse(tidy_v4)
 
 # Check to see if any columns were lost/gained (should only be 'sample_replicate' lost)
 supportR::diff_check(old = names(tidy_v3), new = names(tidy_v4))
+## I checked and 'depth_units' is a one-off oddball column we can safely ignore
 
 ## ------------------------------------------ ##
         # Bulk Density / Soil Fixes ----
@@ -998,7 +989,7 @@ tidy_v8b <- tidy_v8a %>%
   dplyr::summarize(value = mean(value, na.rm = T)) %>%
   dplyr::ungroup()
 
-# If there were any duplicates, we should lose rows
+# If there were any duplicates, we would lose rows
 nrow(tidy_v8a); nrow(tidy_v8b)
 
 # Re-check full data structure
