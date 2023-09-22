@@ -37,9 +37,6 @@ rm(list = ls())
 
 # Read in site averages data file
 site_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv")) %>%
-  # Fill missing SD/SE with 0 for plotting convenience
-  dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("std."),
-                              .fns = ~ ifelse(is.na(.), yes = 0, no = .))) %>%
   # Get a column that is the dataset number
   tidyr::separate_wider_delim(cols = dataset_simp, delim = "_", too_few = "align_start",
                               names = c("dataset_dup", "dataset_num"), cols_remove = F) %>%
@@ -56,10 +53,7 @@ site_n <- dplyr::filter(.data = site_df, !is.na(mean_N_conc_percent))
 site_c <- dplyr::filter(.data = site_df, !is.na(mean_C_conc_percent))
 
 # Read in more granular (spatially) data
-plot_df <- read.csv(file.path("tidy_data", "plot-avgs_tidy-soil-p.csv")) %>%
-  # Fill missing SD/SE with 0 for plotting convenience
-  dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("std."),
-                              .fns = ~ ifelse(is.na(.), yes = 0, no = .)))
+plot_df <- read.csv(file.path("tidy_data", "plot-avgs_tidy-soil-p.csv"))
 
 # Check structure
 dplyr::glimpse(plot_df)
