@@ -60,7 +60,7 @@ dplyr::glimpse(plot_df)
 
 # Pick a color palette for LTERs
 lter_colors <- c("ARC" = "#264653", "BNZ" = "#2a9d8f", "Brazil" = "#e9c46a", 
-                 "Calhoun" = "#f4a261", "CWT" = "#f4a261", "HBR" = "#e76f51", 
+                 "Calhoun" = "#f4a261", "CWT" = "#7209b7", "HBR" = "#e76f51", 
                  "JRN"  = "#606c38", "KNZ" = "#ffafcc", "LUQ" = "#d9ed92", 
                  "NWT" = "#06d6a0", "SEV" = "#d62828")
 
@@ -78,10 +78,10 @@ sparc_theme <- theme(panel.grid = element_blank(),
                      # Axis tick mark / title elements
                      axis.text.y = element_text(size = 14),
                      axis.text.x = element_text(size = 13),
-                     axis.title = element_text(size = 16))
-
-# Custom 'guts' of the site plots
-
+                     axis.title = element_text(size = 16),
+                     # Legend tweaks
+                     legend.key = element_blank(),
+                     legend.background = element_blank())
 
 ## ------------------------------------------ ##
           # Site Average Graphs ----
@@ -103,15 +103,16 @@ xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
-  geom_point(aes(fill = lter, shape = dataset_num), size = 3) +
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
   # Customizing theme elements
   labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE",
-       fill = "LTER", shape = "Dataset Number") +
+       shape = "Dataset Number", fill = "LTER") +
   scale_shape_manual(values = data_shapes) +
   scale_fill_manual(values = lter_colors) +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  # guides(fill = guide_legend(override.aes= data_shapes)) +
-  sparc_theme; xsite_ntotp
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
+  sparc_theme +
+  theme(legend.position = "top"); xsite_ntotp
   
 
 
