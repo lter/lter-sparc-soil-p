@@ -139,18 +139,6 @@ xsite_ntotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   sparc_theme +
   theme(legend.position = "top"); xsite_ntotp
   
-
-
-
-
-
-
-
-
-
-
-
-
 # N% ~ slow P
 xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
   # Error bars (defined above)
@@ -158,15 +146,17 @@ xsite_nslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
-  geom_point(aes(fill = lter), pch = 21, size = 3) +
-  geom_text(aes(label = dataset_simp), nudge_y = -0.1, nudge_x = 0.2) +
-  # Custom colors / axis labels
-  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE") +
-  scale_fill_manual(values = lter_colors) +
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
   # Customizing theme elements
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
-  theme(legend.position = "none"); xsite_nslowp
-  
+  theme(legend.position = "top"); xsite_nslowp
+
 # C% ~ total P
 xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
   # Error bars (defined above)
@@ -174,14 +164,16 @@ xsite_ctotp <- ggplot(data = site_df, aes(x = mean_total.P_conc_mg.kg, y = mean_
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
-  geom_point(aes(fill = lter), pch = 21, size = 3) +
-  geom_text(aes(label = dataset_simp), nudge_y = -0.1, nudge_x = 0.2) +
-  # Custom colors / axis labels
-  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
-  scale_fill_manual(values = lter_colors) +
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
   # Customizing theme elements
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
-  theme(legend.position = "none"); xsite_ctotp
+  theme(legend.position = "top"); xsite_ctotp
 
 # C% ~ slow P
 xsite_cslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
@@ -190,14 +182,16 @@ xsite_cslowp <- ggplot(data = site_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_
   # Best fit line
   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
   # Points/labels for each dataset
-  geom_point(aes(fill = lter), pch = 21, size = 3) +
-  geom_text(aes(label = dataset_simp), nudge_y = -0.1, nudge_x = 0.2) +
-  # Custom colors / axis labels
-  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE") +
-  scale_fill_manual(values = lter_colors) +
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
   # Customizing theme elements
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
-  theme(legend.position = "none"); xsite_cslowp
+  theme(legend.position = "top"); xsite_cslowp
 
 # Assemble a multi-panel figure!
 cowplot::plot_grid(xsite_ntotp, xsite_nslowp, xsite_ctotp, xsite_cslowp,
