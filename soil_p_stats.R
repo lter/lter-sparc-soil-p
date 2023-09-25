@@ -34,9 +34,6 @@ rm(list = ls())
 # Identify Drive folder to upload stat results
 stat_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1it7t9b3JF9V2Tdnt10lR130-CLs0Nxub")
 
-# Clear environment
-rm(list = ls())
-
 # Read in stats/viz-ready file
 main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
 
