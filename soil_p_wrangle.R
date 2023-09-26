@@ -247,7 +247,35 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   print(paste(sub, collapse = "; ")) }
 
 # Calculate Bicarb P
-p_sums_v4 <- p_sums_v3
+p_sums_v4 <- p_sums_v3 %>%
+  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ NA,
+    dataset == "Bonanza Creek_2" ~ NA,
+    dataset == "Bonanza Creek_3" ~ NA,
+    dataset == "Brazil" ~ NA,
+    dataset == "Calhoun" ~ NA,
+    dataset == "CedarCreek_1" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
+    dataset == "Coweeta" ~ NA,
+    dataset == "FloridaCoastal" ~ NA,
+    dataset == "HJAndrews_1" ~ NA,
+    dataset == "Hubbard Brook" ~ NA,
+    dataset == "Jornada_1" ~ NA,
+    dataset == "Jornada_2" ~ NA,
+    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Konza_1" ~ NA,
+    dataset == "Luquillo_1" ~ NA,
+    dataset == "Luquillo_2" ~ NA,
+    dataset == "Luquillo_3" ~ NA,
+    dataset == "Niwot_1" ~ NA,
+    dataset == "Niwot_2" ~ NA,
+    dataset == "Niwot_3" ~ NA,
+    dataset == "Niwot_4" ~ NA,
+    dataset == "Sevilleta_1" ~ NA,
+    dataset == "Sevilleta_2" ~ NA,
+    dataset == "Toolik_1" ~ NA,
+    dataset == "Toolik_2" ~ NA,
+    T ~ NA))
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -268,7 +296,35 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   print(paste(sub, collapse = "; ")) }
 
 # Calculate available P
-p_sums_v5 <- p_sums_v4
+p_sums_v5 <- p_sums_v4 %>%
+  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ NA,
+    dataset == "Bonanza Creek_2" ~ NA,
+    dataset == "Bonanza Creek_3" ~ NA,
+    dataset == "Brazil" ~ NA,
+    dataset == "Calhoun" ~ NA,
+    dataset == "CedarCreek_1" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
+    dataset == "Coweeta" ~ NA,
+    dataset == "FloridaCoastal" ~ NA,
+    dataset == "HJAndrews_1" ~ NA,
+    dataset == "Hubbard Brook" ~ NA,
+    dataset == "Jornada_1" ~ NA,
+    dataset == "Jornada_2" ~ NA,
+    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Konza_1" ~ NA,
+    dataset == "Luquillo_1" ~ NA,
+    dataset == "Luquillo_2" ~ NA,
+    dataset == "Luquillo_3" ~ NA,
+    dataset == "Niwot_1" ~ NA,
+    dataset == "Niwot_2" ~ NA,
+    dataset == "Niwot_3" ~ NA,
+    dataset == "Niwot_4" ~ NA,
+    dataset == "Sevilleta_1" ~ NA,
+    dataset == "Sevilleta_2" ~ NA,
+    dataset == "Toolik_1" ~ NA,
+    dataset == "Toolik_2" ~ NA,
+    T ~ NA))
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -289,7 +345,35 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   print(paste(sub, collapse = "; ")) }
 
 # Calculate NaOH P
-p_sums_v6 <- p_sums_v5
+p_sums_v6 <- p_sums_v5 %>%
+  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ NA,
+    dataset == "Bonanza Creek_2" ~ NA,
+    dataset == "Bonanza Creek_3" ~ NA,
+    dataset == "Brazil" ~ NA,
+    dataset == "Calhoun" ~ NA,
+    dataset == "CedarCreek_1" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
+    dataset == "Coweeta" ~ NA,
+    dataset == "FloridaCoastal" ~ NA,
+    dataset == "HJAndrews_1" ~ NA,
+    dataset == "Hubbard Brook" ~ NA,
+    dataset == "Jornada_1" ~ NA,
+    dataset == "Jornada_2" ~ NA,
+    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Konza_1" ~ NA,
+    dataset == "Luquillo_1" ~ NA,
+    dataset == "Luquillo_2" ~ NA,
+    dataset == "Luquillo_3" ~ NA,
+    dataset == "Niwot_1" ~ NA,
+    dataset == "Niwot_2" ~ NA,
+    dataset == "Niwot_3" ~ NA,
+    dataset == "Niwot_4" ~ NA,
+    dataset == "Sevilleta_1" ~ NA,
+    dataset == "Sevilleta_2" ~ NA,
+    dataset == "Toolik_1" ~ NA,
+    dataset == "Toolik_2" ~ NA,
+    T ~ NA))
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -310,7 +394,35 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   print(paste(sub, collapse = "; ")) }
 
 # Calculate intermediate P
-p_sums_v7 <- p_sums_v6
+p_sums_v7 <- p_sums_v6 %>%
+  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ NA,
+    dataset == "Bonanza Creek_2" ~ NA,
+    dataset == "Bonanza Creek_3" ~ NA,
+    dataset == "Brazil" ~ NA,
+    dataset == "Calhoun" ~ NA,
+    dataset == "CedarCreek_1" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
+    dataset == "Coweeta" ~ NA,
+    dataset == "FloridaCoastal" ~ NA,
+    dataset == "HJAndrews_1" ~ NA,
+    dataset == "Hubbard Brook" ~ NA,
+    dataset == "Jornada_1" ~ NA,
+    dataset == "Jornada_2" ~ NA,
+    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Konza_1" ~ NA,
+    dataset == "Luquillo_1" ~ NA,
+    dataset == "Luquillo_2" ~ NA,
+    dataset == "Luquillo_3" ~ NA,
+    dataset == "Niwot_1" ~ NA,
+    dataset == "Niwot_2" ~ NA,
+    dataset == "Niwot_3" ~ NA,
+    dataset == "Niwot_4" ~ NA,
+    dataset == "Sevilleta_1" ~ NA,
+    dataset == "Sevilleta_2" ~ NA,
+    dataset == "Toolik_1" ~ NA,
+    dataset == "Toolik_2" ~ NA,
+    T ~ NA))
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -331,7 +443,35 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   print(paste(sub, collapse = "; ")) }
 
 # Calculate biological P
-p_sums_v8 <- p_sums_v7
+p_sums_v8 <- p_sums_v7 %>%
+  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+    dataset == "Bonanza Creek_1" ~ NA,
+    dataset == "Bonanza Creek_2" ~ NA,
+    dataset == "Bonanza Creek_3" ~ NA,
+    dataset == "Brazil" ~ NA,
+    dataset == "Calhoun" ~ NA,
+    dataset == "CedarCreek_1" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
+    dataset == "Coweeta" ~ NA,
+    dataset == "FloridaCoastal" ~ NA,
+    dataset == "HJAndrews_1" ~ NA,
+    dataset == "Hubbard Brook" ~ NA,
+    dataset == "Jornada_1" ~ NA,
+    dataset == "Jornada_2" ~ NA,
+    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Konza_1" ~ NA,
+    dataset == "Luquillo_1" ~ NA,
+    dataset == "Luquillo_2" ~ NA,
+    dataset == "Luquillo_3" ~ NA,
+    dataset == "Niwot_1" ~ NA,
+    dataset == "Niwot_2" ~ NA,
+    dataset == "Niwot_3" ~ NA,
+    dataset == "Niwot_4" ~ NA,
+    dataset == "Sevilleta_1" ~ NA,
+    dataset == "Sevilleta_2" ~ NA,
+    dataset == "Toolik_1" ~ NA,
+    dataset == "Toolik_2" ~ NA,
+    T ~ NA))
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
