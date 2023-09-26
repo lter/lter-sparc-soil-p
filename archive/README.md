@@ -4,4 +4,4 @@ This folder contains archived/deprecated scripts or scripts that are only infreq
 
 ## Script Descriptions
 
-- `.R`
+- `ancillary-skeletons.R` - Makes left-most spatial columns from 'stats-ready' data into skeleton to use as template for various ancillary data Google Sheets
