@@ -63,17 +63,22 @@ sparc_v2 <- sparc_v1 %>%
                      yes = "reagent", no = reagent)
   ) %>%
   # Recombine them into a single column
-  dplyr::mutate(P_fractions = ifelse(!reagent %in% c("total"),
-                                     yes = paste(p_type, measurement, units, order, 
-                                                 reagent, sep = "_"),
-                                     no = paste(p_type, measurement, units,
-                                                reagent, sep = "_"))) %>%
+  dplyr::mutate(fractions = dplyr::case_when(
+    reagent == "total" ~ paste(p_type, measurement, units, reagent, sep = "_"),
+    T ~ paste(p_type, measurement, units, order, reagent, sep = "_"))) %>%
   # Drop the separate pieces of information
   dplyr::select(-p_type, -measurement, -units, -order, -reagent) %>%
   # Reclaim wide format!
-  tidyr::pivot_wider(names_from = P_fractions, 
+  tidyr::pivot_wider(names_from = fractions, 
                      values_from = value,
-                     values_fill = NA)
+                     values_fill = NA) %>%
+  # And rename Al/Fe columns more simply
+  dplyr::rename(Al_conc_mg.g_AC = Al_conc_mg.g_1_molarity_AC_time_temp,
+                Al_conc_mg.g_OX = Al_conc_mg.g_1_molarity_OX_time_temp,
+                Fe_conc_mg.g_AC = Fe_conc_mg.g_1_molarity_AC_time_temp,
+                Fe_conc_mg.g_OX = Fe_conc_mg.g_1_molarity_OX_time_temp,
+                Fe2_conc_mg.g_HCl = Fe2_conc_mg.g_order_molarity_HCl_time_temp,
+                Fe3_conc_mg.g_HCl = Fe3_conc_mg.g_order_molarity_HCl_time_temp)
 
 # Glimpse data structure
 dplyr::glimpse(sparc_v2)
