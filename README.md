@@ -10,33 +10,15 @@
 
 - https://lternet.edu/working-groups/soil-p-control-of-c-and-n/
 
-## Guidelines for sharing scripts
+## Script Explanations
 
-- All code should include sufficient annotation and documentation so that other users can understand and run the scripts 
-- Use RStudio projects to manage working directory
-- Write your scripts such that other users can run the code without modifications. Keep file paths and other variables that might need to be changed at the beginning of the script, just after attaching the necessary libraries
-- Check out the Scientific Computing Team’s best practice tips for [storing file paths](https://nceas.github.io/scicomp.github.io/best_practices.html#file-paths)
-- Include an attribution header to your scripts or Rmarkdown documents
+- `soil_p_harmonize.R` - Accepts the [GoogleSheet Data Key](https://docs.google.com/spreadsheets/d/1fJswJ876A1LfFbiwJJ9aJp-Bvl0QEdzjMThOWEHkQUU/edit#gid=402780056) and the raw input files and harmonizes them (i.e., synonymizes columns and combines). Then performs generally necessary tidying / wrangling. Ends by exporting "archival" data (i.e., mostly long-format data relevant to a broad suite of potential data re-users)
 
-Example:
+- `soil_p_wrangle.R` - Accepts the harmonized data (see `soil_p_harmonize.R`) and performs additional wrangling required by the Soil P SPARC group. Exports an analysis-ready CSV.
 
-```r
-## ---------------------------
-##
-## Script name: 
-##
-## Purpose of script:
-##
-## Author: 
-##
-## Email: 
-##
-## ---------------------------
+- `soil_p_stats.R` - Performs desired statistical analysis to test hypotheses of Soil P SPARC group.
 
-library(tidyverse)
-
-```
-
+- `soil_p_graphs.R` - Creates exploratory graphs / publication-quality graphs for fundamental hypotheses or for useful visualizations of data
 
 ## Supplementary Resources
 

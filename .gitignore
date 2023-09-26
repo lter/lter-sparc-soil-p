@@ -46,6 +46,9 @@ vignettes/*.pdf
 
 # Folders to ignore
 raw_data/
+exploratory_graphs/
+tidy_data/
 
-# Files to ignore
+# File types to ignore
 *.csv
+*.png
