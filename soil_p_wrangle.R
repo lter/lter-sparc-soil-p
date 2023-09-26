@@ -55,11 +55,11 @@ sparc_v2 <- sparc_v1 %>%
   dplyr::mutate(
     measurement = ifelse((is.na(measurement) | nchar(measurement) == 0), 
                          yes = "data.type", no = measurement),
-    units = ifelse(is.na(units) | nchar(units) == 0, 
+    units = ifelse((is.na(units) | nchar(units) == 0), 
                    yes = "units", no = units),
     order = ifelse((is.na(order) | nchar(order) == 0), 
                    yes = "order", no = order),
-    reagent = ifelse(is.na(reagent) | nchar(reagent) == 0, 
+    reagent = ifelse((is.na(reagent) | nchar(reagent) == 0), 
                      yes = "reagent", no = reagent)
   ) %>%
   # Recombine them into a single column
@@ -148,9 +148,9 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "Sevilleta_1" ~ (P_conc_mg.kg_5_HCl),
     dataset == "Sevilleta_2" ~ NA,
     # (vvv) If resulting number is negative it gets set to zero
-    dataset == "Toolik_1" ~ ifelse((P_conc_mg.kg_order_HCl - P_conc_mg.kg_order_citrate) < 0,
+    dataset == "Toolik_1" ~ ifelse((P_conc_mg.kg_1_HCl - P_conc_mg.kg_1_citrate) < 0,
                                    yes = 0,
-                                   no = P_conc_mg.kg_order_HCl - P_conc_mg.kg_order_citrate),
+                                   no = P_conc_mg.kg_1_HCl - P_conc_mg.kg_1_citrate),
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
 
