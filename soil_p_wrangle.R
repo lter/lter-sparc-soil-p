@@ -719,12 +719,38 @@ dim(stats_v1); dim(stats_v2)
 # Check structure
 dplyr::glimpse(stats_v2)
 
-# Need to calculate something different for LUQ_2
+# Need to do a weighted average across 0-2 and 2-10 depth cores
 luq2_v1 <- stats_v2 %>%
+  # Subset as needed
   dplyr::filter(dataset_simp == "LUQ_2")
 
 # Calculate across 0-2 and 2-10 depths into a single value
-luq2_v2 <- luq2_v1
+luq2_v2 <- luq2_v1 %>%
+  # Flip to long format
+  tidyr::pivot_longer(cols = -lter:-bulk.density_g.cm3) %>%
+  # Do needed weighted calculation
+  dplyr::mutate(value = case_when(
+    depth.start_cm == 0 & depth.end_cm == 2 ~ value * 0.2,
+    depth.start_cm == 8 & depth.end_cm == 10 ~ value * 0.8,
+    T ~ value)) %>%
+  # Fix depth values and core lengths
+  dplyr::mutate(core.length_cm = dplyr::case_when(
+    depth.start_cm == 0 & depth.end_cm == 2 ~ 10,
+    depth.start_cm == 2 & depth.end_cm == 10 ~ 10,
+    T ~ core.length_cm)) %>%
+  dplyr::mutate(depth.end_cm = ifelse(depth.start_cm == 0 & depth.end_cm == 2,
+                                      yes = 10, no = depth.end_cm)) %>%
+  dplyr::mutate(depth.start_cm = ifelse(depth.start_cm == 2 & depth.end_cm == 10,
+                                        yes = 0, no = depth.start_cm)) %>%
+  # Sum our resolved depths
+  dplyr::group_by(dplyr::across(.cols = -value)) %>%
+  dplyr::summarize(value = sum(value, na.rm = T)) %>%
+  dplyr::ungroup() %>%
+  # Reshape wider
+  tidyr::pivot_wider(names_from = name, values_from = value)
+
+# Check structure
+dplyr::glimpse(luq2_v2)
 
 # Split off on LUQ_2
 not_luq2 <- stats_v2 %>%
