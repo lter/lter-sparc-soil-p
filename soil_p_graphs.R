@@ -73,7 +73,8 @@ plot_c <- dplyr::filter(.data = plot_df, !is.na(mean_C_conc_percent))
 
 # Pick a color palette for LTERs
 lter_colors <- c("ARC" = "#264653", "BNZ" = "#2a9d8f", "Brazil" = "#e9c46a", 
-                 "Calhoun" = "#f4a261", "CWT" = "#7209b7", "HBR" = "#e76f51", 
+                 "Calhoun" = "#f4a261", "CWT" = "#7209b7", "FCE" = "#00b4d8",
+                 "HBR" = "#e76f51", 
                  "JRN"  = "#606c38", "KNZ" = "#ffafcc", "LUQ" = "#d9ed92", 
                  "NWT" = "#06d6a0", "SEV" = "#d62828")
 
@@ -133,7 +134,7 @@ xsite_ntotp <- ggplot(data = site_n, aes(x = mean_total.P_conc_mg.kg, y = mean_N
   labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE",
        shape = "Dataset Number", fill = "LTER") +
   scale_shape_manual(values = data_shapes) +
-  # scale_fill_manual(values = lter_colors) +
+  scale_fill_manual(values = lter_colors) +
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
@@ -151,7 +152,7 @@ xsite_nslowp <- ggplot(data = site_n, aes(x = mean_slow.P_conc_mg.kg, y = mean_N
   labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE",
        shape = "Dataset Number", fill = "LTER") +
   scale_shape_manual(values = data_shapes) +
-  # scale_fill_manual(values = lter_colors) +
+  scale_fill_manual(values = lter_colors) +
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
@@ -169,7 +170,7 @@ xsite_ctotp <- ggplot(data = site_c, aes(x = mean_total.P_conc_mg.kg, y = mean_C
   labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE",
        shape = "Dataset Number", fill = "LTER") +
   scale_shape_manual(values = data_shapes) +
-  # scale_fill_manual(values = lter_colors) +
+  scale_fill_manual(values = lter_colors) +
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
   guides(shape = F) +
@@ -189,7 +190,7 @@ xsite_cslowp <- ggplot(data = site_c, aes(x = mean_slow.P_conc_mg.kg, y = mean_C
   labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE",
        shape = "Dataset Number", fill = "LTER") +
   scale_shape_manual(values = data_shapes) +
-  # scale_fill_manual(values = lter_colors) +
+  scale_fill_manual(values = lter_colors) +
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
   sparc_theme +
