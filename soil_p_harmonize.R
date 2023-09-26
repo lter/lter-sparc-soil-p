@@ -633,11 +633,11 @@ tidy_v2f %>%
 # Fix issue with Toolik (Toolik_1) depths
 tidy_v3 <- tidy_v2f %>%
   # Need to update only mineral layer depth start/end
-  dplyr::mutate(depth.end_cm = ifelse(horizon == "mineral",
+  dplyr::mutate(depth.end_cm = ifelse(dataset == "Toolik_1" & horizon == "mineral",
                                       yes = depth.end_cm - depth.start_cm,
                                       no = depth.end_cm)) %>%
   # Once subtraction from end is done, change start to 0
-  dplyr::mutate(depth.start_cm = ifelse(horizon == "mineral",
+  dplyr::mutate(depth.start_cm = ifelse(dataset == "Toolik_1" & horizon == "mineral",
                                         yes = 0, no = depth.start_cm))
 
 # Check contents of the specific horizon columns
