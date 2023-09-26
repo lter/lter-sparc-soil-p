@@ -111,6 +111,7 @@ key_v3 <- key_v2 %>%
   # Identify which columns _do not_ need a data type
   dplyr::mutate(need_type = dplyr::case_when(
     need_units == "no" ~ "no",
+    Variable == "precipitation" ~ "no",
     Variable == "depth" ~ "no",
     Variable == "org depth" ~ "no",
     stringr::str_detect(string = Variable, pattern = "bulk") ~ "no",
@@ -324,7 +325,6 @@ sort(unique(tidy_v1$plot))
 sort(unique(tidy_v1$block))
 sort(unique(tidy_v1$core))
 sort(unique(tidy_v1$treatment))
-sort(unique(tidy_v1$treatment.years))
 sort(unique(tidy_v1$distance))
 sort(unique(tidy_v1$topography))
 
@@ -334,7 +334,6 @@ tidy_v2 <- tidy_v1 %>%
   dplyr::mutate(lat = as.numeric(lat),
                 lon = as.numeric(lon),
                 distance = as.numeric(distance),
-                treatment.years = as.numeric(treatment.years),
                 topography = tolower(topography)) %>%
   # Rename columns so that everything is in snake case except element abbreviations
   ## snake case = "lower_lower_lower"
@@ -343,7 +342,7 @@ tidy_v2 <- tidy_v1 %>%
                 raw_filename = Raw_Filename) %>%
   # Relocate all spatial/site columns to the left of the dataframe
   dplyr::relocate(lter, dataset, raw_filename, lat, lon, site, plot, block, core,
-                  sample.replicate, treatment, treatment.years, distance, topography, 
+                  sample.replicate, treatment, distance, topography, 
                   horizon, depth_cm, org.depth_cm, pH,
                   .before = dplyr::everything()) %>%
   # Create a better version of the LTER column
@@ -359,7 +358,7 @@ tidy_v2 <- tidy_v1 %>%
     lter %in% c("Jornada_1", "Jornada_2") ~ "JRN",
     lter %in% c("Kellog_Biological_Station") ~ "KBS",
     lter %in% c("Konza_1", "Konza_2") ~ "KNZ",
-    lter %in% c("Luquillo_1", "Luquillo_2") ~ "LUQ",
+    lter %in% c("Luquillo_1", "Luquillo_2", "Luquillo_3") ~ "LUQ",
     lter %in% c("Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4") ~ "NWT",
     lter %in% c("Sevilleta_1", "Sevilleta_2") ~ "SEV",
     lter %in% c("Toolik_1", "Toolik_2") ~ "ARC",
@@ -587,7 +586,7 @@ tidy_v2f <- tidy_v2e %>%
     dataset == "Bonanza Creek_2" ~ "mixed",
     dataset %in% c("Brazil", "Calhoun", "CedarCreek_1", "CedarCreek_2",
                    "Coweeta", "Jornada_1", "Jornada_2", "Kellogg_Bio_Station", 
-                   "Luquillo_1", "Luquillo_2", 
+                   "Luquillo_1", "Luquillo_2", "Luquillo_3", 
                    "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
                    "Sevilleta_1", "Sevilleta_2"
                    ) ~ "mineral", # Need to double check Brazil & Calhoun
@@ -604,7 +603,7 @@ tidy_v2f <- tidy_v2e %>%
     dataset %in% c("Bonanza Creek_1", "Bonanza Creek_2" ,
                    "Brazil", "Calhoun", "CedarCreek_1", "CedarCreek_2",
                    "Coweeta", "FloridaCoastal", "Jornada_1", "Jornada_2",
-                   "Kellogg_Bio_Station", "Luquillo_1", "Luquillo_2", 
+                   "Kellogg_Bio_Station", "Luquillo_1", "Luquillo_2", "Luquillo_3", 
                    "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
                    "Sevilleta_1", "Sevilleta_2"
     ) ~ "expert knowledge", # Need to double check Brazil, Calhoun, and CDR
@@ -780,6 +779,7 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "Konza_1" ~ 0.9,
     dataset == "Luquillo_1" ~ 0.9,
     dataset == "Luquillo_2" ~ 0.9,
+    dataset == "Luquillo_3" ~ 0.9,
     dataset == "Niwot_1" ~ 0.9,
     dataset == "Niwot_2" ~ 0.9,
     dataset == "Niwot_3" ~ 0.9,
