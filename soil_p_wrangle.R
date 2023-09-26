@@ -246,9 +246,9 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   message("Following fractions found for dataset '", data_obj, "': ")
   print(paste(sub, collapse = "; ")) }
 
-# Calculate Bicarb P
+# Calculate available P
 p_sums_v4 <- p_sums_v3 %>%
-  dplyr::mutate(bicarb.P_conc_mg.kg = dplyr::case_when(
+  dplyr::mutate(available.P_conc_mg.kg = dplyr::case_when(
     dataset == "Bonanza Creek_1" ~ NA,
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Bonanza Creek_3" ~ NA,
@@ -296,32 +296,32 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   message("Following fractions found for dataset '", data_obj, "': ")
   print(paste(sub, collapse = "; ")) }
 
-# Calculate available P
+# Calculate bicarb P
 p_sums_v5 <- p_sums_v4 %>%
-  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+  dplyr::mutate(bicarb.P_conc_mg.kg = dplyr::case_when(
     dataset == "Bonanza Creek_1" ~ NA,
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Bonanza Creek_3" ~ NA,
     dataset == "Brazil" ~ NA,
-    dataset == "Calhoun" ~ NA,
+    dataset == "Calhoun" ~ (Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "CedarCreek_1" ~ NA,
     dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ NA,
-    dataset == "FloridaCoastal" ~ NA,
-    dataset == "HJAndrews_1" ~ NA,
+    dataset == "FloridaCoastal" ~ P_conc_mg.kg_2_HCO3,
+    dataset == "HJAndrews_1" ~ (P_conc_mg.kg_2_HCO3),
     dataset == "Hubbard Brook" ~ NA,
     dataset == "Jornada_1" ~ NA,
     dataset == "Jornada_2" ~ NA,
-    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Kellogg_Bio_Station" ~ (Po_conc_mg.kg_2_NaHCO3 + Pi_conc_mg.kg_2_NaHCO3),
     dataset == "Konza_1" ~ NA,
-    dataset == "Luquillo_1" ~ NA,
-    dataset == "Luquillo_2" ~ NA,
+    dataset == "Luquillo_1" ~ (Po_conc_mg.kg_1_HCO3 + Pi_conc_mg.kg_1_HCO3),
+    dataset == "Luquillo_2" ~ (P_conc_mg.kg_2_NaHCO3),
     dataset == "Luquillo_3" ~ NA,
-    dataset == "Niwot_1" ~ NA,
-    dataset == "Niwot_2" ~ NA,
+    dataset == "Niwot_1" ~ (Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
+    dataset == "Niwot_2" ~ (Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
-    dataset == "Sevilleta_1" ~ NA,
+    dataset == "Sevilleta_1" ~ ( P_conc_mg.kg_2_HCO3),
     dataset == "Sevilleta_2" ~ NA,
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
@@ -345,14 +345,14 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   message("Following fractions found for dataset '", data_obj, "': ")
   print(paste(sub, collapse = "; ")) }
 
-# Calculate NaOH P
+# Calculate biological P
 p_sums_v6 <- p_sums_v5 %>%
-  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+  dplyr::mutate(biological.P_conc_mg.kg = dplyr::case_when(
     dataset == "Bonanza Creek_1" ~ NA,
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Bonanza Creek_3" ~ NA,
     dataset == "Brazil" ~ NA,
-    dataset == "Calhoun" ~ NA,
+    dataset == "Calhoun" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
     dataset == "CedarCreek_1" ~ NA,
     dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ NA,
@@ -361,13 +361,14 @@ p_sums_v6 <- p_sums_v5 %>%
     dataset == "Hubbard Brook" ~ NA,
     dataset == "Jornada_1" ~ NA,
     dataset == "Jornada_2" ~ NA,
-    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_NaHCO3 + 
+                                          Po_conc_mg.kg_4_NaOH),
     dataset == "Konza_1" ~ NA,
     dataset == "Luquillo_1" ~ NA,
     dataset == "Luquillo_2" ~ NA,
     dataset == "Luquillo_3" ~ NA,
-    dataset == "Niwot_1" ~ NA,
-    dataset == "Niwot_2" ~ NA,
+    dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
+    dataset == "Niwot_2" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
     dataset == "Sevilleta_1" ~ NA,
@@ -396,30 +397,40 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
 
 # Calculate intermediate P
 p_sums_v7 <- p_sums_v6 %>%
-  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+  dplyr::mutate(intermediate.P_conc_mg.kg = dplyr::case_when(
     dataset == "Bonanza Creek_1" ~ NA,
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Bonanza Creek_3" ~ NA,
     dataset == "Brazil" ~ NA,
-    dataset == "Calhoun" ~ NA,
+    dataset == "Calhoun" ~ (P_conc_mg.kg_1_resin +
+                              Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3 +
+                              Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "CedarCreek_1" ~ NA,
     dataset == "CedarCreek_2" ~ NA,
-    dataset == "Coweeta" ~ NA,
-    dataset == "FloridaCoastal" ~ NA,
-    dataset == "HJAndrews_1" ~ NA,
+    dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_3_NaOH),
+    dataset == "FloridaCoastal" ~ (P_conc_mg.kg_2_HCO3 + 
+                                     Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
+    dataset == "HJAndrews_1" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH),
     dataset == "Hubbard Brook" ~ NA,
     dataset == "Jornada_1" ~ NA,
-    dataset == "Jornada_2" ~ NA,
-    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Jornada_2" ~ (P_conc_mg.kg_1_MgCl2 + P_conc_mg.kg_2_NaOH),
+    dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_1_resin +
+                                          Po_conc_mg.kg_2_NaHCO3 + Pi_conc_mg.kg_2_NaHCO3 +
+                                          Po_conc_mg.kg_4_NaOH + Pi_conc_mg.kg_4_NaOH),
     dataset == "Konza_1" ~ NA,
-    dataset == "Luquillo_1" ~ NA,
-    dataset == "Luquillo_2" ~ NA,
-    dataset == "Luquillo_3" ~ NA,
-    dataset == "Niwot_1" ~ NA,
-    dataset == "Niwot_2" ~ NA,
+    dataset == "Luquillo_1" ~ (Po_conc_mg.kg_1_HCO3 + Pi_conc_mg.kg_1_HCO3 +
+                                 Po_conc_mg.kg_2_NaOH + Pi_conc_mg.kg_2_NaOH),
+    dataset == "Luquillo_2" ~ (P_conc_mg.kg_2_NaHCO3 + P_conc_mg.kg_3_NaOH),
+    dataset == "Luquillo_3" ~ (Po_conc_mg.kg_1_NaOH + Pi_conc_mg.kg_1_NaOH),
+    dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin +
+                              Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3 +
+                              Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
+    dataset == "Niwot_2" ~ (P_conc_mg.kg_1_resin +
+                              Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3 +
+                              Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
-    dataset == "Sevilleta_1" ~ NA,
+    dataset == "Sevilleta_1" ~ (P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH),
     dataset == "Sevilleta_2" ~ NA,
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
@@ -443,54 +454,36 @@ for(data_obj in sort(unique(p_sums_v1$dataset))){
   message("Following fractions found for dataset '", data_obj, "': ")
   print(paste(sub, collapse = "; ")) }
 
-# Calculate biological P
+# Calculate NaOH P
 p_sums_v8 <- p_sums_v7 %>%
-  dplyr::mutate(x.P_conc_mg.kg = dplyr::case_when(
+  dplyr::mutate(NaOH.P_conc_mg.kg = dplyr::case_when(
     dataset == "Bonanza Creek_1" ~ NA,
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Bonanza Creek_3" ~ NA,
     dataset == "Brazil" ~ NA,
-    dataset == "Calhoun" ~ NA,
+    dataset == "Calhoun" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "CedarCreek_1" ~ NA,
     dataset == "CedarCreek_2" ~ NA,
-    dataset == "Coweeta" ~ NA,
-    dataset == "FloridaCoastal" ~ NA,
-    dataset == "HJAndrews_1" ~ NA,
+    dataset == "Coweeta" ~ (P_conc_mg.kg_3_NaOH),
+    dataset == "FloridaCoastal" ~ (P_conc_mg.kg_3_NaOH),
+    dataset == "HJAndrews_1" ~ (P_conc_mg.kg_3_NaOH),
     dataset == "Hubbard Brook" ~ NA,
     dataset == "Jornada_1" ~ NA,
     dataset == "Jornada_2" ~ NA,
-    dataset == "Kellogg_Bio_Station" ~ NA,
+    dataset == "Kellogg_Bio_Station" ~ (Po_conc_mg.kg_4_NaOH + Pi_conc_mg.kg_4_NaOH),
     dataset == "Konza_1" ~ NA,
-    dataset == "Luquillo_1" ~ NA,
-    dataset == "Luquillo_2" ~ NA,
-    dataset == "Luquillo_3" ~ NA,
-    dataset == "Niwot_1" ~ NA,
-    dataset == "Niwot_2" ~ NA,
+    dataset == "Luquillo_1" ~ (Po_conc_mg.kg_2_NaOH + Pi_conc_mg.kg_2_NaOH),
+    dataset == "Luquillo_2" ~ (P_conc_mg.kg_3_NaOH),
+    dataset == "Luquillo_3" ~ (P_conc_mg.kg_1_NaOH),
+    dataset == "Niwot_1" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
+    dataset == "Niwot_2" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
-    dataset == "Sevilleta_1" ~ NA,
+    dataset == "Sevilleta_1" ~ (P_conc_mg.kg_3_NaOH),
     dataset == "Sevilleta_2" ~ NA,
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
-
-# Recall extant P fractions
-for(data_obj in sort(unique(p_sums_v1$dataset))){
-  
-  # Want to know which P fractions are actually in the data
-  sub <- p_sums_v1 %>%
-    # Filter to this dataset
-    dplyr::filter(dataset == data_obj) %>%
-    # Drop completely NA/empty columns
-    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
-    # Keep only P concentration columns
-    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
-    # What is left?
-    names()
-  
-  # Message that out for later use
-  message("Following fractions found for dataset '", data_obj, "': ")
-  print(paste(sub, collapse = "; ")) }
 
 ## ------------------------------------------ ##
               # Finish P Sums ----
@@ -506,10 +499,18 @@ p_sums <- p_sums_v8 %>%
 
 # Any datasets missing?
 p_sums %>%
-  dplyr::filter(is.na(slow.P_conc_mg.kg) | is.na(total.P_conc_mg.kg)) %>%
+  dplyr::filter(is.na(slow.P_conc_mg.kg) | is.na(total.P_conc_mg.kg) |
+                  is.na(available.P_conc_mg.kg) | is.na(bicarb.P_conc_mg.kg) |
+                  is.na(biological.P_conc_mg.kg) | is.na(intermediate.P_conc_mg.kg) |
+                  is.na(NaOH.P_conc_mg.kg) ) %>%
   dplyr::group_by(dataset) %>%
   dplyr::summarize(slow_mean = mean(slow.P_conc_mg.kg, na.rm = T),
-                   total_mean = mean(total.P_conc_mg.kg, na.rm = T)) %>%
+                   total_mean = mean(total.P_conc_mg.kg, na.rm = T),
+                   avail_mean = mean(available.P_conc_mg.kg, na.rm = T),
+                   bicarb_mean = mean(bicarb.P_conc_mg.kg, na.rm = T),
+                   bio_mean = mean(biological.P_conc_mg.kg, na.rm = T),
+                   inter_mean = mean(intermediate.P_conc_mg.kg, na.rm = T),
+                   naoh_mean = mean(NaOH.P_conc_mg.kg, na.rm = T) ) %>%
   dplyr::distinct()
 
 # Check structure
