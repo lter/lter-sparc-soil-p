@@ -614,7 +614,7 @@ tidy_v2f <- tidy_v2e %>%
     T ~ NA), .after = horizon_actual) %>%
   # Create a 'mineral vs. organic' horizon column
   dplyr::mutate(horizon_binary = dplyr::case_when(
-    horizon_actual %in% c("organic", "O", "Oi", "Oe", "Oa") ~ "organic",
+    horizon_actual %in% c("organic", "O", "Oi", "Oe", "Oa", "o", "oi", "oe", "oa") ~ "organic",
     horizon_actual %in% c("mineral", "A", "B", "C", "AEB") ~ "mineral",
     horizon_actual == "T" ~ "hurricane",
     horizon_actual == "mixed" ~ "mixed",
