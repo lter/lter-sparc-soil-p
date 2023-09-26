@@ -719,30 +719,41 @@ dim(stats_v1); dim(stats_v2)
 # Check structure
 dplyr::glimpse(stats_v2)
 
+# Need to calculate something different for LUQ_2
+luq2_v1 <- stats_v2 %>%
+  dplyr::filter(dataset_simp == "LUQ_2")
+
+# Calculate across 0-2 and 2-10 depths into a single value
+luq2_v2 <- luq2_v1
+
+# Split off on LUQ_2
+not_luq2 <- stats_v2 %>%
+  dplyr::filter(dataset_simp != "LUQ_2")
+
+# Recombine
+stats_v3 <- dplyr::bind_rows(luq2_v2, not_luq2)
+
 # Finally, we want to subset to only particular depths within those horizons
-stats_v3 <- stats_v2 %>%
+stats_v4 <- stats_v3 %>%
   # Keep only cores beginning at the top of the horizon
   dplyr::filter(depth.start_cm == 0 | 
                   # Again, keep missing depths on assumption they start at 0
                   nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
 
 # How do the dataframe dimensions change?
-dim(stats_v2); dim(stats_v3)
+dim(stats_v3); dim(stats_v4)
 ## Lose some rows but no columns? Good!
 
 # Check structure
-dplyr::glimpse(stats_v3)
-## tibble::view(stats_v3)
-
-
-
+dplyr::glimpse(stats_v4)
+## tibble::view(stats_v4)
 
 ## ------------------------------------------ ##
           # Export Statistics Data ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-sparc_stats <- stats_v3
+sparc_stats <- stats_v4
 
 # Check its structure
 dplyr::glimpse(sparc_stats)
