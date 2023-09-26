@@ -668,6 +668,7 @@ stats_v1 <- sparc_tidy %>%
   dplyr::select(lter, dataset_simp, dataset, site, block, plot, core,
                 dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
                 core.length_cm, bulk.density_g.cm3,
+                dplyr::starts_with("Al_"), dplyr::starts_with("Fe"),
                 dplyr::ends_with(".P_conc_mg.kg"),
                 C_conc_percent, N_conc_percent) %>%
   # Drop non-unique rows
@@ -864,7 +865,7 @@ sites_v2 <- sites_v1 %>%
 dplyr::glimpse(sites_v2)
 
 ## ------------------------------------------ ##
-        # Export Spatial Aggergations ----
+        # Export Spatial Aggregations ----
 ## ------------------------------------------ ##
 
 # Create a final data object for both
