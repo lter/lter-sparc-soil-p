@@ -171,11 +171,10 @@ xsite_ctotp <- ggplot(data = site_c, aes(x = mean_total.P_conc_mg.kg, y = mean_C
        shape = "Dataset Number", fill = "LTER") +
   scale_shape_manual(values = data_shapes) +
   scale_fill_manual(values = lter_colors) +
-  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
-         shape = guide_legend(override.aes = list(size = 5))) +
-  guides(shape = F) +
   sparc_theme +
-  theme(legend.position = c(0.6, 0.85),
+  guides(fill = F) +
+  sparc_theme +
+  theme(legend.position = c(0.4, 0.75),
         legend.direction = "horizontal"); xsite_ctotp
 
 # C% ~ slow P
@@ -193,10 +192,11 @@ xsite_cslowp <- ggplot(data = site_c, aes(x = mean_slow.P_conc_mg.kg, y = mean_C
   scale_fill_manual(values = lter_colors) +
   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
          shape = guide_legend(override.aes = list(size = 5))) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+       shape = guide_legend(override.aes = list(size = 5))) +
+  guides(shape = F) +
   sparc_theme +
-  guides(fill = F) +
-  sparc_theme +
-  theme(legend.position = c(0.6, 0.9),
+  theme(legend.position = c(0.6, 0.65),
         legend.direction = "horizontal"); xsite_cslowp
 
 # Assemble a multi-panel figure!
