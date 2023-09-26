@@ -18,6 +18,8 @@
 
 - `soil_p_stats.R` - Performs desired statistical analysis to test hypotheses of Soil P SPARC group.
 
+- `soil_p_graphs.R` - Creates exploratory graphs / publication-quality graphs for fundamental hypotheses or for useful visualizations of data
+
 ## Supplementary Resources
 
 NCEAS Scientific Computing Support Team page [link](https://nceas.github.io/scicomp.github.io)
