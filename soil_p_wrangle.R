@@ -606,12 +606,11 @@ sparc_v5 %>%
                    cores = paste(unique(core), collapse = "; "))
 
 ## ------------------------------------------ ##
-        # Export Full SPARC Data ----
+          # Make Simple Data Names ----
 ## ------------------------------------------ ##
 
-# Create a final data object
-sparc_tidy <- sparc_v5 %>%
-  # Simplify dataset names to make plot labels neater
+# Simplify dataset names to make plot labels neater
+sparc_v6 <- sparc_v5 %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Bonanza Creek", replacement = "BNZ", 
                                     x = dataset), .before = dataset) %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "CedarCreek", replacement = "CDR", 
@@ -621,7 +620,7 @@ sparc_tidy <- sparc_v5 %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "FloridaCoastal", replacement = "FCE", 
                                     x = dataset_simp)) %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "HJAndrews", replacement = "AND", 
-                                  x = dataset_simp)) %>%
+                                    x = dataset_simp)) %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Hubbard Brook", replacement = "HBR", 
                                     x = dataset_simp)) %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Jornada", replacement = "JRN", 
@@ -640,7 +639,16 @@ sparc_tidy <- sparc_v5 %>%
                                     x = dataset_simp))
 
 # Check simplified dataset names
-sort(unique(sparc_tidy$dataset_simp))
+sort(unique(sparc_v6$dataset_simp))
+
+## ------------------------------------------ ##
+        # Export Full SPARC Data ----
+## ------------------------------------------ ##
+
+# Create a final data object
+sparc_tidy <- sparc_v6 %>%
+  # Drop the one row with an unreasonably high 'total P' value
+  dplyr::filter(is.na(total.P_conc_mg.kg) | total.P_conc_mg.kg <= 5250)
 
 # Check its structure
 dplyr::glimpse(sparc_tidy)
