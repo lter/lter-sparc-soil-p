@@ -410,7 +410,7 @@ for(focal_dataset in sort(unique(core_df$dataset_simp))){ # Actual loop
     n_graphs[[2]] <- ggplot(data = core_nsub, aes(x = slow.P_conc_mg.kg,
                                                   y = N_conc_percent)) +
       geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-      geom_point(aes(fill = lter), size = 3, pch = pt_shp, alpha = 0.5) +
+      geom_point(aes(fill = site), size = 3, pch = pt_shp, alpha = 0.5) +
       facet_grid(. ~ dataset_simp) +
       labs(x = "Slow P (mg/kg)", y = "N (%)") +
       sparc_theme +
@@ -436,7 +436,7 @@ for(focal_dataset in sort(unique(core_df$dataset_simp))){ # Actual loop
       # Best-fit line
       geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
       # Points
-      geom_point(aes(fill = lter), size = 3, pch = pt_shp, alpha = 0.5) +
+      geom_point(aes(fill = site), size = 3, pch = pt_shp, alpha = 0.5) +
       # Facet by dataset to get nice label
       facet_grid(. ~ dataset_simp) +
       # Custom color, axis labels, and theme elements
@@ -451,7 +451,7 @@ for(focal_dataset in sort(unique(core_df$dataset_simp))){ # Actual loop
     c_graphs[[2]] <- ggplot(data = core_csub, aes(x = slow.P_conc_mg.kg,
                                                   y = C_conc_percent)) +
       geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
-      geom_point(aes(fill = lter), size = 3, pch = pt_shp) +
+      geom_point(aes(fill = site), size = 3, pch = pt_shp, alpha = 0.5) +
       facet_grid(. ~ dataset_simp) +
       labs(x = "Slow P (mg/kg)", y = "C (%)") +
       sparc_theme +
