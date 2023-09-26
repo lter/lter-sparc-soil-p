@@ -146,6 +146,7 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "Konza_1" ~ (P_conc_mg.kg_3_Ca.bound),
     dataset == "Luquillo_1" ~ NA,
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_4_HCl),
+    dataset == "Luquillo_3" ~ (P_conc_mg.kg_3_residual),
     dataset == "Niwot_1" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Niwot_2" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Niwot_3" ~ NA,
@@ -215,6 +216,7 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3 + 
                                  P_conc_mg.kg_3_NaOH + P_conc_mg.kg_4_HCl + 
                                  P_conc_mg.kg_5_residual),
+    dataset == "Luquillo_3" ~ (P_conc_mg.kg_total),
     dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin + 
                               Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 + 
                               Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_3_NaOH +
@@ -689,12 +691,19 @@ dim(sparc_tidy); dim(stats_v1)
 # Check structure
 dplyr::glimpse(stats_v1)
 
+## ------------------------------------------ ##
+ # Statistics / Visualization Subsetting ----
+## ------------------------------------------ ##
+
 # Need to subset to only certain horizons and where N/C data are present
 stats_v2 <- stats_v1 %>%
   # Keep only mineral layer (and mixed mineral/organic) data 
   dplyr::filter(horizon_binary %in% c("mineral", "mixed") |
                   # Also keep unspecified horizon information (assumes mineral)
                   nchar(horizon_binary) == 0) %>%
+  # For HBR, keep only A horizon
+  dplyr::filter((dataset == "Hubbard Brook" & horizon == "A") |
+                  dataset != "Hubbard Brook") %>%
   # Coerce empty N/C percents into true NAs
   dplyr::mutate(C_conc_percent = ifelse(nchar(C_conc_percent) == 0,
                                         yes = NA, no = C_conc_percent),
@@ -724,6 +733,9 @@ dim(stats_v2); dim(stats_v3)
 # Check structure
 dplyr::glimpse(stats_v3)
 ## tibble::view(stats_v3)
+
+
+
 
 ## ------------------------------------------ ##
           # Export Statistics Data ----
