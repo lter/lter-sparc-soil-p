@@ -228,8 +228,135 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Toolik_2" ~ (P_conc_mg.kg_total),
     T ~ NA))
 
+# Recall extant P fractions
+for(data_obj in sort(unique(p_sums_v1$dataset))){
+  
+  # Want to know which P fractions are actually in the data
+  sub <- p_sums_v1 %>%
+    # Filter to this dataset
+    dplyr::filter(dataset == data_obj) %>%
+    # Drop completely NA/empty columns
+    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
+    # Keep only P concentration columns
+    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
+    # What is left?
+    names()
+  
+  # Message that out for later use
+  message("Following fractions found for dataset '", data_obj, "': ")
+  print(paste(sub, collapse = "; ")) }
+
+# Calculate Bicarb P
+p_sums_v4 <- p_sums_v3
+
+# Recall extant P fractions
+for(data_obj in sort(unique(p_sums_v1$dataset))){
+  
+  # Want to know which P fractions are actually in the data
+  sub <- p_sums_v1 %>%
+    # Filter to this dataset
+    dplyr::filter(dataset == data_obj) %>%
+    # Drop completely NA/empty columns
+    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
+    # Keep only P concentration columns
+    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
+    # What is left?
+    names()
+  
+  # Message that out for later use
+  message("Following fractions found for dataset '", data_obj, "': ")
+  print(paste(sub, collapse = "; ")) }
+
+# Calculate available P
+p_sums_v5 <- p_sums_v4
+
+# Recall extant P fractions
+for(data_obj in sort(unique(p_sums_v1$dataset))){
+  
+  # Want to know which P fractions are actually in the data
+  sub <- p_sums_v1 %>%
+    # Filter to this dataset
+    dplyr::filter(dataset == data_obj) %>%
+    # Drop completely NA/empty columns
+    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
+    # Keep only P concentration columns
+    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
+    # What is left?
+    names()
+  
+  # Message that out for later use
+  message("Following fractions found for dataset '", data_obj, "': ")
+  print(paste(sub, collapse = "; ")) }
+
+# Calculate NaOH P
+p_sums_v6 <- p_sums_v5
+
+# Recall extant P fractions
+for(data_obj in sort(unique(p_sums_v1$dataset))){
+  
+  # Want to know which P fractions are actually in the data
+  sub <- p_sums_v1 %>%
+    # Filter to this dataset
+    dplyr::filter(dataset == data_obj) %>%
+    # Drop completely NA/empty columns
+    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
+    # Keep only P concentration columns
+    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
+    # What is left?
+    names()
+  
+  # Message that out for later use
+  message("Following fractions found for dataset '", data_obj, "': ")
+  print(paste(sub, collapse = "; ")) }
+
+# Calculate intermediate P
+p_sums_v7 <- p_sums_v6
+
+# Recall extant P fractions
+for(data_obj in sort(unique(p_sums_v1$dataset))){
+  
+  # Want to know which P fractions are actually in the data
+  sub <- p_sums_v1 %>%
+    # Filter to this dataset
+    dplyr::filter(dataset == data_obj) %>%
+    # Drop completely NA/empty columns
+    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
+    # Keep only P concentration columns
+    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
+    # What is left?
+    names()
+  
+  # Message that out for later use
+  message("Following fractions found for dataset '", data_obj, "': ")
+  print(paste(sub, collapse = "; ")) }
+
+# Calculate biological P
+p_sums_v8 <- p_sums_v7
+
+# Recall extant P fractions
+for(data_obj in sort(unique(p_sums_v1$dataset))){
+  
+  # Want to know which P fractions are actually in the data
+  sub <- p_sums_v1 %>%
+    # Filter to this dataset
+    dplyr::filter(dataset == data_obj) %>%
+    # Drop completely NA/empty columns
+    dplyr::select(dplyr::where(fn = ~ !(all(is.na(.) | all(nchar(.) == 0)) ) ) ) %>%
+    # Keep only P concentration columns
+    dplyr::select(dplyr::contains("_conc_mg.kg")) %>%
+    # What is left?
+    names()
+  
+  # Message that out for later use
+  message("Following fractions found for dataset '", data_obj, "': ")
+  print(paste(sub, collapse = "; ")) }
+
+## ------------------------------------------ ##
+              # Finish P Sums ----
+## ------------------------------------------ ##
+
 # Make a final version of the p_sums object that is as simple as possible
-p_sums <- p_sums_v3 %>%
+p_sums <- p_sums_v8 %>%
   # Remove all P fraction columns (because we changed real NAs to convenient 0s)
   dplyr::select(-dplyr::starts_with("P_"), -dplyr::starts_with("Po_"), 
                 -dplyr::starts_with("Pi_")) %>%
