@@ -52,3 +52,4 @@ tidy_data/
 # File types to ignore
 *.csv
 *.png
+*.xlsx

@@ -17,7 +17,7 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, supportR)
+librarian::shelf(tidyverse, googledrive, readxl, magrittr)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
@@ -146,6 +146,7 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "Konza_1" ~ (P_conc_mg.kg_3_Ca.bound),
     dataset == "Luquillo_1" ~ NA,
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_4_HCl),
+    dataset == "Luquillo_3" ~ (P_conc_mg.kg_3_residual),
     dataset == "Niwot_1" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Niwot_2" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Niwot_3" ~ NA,
@@ -215,6 +216,7 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3 + 
                                  P_conc_mg.kg_3_NaOH + P_conc_mg.kg_4_HCl + 
                                  P_conc_mg.kg_5_residual),
+    dataset == "Luquillo_3" ~ (P_conc_mg.kg_total),
     dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin + 
                               Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 + 
                               Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_3_NaOH +
@@ -642,11 +644,97 @@ sparc_v6 <- sparc_v5 %>%
 sort(unique(sparc_v6$dataset_simp))
 
 ## ------------------------------------------ ##
+        # Acquire Ancillary Data ----
+## ------------------------------------------ ##
+
+# Identify the desired ancillary data files
+anc_files <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1TwN8AwUKc3iLBsTRRzm68owNlUOgkQeI")) %>%
+  dplyr::filter(name %in% c(paste0("Ancillary_", c("dataset", "site", "block", "plot", "core"))))
+
+# Did that get all five?
+anc_files
+
+# Create a folder for local storage
+dir.create(path = file.path("ancillary_data"), showWarnings = F)
+
+# Download files into that
+purrr::walk2(.x = anc_files$id, .y = anc_files$name,
+             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
+                                                path = file.path("ancillary_data", .y)))
+
+## ------------------------------------------ ##
+          # Attach Ancillary Data ----
+## ------------------------------------------ ##
+
+# Make a new version of our primary data to avoid bad errors
+sparc_v7 <- sparc_v6
+
+# Identify the available ancillary data granularity levels
+gran_levels <- c("dataset", "site", "block", "plot", "core")
+
+# Loop across desired/available ancillary data to integrate with data
+for(granularity in gran_levels){
+  
+  # Starting message
+  message("Integrating ", granularity, "-level ancillary data")
+  
+  # Identify the file
+  gran_path <- file.path("ancillary_data", paste0("Ancillary_", granularity, ".xlsx"))
+  
+  # Read it in
+  gran_df <- readxl::read_xlsx(path = gran_path)
+  
+  # Identify spatial organization columns (in this level of the ancillary data)
+  spatial_cols <- intersect(x = c("lter", "dataset_simp", gran_levels), y = names(gran_df))
+  
+  # Make the non-granularity columns specific to the level from which they were entered
+  ## Note: manual assignment of column names is *risky*! DO NOT ATTEMPT ELSEWHERE!!
+  names(gran_df) <- c(spatial_cols, paste0(granularity, "_", 
+                                           setdiff(x = names(gran_df), y = spatial_cols)))
+  
+  # Now join onto the larger SPARC data
+  sparc_v7 %<>%
+    dplyr::left_join(y = gran_df, by = spatial_cols) }
+
+# Check what that leaves us with
+dplyr::glimpse(sparc_v7)
+
+## ------------------------------------------ ##
+        # Streamline Ancillary Data ----
+## ------------------------------------------ ##
+
+# Now need to collapse 'duplicate' columns from ancillary data into single 'actual' value
+## Will do one pipe/object per set of related columns
+
+# Fix latitude/longitude columns
+sparc_v8a <- sparc_v7 %>%
+  ## Collapse columns together into a single 'actual' one
+  dplyr::mutate(lat_actual = dplyr::coalesce(lat, core_latitude, plot_latitude, 
+                                             block_latitude, site_latitude,
+                                             dataset_latitude),
+                lon_actual = dplyr::coalesce(lon, core_longitude, plot_longitude, 
+                                             block_longitude, site_longitude,
+                                             dataset_longitude),
+                coord_source = dplyr::coalesce(core_coordinate_source, plot_coordinate_source, 
+                                               block_coordinate_source, site_coordinate_source,
+                                               dataset_coordinate_source),
+                .after = raw_filename) %>%
+  # Throw away (sorry) all component columns now that we have 'actual'
+  dplyr::select(-lat, -lon, -dplyr::ends_with("_latitude"), 
+                -dplyr::ends_with("_longitude"), -dplyr::ends_with("_coordinate_source")) %>%
+  # Rename actual
+  dplyr::rename(latitude = lat_actual,
+                longitude = lon_actual)
+
+# Glimpse it
+dplyr::glimpse(sparc_v8a)
+
+## ------------------------------------------ ##
         # Export Full SPARC Data ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-sparc_tidy <- sparc_v6 %>%
+sparc_tidy <- sparc_v8a %>%
   # Drop the one row with an unreasonably high 'total P' value
   dplyr::filter(is.na(total.P_conc_mg.kg) | total.P_conc_mg.kg <= 5250)
 
@@ -689,12 +777,19 @@ dim(sparc_tidy); dim(stats_v1)
 # Check structure
 dplyr::glimpse(stats_v1)
 
+## ------------------------------------------ ##
+ # Statistics / Visualization Subsetting ----
+## ------------------------------------------ ##
+
 # Need to subset to only certain horizons and where N/C data are present
 stats_v2 <- stats_v1 %>%
   # Keep only mineral layer (and mixed mineral/organic) data 
   dplyr::filter(horizon_binary %in% c("mineral", "mixed") |
                   # Also keep unspecified horizon information (assumes mineral)
                   nchar(horizon_binary) == 0) %>%
+  # For HBR, keep only A horizon
+  dplyr::filter((dataset == "Hubbard Brook" & horizon == "A") |
+                  dataset != "Hubbard Brook") %>%
   # Coerce empty N/C percents into true NAs
   dplyr::mutate(C_conc_percent = ifelse(nchar(C_conc_percent) == 0,
                                         yes = NA, no = C_conc_percent),
@@ -710,27 +805,67 @@ dim(stats_v1); dim(stats_v2)
 # Check structure
 dplyr::glimpse(stats_v2)
 
+# Need to do a weighted average across 0-2 and 2-10 depth cores
+luq2_v1 <- stats_v2 %>%
+  # Subset as needed
+  dplyr::filter(dataset_simp == "LUQ_2")
+
+# Calculate across 0-2 and 2-10 depths into a single value
+luq2_v2 <- luq2_v1 %>%
+  # Flip to long format
+  tidyr::pivot_longer(cols = -lter:-bulk.density_g.cm3) %>%
+  # Do needed weighted calculation
+  dplyr::mutate(value = case_when(
+    depth.start_cm == 0 & depth.end_cm == 2 ~ value * 0.2,
+    depth.start_cm == 8 & depth.end_cm == 10 ~ value * 0.8,
+    T ~ value)) %>%
+  # Fix depth values and core lengths
+  dplyr::mutate(core.length_cm = dplyr::case_when(
+    depth.start_cm == 0 & depth.end_cm == 2 ~ 10,
+    depth.start_cm == 2 & depth.end_cm == 10 ~ 10,
+    T ~ core.length_cm)) %>%
+  dplyr::mutate(depth.end_cm = ifelse(depth.start_cm == 0 & depth.end_cm == 2,
+                                      yes = 10, no = depth.end_cm)) %>%
+  dplyr::mutate(depth.start_cm = ifelse(depth.start_cm == 2 & depth.end_cm == 10,
+                                        yes = 0, no = depth.start_cm)) %>%
+  # Sum our resolved depths
+  dplyr::group_by(dplyr::across(.cols = -value)) %>%
+  dplyr::summarize(value = sum(value, na.rm = T)) %>%
+  dplyr::ungroup() %>%
+  # Reshape wider
+  tidyr::pivot_wider(names_from = name, values_from = value)
+
+# Check structure
+dplyr::glimpse(luq2_v2)
+
+# Split off on LUQ_2
+not_luq2 <- stats_v2 %>%
+  dplyr::filter(dataset_simp != "LUQ_2")
+
+# Recombine
+stats_v3 <- dplyr::bind_rows(luq2_v2, not_luq2)
+
 # Finally, we want to subset to only particular depths within those horizons
-stats_v3 <- stats_v2 %>%
+stats_v4 <- stats_v3 %>%
   # Keep only cores beginning at the top of the horizon
   dplyr::filter(depth.start_cm == 0 | 
                   # Again, keep missing depths on assumption they start at 0
                   nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
 
 # How do the dataframe dimensions change?
-dim(stats_v2); dim(stats_v3)
+dim(stats_v3); dim(stats_v4)
 ## Lose some rows but no columns? Good!
 
 # Check structure
-dplyr::glimpse(stats_v3)
-## tibble::view(stats_v3)
+dplyr::glimpse(stats_v4)
+## tibble::view(stats_v4)
 
 ## ------------------------------------------ ##
           # Export Statistics Data ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-sparc_stats <- stats_v3
+sparc_stats <- stats_v4
 
 # Check its structure
 dplyr::glimpse(sparc_stats)

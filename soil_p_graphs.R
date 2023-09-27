@@ -21,7 +21,9 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 
 # Identify the needed data file(s) in the Drive
 ( file_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")) %>%
-    dplyr::filter(name %in% c("site-avgs_tidy-soil-p.csv", "plot-avgs_tidy-soil-p.csv")) )
+    dplyr::filter(name %in% c("stats-ready_tidy-soil-p.csv", 
+                              "site-avgs_tidy-soil-p.csv", 
+                              "plot-avgs_tidy-soil-p.csv")) )
 
 # Download those files
 purrr::walk2(.x = file_ids$id, .y = file_ids$name,
@@ -66,6 +68,21 @@ dplyr::glimpse(plot_df)
 # Make one version each for N and C plotting respectively
 plot_n <- dplyr::filter(.data = plot_df, !is.na(mean_N_conc_percent))
 plot_c <- dplyr::filter(.data = plot_df, !is.na(mean_C_conc_percent))
+
+# Read in the unsummarized data
+core_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv")) %>%
+  # Do dataset number processing here too
+  tidyr::separate_wider_delim(cols = dataset_simp, delim = "_", too_few = "align_start",
+                              names = c("dataset_dup", "dataset_num"), cols_remove = F) %>%
+  dplyr::select(-dataset_dup) %>%
+  dplyr::mutate(dataset_num = ifelse(is.na(dataset_num), yes = 1, no = dataset_num))
+
+# Check graphs
+dplyr::glimpse(core_df)
+
+# Make one version each for N and C plotting respectively
+core_n <- dplyr::filter(.data = core_df, !is.na(N_conc_percent))
+core_c <- dplyr::filter(.data = core_df, !is.na(C_conc_percent))
 
 ## ------------------------------------------ ##
             # Graph Housekeeping ----
@@ -208,7 +225,7 @@ ggsave(filename = file.path("graphs", "figure-1_across-sites.png"),
        width = 10, height = 10, units = "in")
 
 ## ------------------------------------------ ##
-            # Within-Site Graphs ----
+     # Within-Site Graphs - Plot Avgs ----
 ## ------------------------------------------ ##
 
 # Check structure
@@ -332,8 +349,131 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
     focal_figure <- cowplot::plot_grid(n_bipanel, c_bipanel, nrow = 2, labels = NULL)
     
     # Make a nice filename for this particular sub-figure
-    focal_name <- paste0("figure-2_", gsub(pattern = "_", replacement = "-", 
-                                           x = focal_dataset), "_across-plots.png")
+    focal_name <- paste0("figure-2_plots_", gsub(pattern = "_", replacement = "-", 
+                                           x = focal_dataset), ".png")
+    
+    # Export with an informative file name
+    ggsave(filename = file.path("graphs", focal_name), width = 10, height = 10, units = "in") } 
+  
+} # Close loop
+
+## ------------------------------------------ ##
+       # Within-Site Graphs - Cores ----
+## ------------------------------------------ ##
+
+# Check structure
+dplyr::glimpse(core_df)
+
+# Check out unique datasets
+unique(core_df$dataset_simp)
+
+# Loop across datasets and create the four desired plots for each
+## Note that not all datasets have both slow and total P
+## Entirely missing P types are skipped and the resulting graphs account for this
+for(focal_dataset in sort(unique(core_df$dataset_simp))){ # Actual loop
+  # for(focal_dataset in "BNZ_1"){ # Test loop
+  
+  # Starting message
+  message("Beginning core-level figure creation for dataset: ", focal_dataset)
+  
+  # Subset N & C data to only a particular dataset
+  core_nsub <- dplyr::filter(.data = core_n, dataset_simp == focal_dataset)
+  core_csub <- dplyr::filter(.data = core_c, dataset_simp == focal_dataset)
+  
+  # Identify correct point shape (in order to match figure 1)
+  pt_shp <- data_shapes[unique(c(core_nsub$dataset_num, core_csub$dataset_num))]
+  
+  # Make a list for N graphs
+  n_graphs <- list()
+  
+  # If there is any total P data in this dataset:
+  if(any(!is.na(core_nsub$total.P_conc_mg.kg))){
+    
+    # Graph N% ~ total P and add to the plot list
+    n_graphs[[1]] <- ggplot(data = core_nsub, aes(x = total.P_conc_mg.kg,
+                                                  y = N_conc_percent)) +
+      # Best-fit line
+      geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+      # Points
+      geom_point(aes(fill = site), size = 3, pch = pt_shp, alpha = 0.5) +
+      # Facet by dataset to get nice label
+      facet_grid(. ~ dataset_simp) +
+      # Custom color, axis labels, and theme elements
+      labs(x = "Total P (mg/kg)", y = "N (%)") +
+      sparc_theme +
+      theme(legend.position = "none") }
+  
+  # If there is any *slow* P in this dataset:
+  if(any(!is.na(core_nsub$slow.P_conc_mg.kg))){
+    
+    # Graph N% ~ total P and add to the plot list
+    n_graphs[[2]] <- ggplot(data = core_nsub, aes(x = slow.P_conc_mg.kg,
+                                                  y = N_conc_percent)) +
+      geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+      geom_point(aes(fill = site), size = 3, pch = pt_shp, alpha = 0.5) +
+      facet_grid(. ~ dataset_simp) +
+      labs(x = "Slow P (mg/kg)", y = "N (%)") +
+      sparc_theme +
+      theme(legend.position = "none") }
+  
+  # Define panel labels based on how many we need
+  n_labs <- c("A", "B")[length(n_graphs)]
+  
+  # Assemble this into a two-panel graph
+  if(length(n_graphs) != 0){
+    n_bipanel <- cowplot::plot_grid(plotlist = n_graphs, ncol = 2, labels = n_labs) } else {
+      n_bipanel <- NULL }
+  
+  # Now make a list for the C graphs
+  c_graphs <- list()
+  
+  # If there is any total P data in this dataset:
+  if(any(!is.na(core_csub$total.P_conc_mg.kg))){
+    
+    # Graph N% ~ total P and add to the plot list
+    c_graphs[[1]] <- ggplot(data = core_csub, aes(x = total.P_conc_mg.kg,
+                                                  y = C_conc_percent)) +
+      # Best-fit line
+      geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+      # Points
+      geom_point(aes(fill = site), size = 3, pch = pt_shp, alpha = 0.5) +
+      # Facet by dataset to get nice label
+      facet_grid(. ~ dataset_simp) +
+      # Custom color, axis labels, and theme elements
+      labs(x = "Total P (mg/kg)", y = "C (%)") +
+      sparc_theme +
+      theme(legend.position = "none") }
+  
+  # If there is any *slow* P in this dataset:
+  if(any(!is.na(core_csub$slow.P_conc_mg.kg))){
+    
+    # Graph N% ~ total P and add to the plot list
+    c_graphs[[2]] <- ggplot(data = core_csub, aes(x = slow.P_conc_mg.kg,
+                                                  y = C_conc_percent)) +
+      geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+      geom_point(aes(fill = site), size = 3, pch = pt_shp, alpha = 0.5) +
+      facet_grid(. ~ dataset_simp) +
+      labs(x = "Slow P (mg/kg)", y = "C (%)") +
+      sparc_theme +
+      theme(legend.position = "none") }
+  
+  # Define panel labels based on how many we need
+  c_labs <- c("C", "D")[length(c_graphs)]
+  
+  # Assemble this into a two-panel graph
+  if(length(c_graphs) != 0){
+    c_bipanel <- cowplot::plot_grid(plotlist = c_graphs, ncol = 2, labels = c_labs) } else {
+      c_bipanel <- NULL }
+  
+  # If either N or C graphs can exist, finalize and export the figure!
+  if(length(n_graphs) != 0 | length(c_graphs) != 0){
+    
+    # Combine the two bi-panel graphs into a single quad panel graph
+    focal_figure <- cowplot::plot_grid(n_bipanel, c_bipanel, nrow = 2, labels = NULL)
+    
+    # Make a nice filename for this particular sub-figure
+    focal_name <- paste0("figure-2_cores_", gsub(pattern = "_", replacement = "-", 
+                                           x = focal_dataset), ".png")
     
     # Export with an informative file name
     ggsave(filename = file.path("graphs", focal_name), width = 10, height = 10, units = "in") } 
