@@ -24,6 +24,7 @@ librarian::shelf(tidyverse, googledrive, supportR)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "stats_ready"), showWarnings = F)
 
 # Clear environment
 rm(list = ls())
@@ -147,38 +148,45 @@ mineral_v1 <- stats_v1 %>%
 nrow(stats_v1) - nrow(mineral_v1)
 
 # Now subset to only the mineral cores that start at 0
-
-
-
-
-
-## ------------------------------------------ ##
-# Statistics / Visualization Subsetting ----
-## ------------------------------------------ ##
-
-
-# How do the dataframe dimensions change?
-dim(stats_v1); dim(stats_v2)
-## Lose many rows but no columns? Good!
-
-# Check structure
-dplyr::glimpse(stats_v2)
-
-
-# Finally, we want to subset to only particular depths within those horizons
-stats_v4 <- stats_v3 %>%
+mineral_v2 <- mineral_v1 %>%
   # Keep only cores beginning at the top of the horizon
   dplyr::filter(depth.start_cm == 0 | 
                   # Again, keep missing depths on assumption they start at 0
                   nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
 
-# How do the dataframe dimensions change?
-dim(stats_v3); dim(stats_v4)
-## Lose some rows but no columns? Good!
+# How many rows dropped at that step?
+nrow(mineral_v1) - nrow(mineral_v2)
 
-# Check structure
-dplyr::glimpse(stats_v4)
-## tibble::view(stats_v4)
+## ------------------------------------------ ##
+# Mineral Export (Local) ----
+## ------------------------------------------ ##
+
+# Make a final object
+final_mineral <- mineral_v2
+
+# Define the name for this file
+mineral_name <- "sparc-soil-p_stats-ready_mineral_0-10.csv"
+
+# Export locally as a CSV
+write.csv(x = final_mineral, row.names = F, na = "",
+          file = file.path("data", "stats_ready", mineral_name))
+
+## ------------------------------------------ ##
+# Stats-Ready Export (Drive) ----
+## ------------------------------------------ ##
+
+# List all 'stats ready' files that we've made
+( ready_files <- dir(path = file.path("data", "stats_ready")) )
+
+# Loop across it uploading to Drive
+for(focal_ready in ready_files){
+  
+  googledrive::drive_upload(media = file.path("data", "stats_ready", focal_ready),
+                            path = tidy_drive, overwrite = T)
+  
+}
+
+
 
 ## ------------------------------------------ ##
 # Export Statistics Data ----
