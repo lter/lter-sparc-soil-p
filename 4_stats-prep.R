@@ -1,22 +1,84 @@
 ## ------------------------------------------ ##
-# Statistics / Visualization Prep ----
+      # SPARC Soil P -- Stats/Viz Prep
 ## ------------------------------------------ ##
+# Script author(s): Nick J Lyon
+
+# Purpose:
+
 
 # We definitely want the data we just exported BUT
 ## we also want a really simplified version for stats/visualization
 ## this will make it much easier to navigate the really fundamental parts of the data
 ## while still having easy access to the most granular version of the data (exported above)
 
-# Megadata includes *a lot* of information and we only really need a subset of it for stats
-stats_v1 <- sparc_tidy %>%
-  # Pare down to only columns of interest
-  ## Unspecified columns are implicitly removed
-  dplyr::select(lter, dataset_simp, dataset, site, block, plot, core,
+
+# Pre-Requisites:
+
+## ------------------------------------------ ##
+            # Housekeeping -----
+## ------------------------------------------ ##
+
+# Load necessary libraries
+# install.packages("librarian")
+librarian::shelf(tidyverse, googledrive, supportR)
+
+# Create necessary sub-folder(s)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
+
+# Clear environment
+rm(list = ls())
+
+# Identify needed tidy file(s)
+tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
+
+# Identify the archival data in that folder and download it
+googledrive::drive_ls(path = tidy_drive) %>%
+  dplyr::filter(name == "sparc-soil-p_full-data-incl-ancillary.csv") %>%
+  googledrive::drive_download(file = .$id, overwrite = T,
+                              path = file.path("data", "tidy_data", .$name))
+
+# Read that file in
+all_v1 <- read.csv(file = file.path("data", "tidy_data", 
+                                    "sparc-soil-p_full-data-incl-ancillary.csv"))
+
+# Glimpse it!
+dplyr::glimpse(all_v1)
+
+## ------------------------------------------ ##
+           # Slim Down Columns -----
+## ------------------------------------------ ##
+
+# Only some columns are really needed from here on out
+all_v2 <- all_v1 %>%
+  dplyr::select(lter:core, dplyr::starts_with("mean.annual."), pH,
                 dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
                 core.length_cm, bulk.density_g.cm3,
                 dplyr::starts_with("Al_"), dplyr::starts_with("Fe"),
                 dplyr::ends_with(".P_conc_mg.kg"),
-                C_conc_percent, N_conc_percent) %>%
+                C_conc_percent, N_conc_percent)
+
+# See what we lost and make sure you're cool with that
+supportR::diff_check(old = names(all_v1), new = names(all_v2), sort = T)
+
+# Look at what you still kept
+dplyr::glimpse(all_v2)
+
+## ------------------------------------------ ##
+
+## ------------------------------------------ ##
+
+
+
+# %>%
+#   # Drop the one row with an unreasonably high 'total P' value
+#   dplyr::filter(is.na(total.P_conc_mg.kg) | total.P_conc_mg.kg <= 5250)
+
+
+# Megadata includes *a lot* of information and we only really need a subset of it for stats
+stats_v1 <- sparc_tidy %>%
+  # Pare down to only columns of interest
+  ## Unspecified columns are implicitly removed
+   %>%
   # Drop non-unique rows
   dplyr::distinct()
 
