@@ -17,7 +17,7 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, supportR)
+librarian::shelf(tidyverse, googledrive, readxl)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
@@ -642,6 +642,36 @@ sparc_v6 <- sparc_v5 %>%
 
 # Check simplified dataset names
 sort(unique(sparc_v6$dataset_simp))
+
+## ------------------------------------------ ##
+        # Acquire Ancillary Data ----
+## ------------------------------------------ ##
+
+# Identify the desired ancillary data files
+anc_files <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1TwN8AwUKc3iLBsTRRzm68owNlUOgkQeI")) %>%
+  dplyr::filter(name %in% c(paste0("Ancillary_", c("dataset", "site", "block", "plot", "core"))))
+
+# Did that get all five?
+anc_files
+
+# Create a folder for local storage
+dir.create(path = file.path("ancillary_data"), showWarnings = F)
+
+# Download files into that
+purrr::walk2(.x = anc_files$id, .y = anc_files$name,
+             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
+                                                path = file.path("ancillary_data", .y)))
+
+## ------------------------------------------ ##
+# Attach Ancillary Data ----
+## ------------------------------------------ ##
+
+# We want to join each ancillary file to our primary data
+
+
+
+
+
 
 ## ------------------------------------------ ##
         # Export Full SPARC Data ----
