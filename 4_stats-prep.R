@@ -55,7 +55,9 @@ all_v2 <- all_v1 %>%
                 core.length_cm, bulk.density_g.cm3,
                 dplyr::starts_with("Al_"), dplyr::starts_with("Fe"),
                 dplyr::ends_with(".P_conc_mg.kg"),
-                C_conc_percent, N_conc_percent)
+                C_conc_percent, N_conc_percent) %>%
+  # Drop non-unique rows (shouldn't be any but you never know)
+  dplyr::distinct()
 
 # See what we lost and make sure you're cool with that
 supportR::diff_check(old = names(all_v1), new = names(all_v2), sort = T)
@@ -64,61 +66,11 @@ supportR::diff_check(old = names(all_v1), new = names(all_v2), sort = T)
 dplyr::glimpse(all_v2)
 
 ## ------------------------------------------ ##
-
+       # Handle Luquillo_2 Core Issue ----
 ## ------------------------------------------ ##
-
-
-
-# %>%
-#   # Drop the one row with an unreasonably high 'total P' value
-#   dplyr::filter(is.na(total.P_conc_mg.kg) | total.P_conc_mg.kg <= 5250)
-
-
-# Megadata includes *a lot* of information and we only really need a subset of it for stats
-stats_v1 <- sparc_tidy %>%
-  # Pare down to only columns of interest
-  ## Unspecified columns are implicitly removed
-   %>%
-  # Drop non-unique rows
-  dplyr::distinct()
-
-# How do the dataframe dimensions change?
-dim(sparc_tidy); dim(stats_v1)
-## Lose many columns but no rows? Good!
-
-# Check structure
-dplyr::glimpse(stats_v1)
-
-## ------------------------------------------ ##
-# Statistics / Visualization Subsetting ----
-## ------------------------------------------ ##
-
-# Need to subset to only certain horizons and where N/C data are present
-stats_v2 <- stats_v1 %>%
-  # Keep only mineral layer (and mixed mineral/organic) data 
-  dplyr::filter(horizon_binary %in% c("mineral", "mixed") |
-                  # Also keep unspecified horizon information (assumes mineral)
-                  nchar(horizon_binary) == 0) %>%
-  # For HBR, keep only A horizon
-  dplyr::filter((dataset == "Hubbard Brook" & horizon == "A") |
-                  dataset != "Hubbard Brook") %>%
-  # Coerce empty N/C percents into true NAs
-  dplyr::mutate(C_conc_percent = ifelse(nchar(C_conc_percent) == 0,
-                                        yes = NA, no = C_conc_percent),
-                N_conc_percent = ifelse(nchar(N_conc_percent) == 0,
-                                        yes = NA, no = N_conc_percent)) %>%
-  # Also we need **either** N or C information in addition to P data for statistics
-  dplyr::filter(!is.na(C_conc_percent) | !is.na(N_conc_percent))
-
-# How do the dataframe dimensions change?
-dim(stats_v1); dim(stats_v2)
-## Lose many rows but no columns? Good!
-
-# Check structure
-dplyr::glimpse(stats_v2)
 
 # Need to do a weighted average across 0-2 and 2-10 depth cores
-luq2_v1 <- stats_v2 %>%
+luq2_v1 <- all_v2 %>%
   # Subset as needed
   dplyr::filter(dataset_simp == "LUQ_2")
 
@@ -149,13 +101,69 @@ luq2_v2 <- luq2_v1 %>%
 
 # Check structure
 dplyr::glimpse(luq2_v2)
+## Should go from 20 rows to 10 rows
 
 # Split off on LUQ_2
-not_luq2 <- stats_v2 %>%
+not_luq2 <- all_v2 %>%
   dplyr::filter(dataset_simp != "LUQ_2")
 
 # Recombine
-stats_v3 <- dplyr::bind_rows(luq2_v2, not_luq2)
+all_v3 <- dplyr::bind_rows(luq2_v2, not_luq2)
+
+## ------------------------------------------ ##
+              # Remove Outliers ----
+## ------------------------------------------ ##
+
+# Begin by removing obvious outliers
+stats_v1 <- all_v3 %>%
+  # KBS has an outrageously high total P value in one spot (~5600 mg/kg)
+  dplyr::filter(is.na(total.P_conc_mg.kg) | total.P_conc_mg.kg <= 5250)
+
+# How many rows lost?
+nrow(all_v3) - nrow(stats_v1)
+
+## ------------------------------------------ ##
+          # Mineral Subsetting ----
+## ------------------------------------------ ##
+
+# One set of hypotheses requires only 0-10 cm of mineral layer
+mineral_v1 <- stats_v1 %>%
+  # Keep only mineral layer (and mixed mineral/organic) data 
+  dplyr::filter(horizon_binary %in% c("mineral", "mixed") |
+                  # Also keep unspecified horizon information (assumes mineral)
+                  nchar(horizon_binary) == 0) %>%
+  # For HBR, keep only A horizon
+  dplyr::filter((dataset == "Hubbard Brook" & horizon == "A") |
+                  dataset != "Hubbard Brook") %>%
+  # Coerce empty N/C percents into true NAs
+  dplyr::mutate(C_conc_percent = ifelse(nchar(C_conc_percent) == 0,
+                                        yes = NA, no = C_conc_percent),
+                N_conc_percent = ifelse(nchar(N_conc_percent) == 0,
+                                        yes = NA, no = N_conc_percent)) %>%
+  # Also we need **either** N or C information in addition to P data for statistics
+  dplyr::filter(!is.na(C_conc_percent) | !is.na(N_conc_percent))
+
+# How many rows does that lose?
+nrow(stats_v1) - nrow(mineral_v1)
+
+# Now subset to only the mineral cores that start at 0
+
+
+
+
+
+## ------------------------------------------ ##
+# Statistics / Visualization Subsetting ----
+## ------------------------------------------ ##
+
+
+# How do the dataframe dimensions change?
+dim(stats_v1); dim(stats_v2)
+## Lose many rows but no columns? Good!
+
+# Check structure
+dplyr::glimpse(stats_v2)
+
 
 # Finally, we want to subset to only particular depths within those horizons
 stats_v4 <- stats_v3 %>%
