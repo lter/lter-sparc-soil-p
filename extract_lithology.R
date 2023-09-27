@@ -134,7 +134,27 @@ rock_index <- rock_index_raw %>%
       rock_abbrev == 'nd' ~ 'no_data',
       TRUE ~ as.character(rock_abbrev) ) ) %>%
   # Remove unneeded columns
-  dplyr::select(value = rock_code, rock_type)
+  dplyr::select(value = rock_code, rock_type) %>%
+  # Create new column for rock group
+  dplyr::mutate(
+    rock_group = dplyr::case_when(
+      rock_type == 'unconsolidated_sediments' ~ 'Check on this',
+      rock_type == 'siliciclastic_sedimentary_rocks' ~ 'Acidic',
+      rock_type == 'mixed_sedimentary_rocks' ~ 'Check on this',
+      rock_type == 'pyroclastic' ~ 'Check on this',
+      rock_type == 'carbonate_sedimentary_rocks' ~ 'Carbonate',
+      rock_type == 'evaporites' ~ 'Check on this',
+      rock_type == 'metamorphic_rocks' ~ 'Check on this',
+      rock_type == 'acid_plutonic_rocks' ~ 'Acidic',
+      rock_type == 'intermediate_plutonic_rocks' ~ 'Intermediate',
+      rock_type == 'basic_plutonic_rocks' ~ 'Basic',
+      rock_type == 'acid_volcanic_rocks' ~ 'Acidic',
+      rock_type == 'intermediate_volcanic_rocks' ~ 'Intermediate',
+      rock_type == 'basic_volcanic_rocks' ~ 'Basic',
+      rock_type == 'ice_and_glaciers' ~ 'Check on this',
+      rock_type == 'water_bodies' ~ 'Check on this',
+      rock_type == 'no_data' ~ 'Check on this',
+      TRUE ~ as.character(rock_type)))
 
 # Check that worked
 dplyr::glimpse(rock_index)
