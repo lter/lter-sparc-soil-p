@@ -1,3 +1,43 @@
+## ------------------------------------------ ##
+    # SPARC Soil P -- Calculating Averages
+## ------------------------------------------ ##
+# Script author(s): Nick J Lyon
+
+# Purpose:
+
+
+# Pre-Requisites:
+
+
+## ------------------------------------------ ##
+              # Housekeeping -----
+## ------------------------------------------ ##
+
+# Load necessary libraries
+# install.packages("librarian")
+librarian::shelf(tidyverse, googledrive)
+
+# Create necessary sub-folder(s)
+dir.create(path = file.path("data", "stats_ready"), showWarnings = F)
+dir.create(path = file.path("data", "averages"), showWarnings = F)
+
+# Clear environment
+rm(list = ls())
+
+# Identify needed tidy file(s)
+tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
+
+# Identify all files in that folder that are 'stats-ready'
+ready_files <- googledrive::drive_ls(path = tidy_drive) %>%
+  dplyr::filter(stringr::str_detect(string = name, pattern = "_stats-ready_"))
+
+# Download those files locally
+purrr::walk2(.x = ready_files$id, .y = ready_files$name,
+             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
+                                                path = file.path("data", "stats_ready", .y)))
+
+# Identify those files locally
+( ready_local <- dir(path = file.path("data", "stats_ready")) )
 
 
 
