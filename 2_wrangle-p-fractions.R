@@ -17,10 +17,10 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, readxl, magrittr)
+librarian::shelf(tidyverse, googledrive, magrittr)
 
 # Create necessary sub-folder(s)
-dir.create(path = file.path("tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
 
 # Clear environment
 rm(list = ls())
@@ -32,10 +32,11 @@ tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pj
 googledrive::drive_ls(path = tidy_drive) %>%
   dplyr::filter(name == "sparc-soil-p_archival-data.csv") %>%
   googledrive::drive_download(file = .$id, overwrite = T,
-                              path = file.path("tidy_data", .$name))
+                              path = file.path("data", "tidy_data", .$name))
 
 # Read that file in
-sparc_v1 <- read.csv(file = file.path("tidy_data", "sparc-soil-p_archival-data.csv")) %>%
+sparc_v1 <- read.csv(file = file.path("data", "tidy_data", 
+                                      "sparc-soil-p_archival-data.csv")) %>%
   # Drop row number column
   dplyr::select(-row_num)
 
@@ -84,7 +85,7 @@ sparc_v2 <- sparc_v1 %>%
 dplyr::glimpse(sparc_v2)
 
 ## ------------------------------------------ ##
-            # Phosphorus Sums ----
+          # Phosphorus Sums Prep ----
 ## ------------------------------------------ ##
 
 # Glimpse the entire dataset
@@ -107,6 +108,10 @@ p_sums_v1 <- sparc_v2 %>%
 
 # Check that out
 dplyr::glimpse(p_sums_v1)
+
+## ------------------------------------------ ##
+             # P Sums - Slow ----
+## ------------------------------------------ ##
 
 # For the below to work we need to easily reference which P fractions exist for each dataset
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -159,6 +164,10 @@ p_sums_v2 <- p_sums_v1 %>%
                                    no = P_conc_mg.kg_1_HCl - P_conc_mg.kg_1_citrate),
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
+
+## ------------------------------------------ ##
+            # P Sums - Total ----
+## ------------------------------------------ ##
 
 # Recall P fractions for calculating total P
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -235,6 +244,10 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Toolik_2" ~ (P_conc_mg.kg_total),
     T ~ NA))
 
+## ------------------------------------------ ##
+            # P Sums - Available ----
+## ------------------------------------------ ##
+
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
   
@@ -285,6 +298,10 @@ p_sums_v4 <- p_sums_v3 %>%
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
 
+## ------------------------------------------ ##
+              # P Sums - Bicarb ----
+## ------------------------------------------ ##
+
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
   
@@ -333,6 +350,10 @@ p_sums_v5 <- p_sums_v4 %>%
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
+
+## ------------------------------------------ ##
+            # P Sums - Biological ----
+## ------------------------------------------ ##
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -383,6 +404,10 @@ p_sums_v6 <- p_sums_v5 %>%
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
+
+## ------------------------------------------ ##
+        # P Sums - Intermediate ----
+## ------------------------------------------ ##
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -442,6 +467,10 @@ p_sums_v7 <- p_sums_v6 %>%
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
+
+## ------------------------------------------ ##
+              # P Sums - NaOH P ----
+## ------------------------------------------ ##
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
