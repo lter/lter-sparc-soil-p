@@ -163,19 +163,20 @@ dplyr::glimpse(full_v3c)
 ## ------------------------------------------ ##
 
 # Create a final data object
-sparc_tidy <- sparc_v8a %>%
-  # Drop the one row with an unreasonably high 'total P' value
-  dplyr::filter(is.na(total.P_conc_mg.kg) | total.P_conc_mg.kg <= 5250)
+final_combo <- full_v3c
 
 # Check its structure
-dplyr::glimpse(sparc_tidy)
+dplyr::glimpse(final_combo)
 
 # Define the tidy file name
-tidy_name <- "full-data_tidy-soil-p.csv"
+combo_name <- "sparc-soil-p_full-data-incl-ancillary.csv"
 
 # Save out the final data object
-write.csv(x = sparc_tidy, file = file.path("tidy_data", tidy_name), 
+write.csv(x = final_combo, file = file.path("data", "tidy_data", combo_name), 
           row.names = F, na = "")
 
+# Export to that folder in the Drive
+googledrive::drive_upload(media = file.path("data", "tidy_data", combo_name), 
+                          overwrite = T, path = tidy_drive)
 
 # End ----
