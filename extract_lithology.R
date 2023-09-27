@@ -17,17 +17,41 @@
 # install.packages("librarian")
 librarian::shelf(tidyverse, scicomptools, sf, terra)
 
-# NOTE: pulling source data from another working group's folder
-# Need to create own folder for SPARC Soil P later and populate it with the source data
-(path <- scicomptools::wd_loc(local = F, remote_path = file.path('/', "home", "shares", "lter-si", "si-watershed-extract")))
+# Create necessary sub-folder(s)
+dir.create(path = file.path("raw_data"), showWarnings = F)
+
+# Identify raw data files
+raw_lithology_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1gxhT6OCOGlIsLZ-DT3Zzvuj6-EnNgXQh")) %>%
+  dplyr::filter(name %in% c("glim_wgs84_0point5deg.txt.asc",
+                            "Classnames.txt"))
+
+# Identify raw data files
+raw_ancillary_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1TwN8AwUKc3iLBsTRRzm68owNlUOgkQeI")) %>%
+  dplyr::filter(name %in% c("Ancillary_site"))
+
+# Combine file IDs
+raw_ids <- rbind(raw_lithology_ids, raw_ancillary_ids)
+
+# For each raw data file
+for(k in 1:nrow(raw_ids)){
+  
+  # Download file (but silence how chatty this function is)
+  googledrive::with_drive_quiet(
+    googledrive::drive_download(file = raw_ids[k, ]$id, overwrite = T,
+                                path = file.path("raw_data", raw_ids[k, ]$name)) )
+  
+  # Print success message
+  message("Downloaded file ", k, " of ", nrow(raw_ids)) }
+
+# Clear environment
+rm(list = ls())
 
 ## ------------------------------------------------------- ##
 #                Lithology - Extract ----
 ## ------------------------------------------------------- ##
 
 # Pull in the raw lithology data
-rocks_raw <- terra::rast(x = file.path(path, "raw-driver-data", "raw-lithology-data",
-                                       "glim_wgs84_0point5deg.txt.asc"))
+rocks_raw <- terra::rast(x = file.path("raw_data", "glim_wgs84_0point5deg.txt.asc"))
 
 # Check CRS
 sf::st_crs(rocks_raw)
@@ -68,6 +92,10 @@ locations_spatvector <- terra::vect(locations, geom=c("x", "y"), crs="+proj=long
 terra::extract(rocks_raw, locations_spatvector)
 
 
+
+
+
+
 ## ------------------------------------------------------- ##
 #              Lithology - Index Prep ----
 ## ------------------------------------------------------- ##
@@ -75,8 +103,7 @@ terra::extract(rocks_raw, locations_spatvector)
 # Bring in the index tying rock code integers with rock abbreviations
 # NOTE: pulling source data from another working group's folder
 # Need to create own folder for SPARC Soil P later and populate it with the source data
-rock_index_raw <- read.table(file = file.path(path, "raw-driver-data", 
-                                              "raw-lithology-data", "Classnames.txt"),
+rock_index_raw <- read.table(file = file.path("raw_data", "Classnames.txt"),
                              header = T, sep = ';')
 
 # Fix this index to make it more usable
