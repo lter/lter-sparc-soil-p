@@ -7,8 +7,8 @@
 ## Process 'archival' data for the purposes of the 'Soil P' LTER SPARC group
 
 # Pre-Requisites:
-## Assumes that "soil_p_harmonize.R" script has been run relatively recently
-## Otherwise risks using a superseded version of the tidy data
+## Assumes that "1_harmonize.R" script has been run or doesn't need to be run
+## Otherwise risks using an old version of the tidy data
 ### (that could lack updated raw data/data key information)
 
 ## ------------------------------------------ ##
@@ -643,6 +643,27 @@ sparc_v6 <- sparc_v5 %>%
 # Check simplified dataset names
 sort(unique(sparc_v6$dataset_simp))
 
+## ------------------------------------------ ##
+# Export ----
+## ------------------------------------------ ##
+
+# Make a final data object
+final_sparc <- sparc_v6
+
+# Glimpse it
+dplyr::glimpse(final_sparc)
+
+
+
+# Export locally
+
+
+
+# Identify Drive folder for export
+tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
+
+
+# Export to that folder in the Drive
 
 
 
