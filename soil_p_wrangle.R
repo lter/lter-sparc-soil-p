@@ -142,7 +142,7 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "FloridaCoastal" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Jornada_1" ~ NA,
     dataset == "Jornada_2" ~ (P_conc_mg.kg_3_HCl),
-    dataset == "Kellog_Biological_Station" ~ (Pi_conc_mg.kg_6_HCl),
+    dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_6_HCl),
     dataset == "Konza_1" ~ (P_conc_mg.kg_3_Ca.bound),
     dataset == "Luquillo_1" ~ NA,
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_4_HCl),
@@ -200,7 +200,7 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Jornada_1" ~ (P_conc_mg.kg_total),
     dataset == "Jornada_2" ~ (P_conc_mg.kg_1_MgCl2 + P_conc_mg.kg_2_NaOH + P_conc_mg.kg_3_HCl +
                                 P_conc_mg.kg_4_residual),
-    dataset == "Kellog_Biological_Station" ~ (Pi_conc_mg.kg_1_resin + 
+    dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_1_resin + 
                                                 Pi_conc_mg.kg_2_NaHCO3 + 
                                                 Po_conc_mg.kg_2_NaHCO3 +
                                                 Pi_conc_mg.kg_3_microbial + 
