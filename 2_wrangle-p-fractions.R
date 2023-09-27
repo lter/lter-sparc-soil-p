@@ -661,45 +661,4 @@ for(file in ready_files){
   googledrive::drive_upload(media = file.path("tidy_data", file), 
                             overwrite = T, path = tidy_drive) }
 
-## ------------------------------------------ ##
-    # Bonus - Nuanced Depth Subsetting ----
-## ------------------------------------------ ##
-
-# We may eventually want a more nuanced depth subset operation
-## I figured this out when it seemed like what we wanted first
-## and am preserving it here if/when we need it later
-
-# Check structure of pre-depth subset version of the stats object
-dplyr::glimpse(stats_v2)
-
-# How many *centimeters* from the first measured depth (of the mineral/A horizon) are allowed?
-depth_cutoff <- 15
-
-# Start with the 
-stats_bonus <- stats_v2 %>%
-  # Group by site-information columns
-  dplyr::group_by(dplyr::across(lter:block)) %>%
-  # Calculate minimum depth within those columns
-  dplyr::mutate(min_depth = ifelse(!all(is.na(depth.start_cm)),
-                                   yes = min(depth.start_cm, na.rm = T),
-                                   no = NA)) %>%
-  # Also calculate the maximum 'allowed' depth using the cutoff defined above
-  dplyr::mutate(max_allowed_depth = (min_depth + depth_cutoff)) %>%
-  # Ungroup
-  dplyr::ungroup() %>%
-  # Now filter to only samples between those bookends
-  dplyr::filter(depth.start_cm >= min_depth & depth.end_cm <= max_allowed_depth) %>%
-  # Drop columns needed for that filter but otherwise not needed
-  dplyr::select(-min_depth, -max_allowed_depth)
-
-# How many rows does that drop?
-nrow(stats_v2); nrow(stats_bonus)
-
-# More or less data in this subset than the simpler 'depth starting at 0' subset?
-nrow(stats_v3); nrow(stats_bonus)
-## *Much* less data with this approach
-
-# Re-check structure
-dplyr::glimpse(stats_bonus)
-
 # End ----
