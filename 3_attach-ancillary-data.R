@@ -1,32 +1,71 @@
+## ------------------------------------------ ##
+# SPARC Soil P -- Join Ancillary Data
+## ------------------------------------------ ##
+# Script author(s): Nick J Lyon
+
+# Purpose:
+
+
+# Pre-Requisites:
 
 
 ## ------------------------------------------ ##
-# Acquire Ancillary Data ----
+              # Housekeeping -----
 ## ------------------------------------------ ##
+
+# Load necessary libraries
+# install.packages("librarian")
+librarian::shelf(tidyverse, googledrive, magrittr)
+
+# Create necessary sub-folder(s)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "ancillary_data"), showWarnings = F)
+
+# Clear environment
+rm(list = ls())
+
+# Identify needed tidy file(s)
+tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
+
+# Identify the archival data in that folder and download it
+googledrive::drive_ls(path = tidy_drive) %>%
+  dplyr::filter(name == "sparc-soil-p_full-data-p-sums.csv") %>%
+  googledrive::drive_download(file = .$id, overwrite = T,
+                              path = file.path("data", "tidy_data", .$name))
+
+# Read that file in
+full_v1 <- read.csv(file = file.path("data", "tidy_data", 
+                                     "sparc-soil-p_full-data-p-sums.csv"))
+
+# Glimpse it!
+dplyr::glimpse(full_v1)
+
+## ------------------------------------------ ##
+          # Acquire Ancillary Data ----
+## ------------------------------------------ ##
+
+# Identify ancillary data file names
+anc_names <- c(paste0("Ancillary_", c("dataset", "site", "block", "plot", "core")))
 
 # Identify the desired ancillary data files
 anc_files <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1TwN8AwUKc3iLBsTRRzm68owNlUOgkQeI")) %>%
-  dplyr::filter(name %in% c(paste0("Ancillary_", c("dataset", "site", "block", "plot", "core"))))
+  dplyr::filter(name %in% anc_names)
 
 # Did that get all five?
 anc_files
 
-# Create a folder for local storage
-dir.create(path = file.path("ancillary_data"), showWarnings = F)
-
 # Download files into that
 purrr::walk2(.x = anc_files$id, .y = anc_files$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T,
-                                                path = file.path("ancillary_data", .y)))
-
-
+                                                path = file.path("data", 
+                                                                 "ancillary_data", .y)))
 
 ## ------------------------------------------ ##
-# Attach Ancillary Data ----
+            # Attach Ancillary Data ----
 ## ------------------------------------------ ##
 
 # Make a new version of our primary data to avoid bad errors
-sparc_v7 <- sparc_v6
+full_v2 <- full_v1
 
 # Identify the available ancillary data granularity levels
 gran_levels <- c("dataset", "site", "block", "plot", "core")
@@ -38,7 +77,7 @@ for(granularity in gran_levels){
   message("Integrating ", granularity, "-level ancillary data")
   
   # Identify the file
-  gran_path <- file.path("ancillary_data", paste0("Ancillary_", granularity, ".xlsx"))
+  gran_path <- file.path("data", "ancillary_data", paste0("Ancillary_", granularity, ".xlsx"))
   
   # Read it in
   gran_df <- readxl::read_xlsx(path = gran_path)
@@ -52,21 +91,24 @@ for(granularity in gran_levels){
                                            setdiff(x = names(gran_df), y = spatial_cols)))
   
   # Now join onto the larger SPARC data
-  sparc_v7 %<>%
+  full_v2 %<>%
     dplyr::left_join(y = gran_df, by = spatial_cols) }
 
 # Check what that leaves us with
-dplyr::glimpse(sparc_v7)
+dplyr::glimpse(full_v2)
+
+# Drop the data object left over from the loop
+rm(list = "gran_df")
 
 ## ------------------------------------------ ##
-# Streamline Ancillary Data ----
+        # Streamline Ancillary Data ----
 ## ------------------------------------------ ##
 
 # Now need to collapse 'duplicate' columns from ancillary data into single 'actual' value
 ## Will do one pipe/object per set of related columns
 
 # Fix latitude/longitude columns
-sparc_v8a <- sparc_v7 %>%
+full_v3a <- full_v2 %>%
   ## Collapse columns together into a single 'actual' one
   dplyr::mutate(lat_actual = dplyr::coalesce(lat, as.numeric(core_latitude), 
                                              as.numeric(plot_latitude), 
@@ -79,9 +121,6 @@ sparc_v8a <- sparc_v7 %>%
                                              as.numeric(block_longitude), 
                                              as.numeric(site_longitude),
                                              as.numeric(dataset_longitude)),
-                coord_source = dplyr::coalesce(core_coordinate_source, plot_coordinate_source, 
-                                               block_coordinate_source, site_coordinate_source,
-                                               dataset_coordinate_source),
                 .after = raw_filename) %>%
   # Throw away (sorry) all component columns now that we have 'actual'
   dplyr::select(-lat, -lon, -dplyr::ends_with("_latitude"), 
@@ -91,10 +130,36 @@ sparc_v8a <- sparc_v7 %>%
                 longitude = lon_actual)
 
 # Glimpse it
-dplyr::glimpse(sparc_v8a)
+dplyr::glimpse(full_v3a)
+
+# Streamline precipitation
+full_v3b <- full_v3a %>%
+  # Collapse into one column
+  dplyr::mutate(precip_actual = dplyr::coalesce(precipitation_mm, site_MAP_mm),
+                .after = core) %>%
+  # Drop old columns
+  dplyr::select(-precipitation_mm, -site_MAP_mm) %>%
+  # Rename remaining column
+  dplyr::rename(mean.annual.precip_mm = precip_actual)
+
+# Look at it
+dplyr::glimpse(full_v3b)
+
+# Do temperature next
+full_v3c <- full_v3b %>%
+  # Collapse
+  dplyr::mutate(temp_actual = dplyr::coalesce(site_MAT_C),
+                .after = mean.annual.precip_mm) %>%
+  # Drop old
+  dplyr::select(-site_MAT_C) %>%
+  # Rename new
+  dplyr::rename(mean.annual.temp_C = temp_actual)
+
+# Look at it
+dplyr::glimpse(full_v3c)
 
 ## ------------------------------------------ ##
-# Export Full SPARC Data ----
+     # Export Ancillary + P Sum Data ----
 ## ------------------------------------------ ##
 
 # Create a final data object
