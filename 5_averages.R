@@ -37,7 +37,22 @@ purrr::walk2(.x = ready_files$id, .y = ready_files$name,
                                                 path = file.path("data", "stats_ready", .y)))
 
 # Identify those files locally
-( ready_local <- dir(path = file.path("data", "stats_ready")) )
+( local_files <- dir(path = file.path("data", "stats_ready")) )
+
+## ------------------------------------------ ##
+              # Averaging Steps ----
+## ------------------------------------------ ##
+
+# We'll loop across each stats-ready file separately to get this done
+for(focal_ready in local_files){
+  
+  # Starting message
+  message("Beginning averaging steps for '", focal_ready, "'")
+  
+  
+  
+}
+
 
 
 
