@@ -607,9 +607,6 @@ sparc_name <- "sparc-soil-p_full-data-p-sums.csv"
 write.csv(x = final_sparc, row.names = F, na = '',
           file = file.path("data", "tidy_data", sparc_name))
 
-# Identify Drive folder for export
-tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
-
 # Export to that folder in the Drive
 googledrive::drive_upload(media = file.path("data", "tidy_data", sparc_name), 
                           overwrite = T, path = tidy_drive)
