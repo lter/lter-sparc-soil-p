@@ -17,7 +17,10 @@
 librarian::shelf(tidyverse, googledrive, supportR, psych)
 
 # Create necessary sub-folder(s)
-dir.create(path = file.path("raw_data"), showWarnings = F)
+dir.create(path = file.path("data"), showWarnings = F)
+dir.create(path = file.path("data", "raw_data"), showWarnings = F)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "key_files"), showWarnings = F)
 
 # Identify raw data files
 raw_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/10igyNjNSEJDrz5mUtYyxgbUPDUO7bsuW"), type = "csv")
@@ -25,7 +28,7 @@ raw_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/dr
 # Download each data file into the new 'raw_data' folder
 purrr::walk2(.x = raw_ids$id, .y = raw_ids$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T,
-                                                path = file.path("raw_data", .y)))
+                                                path = file.path("data", "raw_data", .y)))
 
 # Clear environment
 rm(list = ls())
@@ -34,16 +37,13 @@ rm(list = ls())
               # Data Key Prep ----
 ## ------------------------------------------ ##
 
-# Make a folder for local storage of the data key
-dir.create(path = file.path("key_files"), showWarnings = F)
-
 # Download data key (connects raw column names with synonymized equivalents)
 googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1WIAo08Jnmp7BdvN8xxobZ_txcFCWZ35w"), pattern = "LTER_P_DataKey") %>%
   googledrive::drive_download(file = .$id, type = "csv", overwrite = T,
-                              path = file.path("key_files", .$name))
+                              path = file.path("data", "key_files", .$name))
 
 # Retrieve the data key
-key_v1 <- read.csv(file = file.path("key_files", "LTER_P_DataKey.csv")) %>%
+key_v1 <- read.csv(file = file.path("data", "key_files", "LTER_P_DataKey.csv")) %>%
   # Remove any rows that lack an entry in the "Variable" column
   dplyr::filter(!is.na(Variable) & nchar(Variable) != 0 & Variable != "NA") %>%
   # Drop unwanted columns
@@ -213,7 +213,7 @@ key_v5 %>%
 ## ------------------------------------------ ##
 
 # Identify the downloaded raw files
-downloaded_files <- dir(path = file.path("raw_data"))
+downloaded_files <- dir(path = file.path("data", "raw_data"))
 
 # Compare the two to see if all file names in the key were in the Drive
 supportR::diff_check(old = downloaded_files, new = unique(key_v5$Raw_Filename))
@@ -237,7 +237,7 @@ for(j in 1:length(raw_files)){
   key_sub <- dplyr::filter(key, Raw_Filename == focal_raw)
   
   # Load in that file
-  raw_df_v1 <- read.csv(file = file.path("raw_data", focal_raw))
+  raw_df_v1 <- read.csv(file = file.path("data", "raw_data", focal_raw))
   
   # Process it to ready for integration with other raw files
   raw_df_v2 <- raw_df_v1 %>%
@@ -1005,9 +1005,6 @@ final_tidy <- tidy_v8b
 # Check its structure
 dplyr::glimpse(final_tidy)
 
-# Create a folder to export into
-dir.create(path = file.path("tidy_data"), showWarnings = F)
-
 # And identify the tidy data Drive URL
 tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
 
@@ -1016,10 +1013,10 @@ arch_name <- "sparc-soil-p_archival-data.csv"
 
 # Export locally
 write.csv(x = final_tidy, row.names = F, na = '',
-          file = file.path("tidy_data", arch_name))
+          file = file.path("data", "tidy_data", arch_name))
 
 # Upload that to the Drive as well
-googledrive::drive_upload(media = file.path("tidy_data", arch_name), 
+googledrive::drive_upload(media = file.path("data", "tidy_data", arch_name), 
                           overwrite = T, path = tidy_drive)
 
 # End ----
