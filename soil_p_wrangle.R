@@ -17,7 +17,7 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, readxl)
+librarian::shelf(tidyverse, googledrive, readxl, magrittr)
 
 # Create necessary sub-folder(s)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
@@ -663,14 +663,47 @@ purrr::walk2(.x = anc_files$id, .y = anc_files$name,
                                                 path = file.path("ancillary_data", .y)))
 
 ## ------------------------------------------ ##
-# Attach Ancillary Data ----
+          # Attach Ancillary Data ----
 ## ------------------------------------------ ##
 
-# We want to join each ancillary file to our primary data
+# Make a new version of our primary data to avoid bad errors
+sparc_v7 <- sparc_v6
 
+# Identify the available ancillary data granularity levels
+gran_levels <- c("dataset", "site", "block", "plot", "core")
 
+# Loop across desired/available ancillary data to integrate with data
+for(granularity in gran_levels){
+  
+  # Starting message
+  message("Integrating ", granularity, "-level ancillary data")
+  
+  # Identify the file
+  gran_path <- file.path("ancillary_data", paste0("Ancillary_", granularity, ".xlsx"))
+  
+  # Read it in
+  gran_df <- readxl::read_xlsx(path = gran_path)
+  
+  # Identify spatial organization columns (in this level of the ancillary data)
+  spatial_cols <- intersect(x = c("lter", "dataset_simp", gran_levels), y = names(gran_df))
+  
+  # Make the non-granularity columns specific to the level from which they were entered
+  ## Note: manual assignment of column names is *risky*! DO NOT ATTEMPT ELSEWHERE!!
+  names(gran_df) <- c(spatial_cols, paste0(granularity, "_", 
+                                           setdiff(x = names(gran_df), y = spatial_cols)))
+  
+  # Now join onto the larger SPARC data
+  sparc_v7 %<>%
+    dplyr::left_join(y = gran_df, by = spatial_cols) }
 
+# Check what that leaves us with
+dplyr::glimpse(sparc_v7)
 
+## ------------------------------------------ ##
+# Streamline Ancillary Data ----
+## ------------------------------------------ ##
+
+# Now need to collapse 'duplicate' columns from ancillary data into single 'actual' value
 
 
 ## ------------------------------------------ ##
