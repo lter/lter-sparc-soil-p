@@ -591,124 +591,27 @@ summary(sparc_v4$total.P_stock_g.m2)
 dplyr::glimpse(sparc_v4[1:35])
 
 ## ------------------------------------------ ##
-        # Standardize Spatial Info ----
-## ------------------------------------------ ##
-
-# Not all datasets are collected at the same level of spatial granularity
-## Those that don't have a given level (e.g., data only at plot level not specific cores)...
-## ...have NA in the levels of information that they are missing
-# We'll fill those with a standard character here so that we can use it for stats/graphing purposes
-
-# Check structure of the relevant columns
-sparc_v4 %>%
-  dplyr::select(lter, dataset, site, block, plot, core) %>%
-  dplyr::glimpse()
-
-# Fill missing entries in a dataset-specific way
-sparc_v5 <- sparc_v4 %>%
-  # If site is missing, fill with dataset name
-  dplyr::mutate(site = ifelse(test = (is.na(site) | nchar(site) == 0),
-                              yes = dataset, no = site)) %>%
-  # If block is missing, fill with site
-  dplyr::mutate(block = ifelse(test = (is.na(block) | nchar(block) == 0),
-                               yes = site, no = block)) %>%
-  # If plot is missing, fill with block
-  dplyr::mutate(plot = ifelse(test = (is.na(plot) | nchar(plot) == 0),
-                               yes = block, no = plot)) %>%
-  # If core is missing, fill with plot
-  dplyr::mutate(core = ifelse(test = (is.na(core) | nchar(core) == 0),
-                              yes = plot, no = core))
-
-# Re-check structure
-sparc_v5 %>%
-  dplyr::select(lter, dataset, site, block, plot, core) %>%
-  dplyr::glimpse()
-
-# Collapse spatial organization to get a quick sense of how many granularity is available
-sparc_v5 %>%
-  dplyr::group_by(lter, dataset) %>%
-  dplyr::summarize(site_ct = length(unique(site)),
-                   sites = paste(unique(site), collapse = "; "),
-                   block_ct = length(unique(block)),
-                   blocks = paste(unique(block), collapse = "; "),
-                   plot_ct = length(unique(plot)),
-                   plots = paste(unique(plot), collapse = "; "),
-                   core_ct = length(unique(core)),
-                   cores = paste(unique(core), collapse = "; "))
-
-## ------------------------------------------ ##
-          # Make Simple Data Names ----
-## ------------------------------------------ ##
-
-# Simplify dataset names to make plot labels neater
-sparc_v6 <- sparc_v5 %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Bonanza Creek", replacement = "BNZ", 
-                                    x = dataset), .before = dataset) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "CedarCreek", replacement = "CDR", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Coweeta", replacement = "CWT", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "FloridaCoastal", replacement = "FCE", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "HJAndrews", replacement = "AND", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Hubbard Brook", replacement = "HBR", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Jornada", replacement = "JRN", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Kellogg_Bio_Station", replacement = "KBS", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Konza", replacement = "KNZ", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Luquillo", replacement = "LUQ", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Niwot", replacement = "NWT", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Sevilleta", replacement = "SEV", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Toolik", replacement = "ARC", 
-                                    x = dataset_simp))
-
-# Check simplified dataset names
-sort(unique(sparc_v6$dataset_simp))
-
-## ------------------------------------------ ##
-# Export ----
+            # Export P Sums Data ----
 ## ------------------------------------------ ##
 
 # Make a final data object
-final_sparc <- sparc_v6
+final_sparc <- sparc_v4
 
 # Glimpse it
 dplyr::glimpse(final_sparc)
 
-
+# Define file name
+sparc_name <- "sparc-soil-p_full-data-p-sums.csv"
 
 # Export locally
-
-
+write.csv(x = final_sparc, row.names = F, na = '',
+          file = file.path("data", "tidy_data", sparc_name))
 
 # Identify Drive folder for export
 tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
 
-
 # Export to that folder in the Drive
-
-
-
-## ------------------------------------------ ##
-          # Google Drive Uploads ----
-## ------------------------------------------ ##
-
-# Identify tidy files (other than archival data made by 'harmonize' script)
-( ready_files <- setdiff(x = dir(path = file.path("tidy_data")), 
-                         y = "sparc-soil-p_archival-data.csv") )
-
-# Loop across these files...
-for(file in ready_files){
-  
-  #...and upload to the Drive
-  googledrive::drive_upload(media = file.path("tidy_data", file), 
-                            overwrite = T, path = tidy_drive) }
+googledrive::drive_upload(media = file.path("data", "tidy_data", sparc_name), 
+                          overwrite = T, path = tidy_drive)
 
 # End ----
