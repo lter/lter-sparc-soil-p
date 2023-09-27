@@ -700,18 +700,41 @@ for(granularity in gran_levels){
 dplyr::glimpse(sparc_v7)
 
 ## ------------------------------------------ ##
-# Streamline Ancillary Data ----
+        # Streamline Ancillary Data ----
 ## ------------------------------------------ ##
 
 # Now need to collapse 'duplicate' columns from ancillary data into single 'actual' value
+## Will do one pipe/object per set of related columns
 
+# Fix latitude/longitude columns
+sparc_v8a <- sparc_v7 %>%
+  ## Collapse columns together into a single 'actual' one
+  dplyr::mutate(lat_actual = dplyr::coalesce(lat, core_latitude, plot_latitude, 
+                                             block_latitude, site_latitude,
+                                             dataset_latitude),
+                lon_actual = dplyr::coalesce(lon, core_longitude, plot_longitude, 
+                                             block_longitude, site_longitude,
+                                             dataset_longitude),
+                coord_source = dplyr::coalesce(core_coordinate_source, plot_coordinate_source, 
+                                               block_coordinate_source, site_coordinate_source,
+                                               dataset_coordinate_source),
+                .after = raw_filename) %>%
+  # Throw away (sorry) all component columns now that we have 'actual'
+  dplyr::select(-lat, -lon, -dplyr::ends_with("_latitude"), 
+                -dplyr::ends_with("_longitude"), -dplyr::ends_with("_coordinate_source")) %>%
+  # Rename actual
+  dplyr::rename(latitude = lat_actual,
+                longitude = lon_actual)
+
+# Glimpse it
+dplyr::glimpse(sparc_v8a)
 
 ## ------------------------------------------ ##
         # Export Full SPARC Data ----
 ## ------------------------------------------ ##
 
 # Create a final data object
-sparc_tidy <- sparc_v6 %>%
+sparc_tidy <- sparc_v8a %>%
   # Drop the one row with an unreasonably high 'total P' value
   dplyr::filter(is.na(total.P_conc_mg.kg) | total.P_conc_mg.kg <= 5250)
 
