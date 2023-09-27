@@ -209,7 +209,7 @@ key_v5 %>%
   dplyr::filter(ct > 1)
 
 ## ------------------------------------------ ##
-                # Data Harmonizing ----
+            # Data Harmonizing ----
 ## ------------------------------------------ ##
 
 # Identify the downloaded raw files
@@ -329,7 +329,7 @@ sort(unique(tidy_v1$distance))
 sort(unique(tidy_v1$topography))
 
 # Fix any typos identified above
-tidy_v2 <- tidy_v1 %>%
+tidy_v2a <- tidy_v1 %>%
   # Fix some of the spatial/site columns
   dplyr::mutate(lat = as.numeric(lat),
                 lon = as.numeric(lon),
@@ -374,13 +374,77 @@ tidy_v2 <- tidy_v1 %>%
                                  no = dataset)) %>%
   # And simplify LTER for that dataset
   dplyr::mutate(lter = ifelse(lter == "Chichaqua",
-                                 yes = "CDR", no = lter)) 
+                                 yes = "CDR", no = lter))  %>%
+  # Also make a simplified dataset name for use down the line
+  dplyr::mutate(dataset_simp = gsub(pattern = "Bonanza Creek", replacement = "BNZ", 
+                                    x = dataset), .before = dataset) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "CedarCreek", replacement = "CDR", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Coweeta", replacement = "CWT", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "FloridaCoastal", replacement = "FCE", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "HJAndrews", replacement = "AND", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Hubbard Brook", replacement = "HBR", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Jornada", replacement = "JRN", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Kellogg_Bio_Station", replacement = "KBS", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Konza", replacement = "KNZ", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Luquillo", replacement = "LUQ", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Niwot", replacement = "NWT", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Sevilleta", replacement = "SEV", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Toolik", replacement = "ARC", 
+                                    x = dataset_simp))
 
 # Check out new LTER column
-sort(unique(tidy_v2$lter))
+sort(unique(tidy_v2a$lter))
+sort(unique(tidy_v2a$dataset_simp))
+
+# Not all datasets are collected at the same level of spatial granularity
+## Those that don't have a given level (e.g., data only at plot level not specific cores)...
+## ...have NA in the levels of information that they are missing
+
+# If any piece of information is missing, fill with the next coarser piece
+tidy_v2b <- tidy_v2a %>%
+  # If site is missing, fill with dataset name
+  dplyr::mutate(site = ifelse(test = (is.na(site) | nchar(site) == 0),
+                              yes = dataset, no = site)) %>%
+  # If block is missing, fill with site
+  dplyr::mutate(block = ifelse(test = (is.na(block) | nchar(block) == 0),
+                               yes = site, no = block)) %>%
+  # If plot is missing, fill with block
+  dplyr::mutate(plot = ifelse(test = (is.na(plot) | nchar(plot) == 0),
+                              yes = block, no = plot)) %>%
+  # If core is missing, fill with plot
+  dplyr::mutate(core = ifelse(test = (is.na(core) | nchar(core) == 0),
+                              yes = plot, no = core))
+
+# Re-check structure
+tidy_v2b %>%
+  dplyr::select(lter, dataset, site, block, plot, core) %>%
+  dplyr::glimpse()
+
+# Collapse spatial organization to get a quick sense of how many granularity is available
+tidy_v2b %>%
+  dplyr::group_by(lter, dataset) %>%
+  dplyr::summarize(site_ct = length(unique(site)),
+                   sites = paste(unique(site), collapse = "; "),
+                   block_ct = length(unique(block)),
+                   blocks = paste(unique(block), collapse = "; "),
+                   plot_ct = length(unique(plot)),
+                   plots = paste(unique(plot), collapse = "; "),
+                   core_ct = length(unique(core)),
+                   cores = paste(unique(core), collapse = "; "))
 
 # Check structure
-dplyr::glimpse(tidy_v2)
+dplyr::glimpse(tidy_v2b)
 
 ## ------------------------------------------ ##
           # Depth & Horizon Fixes ----
