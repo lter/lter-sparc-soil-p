@@ -68,6 +68,13 @@ key_v2 <- key_v1 %>%
                                           x = Raw_Column_Name)),
     # Leading number becomes X 
     !is.na(suppressWarnings(as.numeric(first_char))) ~ paste0("X", Raw_Column_Name),
+    # Some Niwot 5 issues
+    Dataset == "Niwot_5" & Raw_Column_Name == "TotalP(%)" ~ "TotalP...",
+    Dataset == "Niwot_5" & Raw_Column_Name == "TotalC(%)" ~ "TotalC...",
+    Dataset == "Niwot_5" & Raw_Column_Name == "TotalN(%)" ~ "TotalN...",
+    # Konza_2 problems
+    Dataset == "Konza_2" & Raw_Column_Name == "Total N (%)" ~ "Total.N....",
+    Dataset == "Konza_2" & Raw_Column_Name == "Total C (%)" ~ "Total.C....",
     # Some LUQ columns with specific issues
     Dataset == "Luquillo_1" & Raw_Column_Name == "C (%)" ~ "C....",
     Dataset == "Luquillo_1" & Raw_Column_Name == "N (%)" ~ "N....",
@@ -105,6 +112,8 @@ key_v3 <- key_v2 %>%
     Variable == "topography" ~ "no",
     Variable == "distance" ~ "no",
     Variable == "pH" ~ "no",
+    Variable == "pH max" ~ "no",
+    Variable == "pH min" ~ "no",
     # If not identified above, variables is _assumed to need units_
     T ~ "yes"), .before = Units) %>%
   # Identify which columns _do not_ need a data type
