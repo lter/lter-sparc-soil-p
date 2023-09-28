@@ -4,15 +4,8 @@
 # Script author(s): Nick J Lyon
 
 # Purpose:
-
-
-# We definitely want the data we just exported BUT
-## we also want a really simplified version for stats/visualization
-## this will make it much easier to navigate the really fundamental parts of the data
-## while still having easy access to the most granular version of the data (exported above)
-
-
-# Pre-Requisites:
+## Take complete data (i.e., with P sums and ancillary data)
+## And create subset(s) relevant to hypotheses
 
 ## ------------------------------------------ ##
             # Housekeeping -----
@@ -158,7 +151,7 @@ mineral_v2 <- mineral_v1 %>%
 nrow(mineral_v1) - nrow(mineral_v2)
 
 ## ------------------------------------------ ##
-# Mineral Export (Local) ----
+          # Mineral Export (Local) ----
 ## ------------------------------------------ ##
 
 # Make a final object

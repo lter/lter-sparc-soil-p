@@ -4,9 +4,8 @@
 # Script author(s): Nick J Lyon
 
 # Purpose:
-## Harmonize soil P, C, and N data from several raw files
-## Do general purpose tidying (bad numbers, redundant columns, etc.)
-## Create an 'archive ready' data file that can be uploaded to a data repository
+## Absorb all raw files and (using data key) combine them
+## Finishes with an 'archive ready' long format data file
 
 ## ------------------------------------------ ##
               # Housekeeping -----

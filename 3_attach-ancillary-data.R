@@ -4,10 +4,7 @@
 # Script author(s): Nick J Lyon
 
 # Purpose:
-
-
-# Pre-Requisites:
-
+## Attaches ancillary data GoogleSheets to the data created by the preceding step
 
 ## ------------------------------------------ ##
               # Housekeeping -----

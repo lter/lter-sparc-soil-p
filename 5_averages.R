@@ -4,10 +4,7 @@
 # Script author(s): Nick J Lyon
 
 # Purpose:
-
-
-# Pre-Requisites:
-
+## Take all 'stats ready' files and create plot- and site-level averages
 
 ## ------------------------------------------ ##
               # Housekeeping -----

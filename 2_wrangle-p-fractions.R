@@ -4,12 +4,7 @@
 # Script author(s): Nick J Lyon
 
 # Purpose:
-## Process 'archival' data for the purposes of the 'Soil P' LTER SPARC group
-
-# Pre-Requisites:
-## Assumes that "1_harmonize.R" script has been run or doesn't need to be run
-## Otherwise risks using an old version of the tidy data
-### (that could lack updated raw data/data key information)
+## Flips archival data to wide format and calculates various P fraction sums
 
 ## ------------------------------------------ ##
               # Housekeeping -----
