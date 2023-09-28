@@ -16,19 +16,22 @@
 librarian::shelf(tidyverse, googledrive, supportR, cowplot)
 
 # Create necessary sub-folder(s)
-dir.create(path = file.path("tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
 dir.create(path = file.path("graphs"), showWarnings = F)
+dir.create(path = file.path("graphs", "cores"), showWarnings = F)
+dir.create(path = file.path("graphs", "plots"), showWarnings = F)
+dir.create(path = file.path("graphs", "sites"), showWarnings = F)
 
 # Identify the needed data file(s) in the Drive
 ( file_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")) %>%
-    dplyr::filter(name %in% c("stats-ready_tidy-soil-p.csv", 
-                              "site-avgs_tidy-soil-p.csv", 
-                              "plot-avgs_tidy-soil-p.csv")) )
+    dplyr::filter(name %in% c("sparc-soil-p_stats-ready_mineral_0-10.csv", 
+                              "sparc-soil-p_site-avgs_mineral_0-10.csv", 
+                              "sparc-soil-p_plot-avgs_mineral_0-10.csv")) )
 
 # Download those files
 purrr::walk2(.x = file_ids$id, .y = file_ids$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T, 
-                                                path = file.path("tidy_data", .y)))
+                                                path = file.path("data", "tidy_data", .y)))
 
 # Clear environment
 rm(list = ls())
@@ -38,7 +41,7 @@ rm(list = ls())
 ## ------------------------------------------ ##
 
 # Read in site averages data file
-site_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv")) %>%
+site_df <- read.csv(file.path("data", "tidy_data", "sparc-soil-p_site-avgs_mineral_0-10.csv")) %>%
   # Get a column that is the dataset number
   tidyr::separate_wider_delim(cols = dataset_simp, delim = "_", too_few = "align_start",
                               names = c("dataset_dup", "dataset_num"), cols_remove = F) %>%
@@ -55,7 +58,7 @@ site_n <- dplyr::filter(.data = site_df, !is.na(mean_N_conc_percent))
 site_c <- dplyr::filter(.data = site_df, !is.na(mean_C_conc_percent))
 
 # Read in more granular (spatially) data
-plot_df <- read.csv(file.path("tidy_data", "plot-avgs_tidy-soil-p.csv")) %>%
+plot_df <- read.csv(file.path("data", "tidy_data", "sparc-soil-p_plot-avgs_mineral_0-10.csv")) %>%
   # Do dataset number processing here too
   tidyr::separate_wider_delim(cols = dataset_simp, delim = "_", too_few = "align_start",
                               names = c("dataset_dup", "dataset_num"), cols_remove = F) %>%
@@ -70,7 +73,7 @@ plot_n <- dplyr::filter(.data = plot_df, !is.na(mean_N_conc_percent))
 plot_c <- dplyr::filter(.data = plot_df, !is.na(mean_C_conc_percent))
 
 # Read in the unsummarized data
-core_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv")) %>%
+core_df <- read.csv(file.path("data", "tidy_data", "sparc-soil-p_stats-ready_mineral_0-10.csv")) %>%
   # Do dataset number processing here too
   tidyr::separate_wider_delim(cols = dataset_simp, delim = "_", too_few = "align_start",
                               names = c("dataset_dup", "dataset_num"), cols_remove = F) %>%
@@ -353,7 +356,7 @@ for(focal_dataset in sort(unique(plot_df$dataset_simp))){ # Actual loop
                                            x = focal_dataset), ".png")
     
     # Export with an informative file name
-    ggsave(filename = file.path("graphs", focal_name), width = 10, height = 10, units = "in") } 
+    ggsave(filename = file.path("graphs", "plots", focal_name), width = 10, height = 10, units = "in") } 
   
 } # Close loop
 
@@ -476,7 +479,7 @@ for(focal_dataset in sort(unique(core_df$dataset_simp))){ # Actual loop
                                            x = focal_dataset), ".png")
     
     # Export with an informative file name
-    ggsave(filename = file.path("graphs", focal_name), width = 10, height = 10, units = "in") } 
+    ggsave(filename = file.path("graphs", "cores", focal_name), width = 10, height = 10, units = "in") } 
   
 } # Close loop
 
@@ -542,7 +545,7 @@ exp4 <- ggplot(data = plot_df, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_p
 cowplot::plot_grid(exp1, exp2, exp3, exp4, labels = "AUTO", nrow = 2)
 
 # Export
-ggsave(filename = file.path("graphs", "figure-2_All-Datasets_across-plots.png"), 
+ggsave(filename = file.path("graphs", "plots", "figure-2_All-Datasets_across-plots.png"), 
        width = 10, height = 10, units = "in")
 
 # End ----
