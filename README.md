@@ -18,13 +18,15 @@
 
 3. Attach Ancillary Data - Join on ancillary data to the data created by step 2 for use in statistics/visualization
 
-4. Statistics Prep - Subset the data made by step 3 into scientifically-relevant groups for testing particular hypotheses
+4. Extract Spatial Information - ...
 
-5. Calculate Averages - Accept _all_ 'stats-ready' files and average to both plot- and site-level
+5. Statistics Prep - Subset the data made by step 3 into scientifically-relevant groups for testing particular hypotheses
 
-6A. Graphs - Make graphs/figures from the data created by step 4 and 5
+6. Calculate Averages - Accept _all_ 'stats-ready' files and average to both plot- and site-level
 
-6B. Statistics - Perform statistics on data (likely only data from step 4 but maybe step 5 too)
+7A. Graphs - Make graphs/figures from the data created by step 4 and 5
+
+7B. Statistics - Perform statistics on data (likely only data from step 4 but maybe step 5 too)
 
 ## Supplementary Resources
 
