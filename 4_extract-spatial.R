@@ -56,8 +56,7 @@ rm(list = ls())
 ## ------------------------------------------------------- ##
 
 # Read in csv with lat/lon coordinates
-locations <- read_csv(file.path("raw_data","sparc-soil-p_stats-ready_mineral_0-10.csv")) %>%
-  dplyr::select(lter, dataset_simp, dataset, raw_filename, site, plot, block, core, longitude, latitude) 
+locations <- read_csv(file.path("raw_data","sparc-soil-p_full-data-incl-ancillary.csv")) 
 
 # Convert the dataframe to a terra SpatVector object
 locations_spatvector <- terra::vect(locations, geom=c("longitude", "latitude"), crs="+proj=longlat +datum=WGS84", keepgeom=T)
