@@ -104,6 +104,7 @@ key_v3 <- key_v2 %>%
     Variable == "plot" ~ "no",
     Variable == "core" ~ "no",
     Variable == "sample replicate" ~ "no",
+    Variable == "sample replicate 2" ~ "no",
     Variable == "treatment" ~ "no",
     Variable == "treatment years" ~ "no",
     Variable == "lat" ~ "no",
