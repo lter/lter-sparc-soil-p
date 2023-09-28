@@ -10,15 +10,21 @@
 
 - https://lternet.edu/working-groups/soil-p-control-of-c-and-n/
 
-## Script Explanations
+## Scripted Workflow
 
-- `soil_p_harmonize.R` - Accepts the [GoogleSheet Data Key](https://docs.google.com/spreadsheets/d/1fJswJ876A1LfFbiwJJ9aJp-Bvl0QEdzjMThOWEHkQUU/edit#gid=402780056) and the raw input files and harmonizes them (i.e., synonymizes columns and combines). Then performs generally necessary tidying / wrangling. Ends by exporting "archival" data (i.e., mostly long-format data relevant to a broad suite of potential data re-users)
+1. Harmonize - Using [GoogleSheet Data Key](https://docs.google.com/spreadsheets/d/1fJswJ876A1LfFbiwJJ9aJp-Bvl0QEdzjMThOWEHkQUU/edit#gid=402780056), combine all raw data files. Creates archival data in long format.
 
-- `soil_p_wrangle.R` - Accepts the harmonized data (see `soil_p_harmonize.R`) and performs additional wrangling required by the Soil P SPARC group. Exports an analysis-ready CSV.
+2. Wrangle P Fractions - Sum P fractions conditionally by dataset to create relevant P sums (e.g., "total", "slow", etc.)
 
-- `soil_p_stats.R` - Performs desired statistical analysis to test hypotheses of Soil P SPARC group.
+3. Attach Ancillary Data - Join on ancillary data to the data created by step 2 for use in statistics/visualization
 
-- `soil_p_graphs.R` - Creates exploratory graphs / publication-quality graphs for fundamental hypotheses or for useful visualizations of data
+4. Statistics Prep - Subset the data made by step 3 into scientifically-relevant groups for testing particular hypotheses
+
+5. Calculate Averages - Accept _all_ 'stats-ready' files and average to both plot- and site-level
+
+6A. Graphs - Make graphs/figures from the data created by step 4 and 5
+
+6B. Statistics - Perform statistics on data (likely only data from step 4 but maybe step 5 too)
 
 ## Supplementary Resources
 
