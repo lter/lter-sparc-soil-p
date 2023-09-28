@@ -368,11 +368,11 @@ tidy_v1b <- tidy_v1 %>%
     lter %in% c("Kellog_Biological_Station") ~ "KBS",
     lter %in% c("Konza_1", "Konza_2") ~ "KNZ",
     lter %in% c("Luquillo_1", "Luquillo_2", "Luquillo_3") ~ "LUQ",
-    lter %in% c("Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4") ~ "NWT",
+    lter %in% c("Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", "Niwot_5") ~ "NWT",
     lter %in% c("Sevilleta_1", "Sevilleta_2") ~ "SEV",
     lter %in% c("Toolik_1", "Toolik_2") ~ "ARC",
     # Non-LTER sites
-    lter %in% c("Brazil") ~ "Brazil",
+    lter %in% c("Brazil", "Tapajos") ~ "Brazil",
     lter %in% c("Calhoun") ~ "Calhoun",
     lter %in% c("Fernow") ~ "Fernow",
     # Otherwise retain whatever was in that column originally
