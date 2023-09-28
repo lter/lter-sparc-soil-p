@@ -30,11 +30,11 @@ data <- data_raw %>%
 # P_H2SO4
 
 data <- data %>% 
-  mutate(P_NaHCO3 = ((P_NaHCO3/bulk_density)*1000),
-         P_NaOH = ((P_NaHCO3/bulk_density)*1000),
-         P_1M_HCl = ((P_1M_HCl/bulk_density)*1000),
-          P_conc_HCl =  ((P_conc_HCl/bulk_density)*1000),
-         P_H2SO4 =  ((P_H2SO4/bulk_density)*1000))
+  mutate(P_NaHCO3 = ((P_NaHCO3/bulk_density)*10^2),
+         P_NaOH = (( P_NaOH/bulk_density)*10^2),
+         P_1M_HCl = ((P_1M_HCl/bulk_density)*10^2),
+          P_conc_HCl =  ((P_conc_HCl/bulk_density)*10^2),
+         P_H2SO4 =  ((P_H2SO4/bulk_density)*10^2))
 ```
 
 ```{r export data}
