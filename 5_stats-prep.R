@@ -4,7 +4,7 @@
 # Script author(s): Nick J Lyon
 
 # Purpose:
-## Take complete data (i.e., with P sums and ancillary data)
+## Take complete data (i.e., with P sums, ancillary data, and spatial info)
 ## And create subset(s) relevant to hypotheses
 
 ## ------------------------------------------ ##
