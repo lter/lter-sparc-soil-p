@@ -208,8 +208,7 @@ dplyr::glimpse(soil_index)
 
 # Get ready to export by joining the extracted data with the index
 rocks_export <- rocks_out %>%
-  dplyr::left_join(y = rock_index) %>%
-  distinct()
+  dplyr::left_join(y = rock_index)
 
 # Check it out
 dplyr::glimpse(rocks_export)
@@ -221,8 +220,17 @@ soil_export <- soil_out %>%
 # Check it out
 dplyr::glimpse(soil_export)
 
+# Combine both lithology and soil order
 spatial_export <- rocks_export %>%
-  dplyr::left_join(soil_export)
+  dplyr::left_join(soil_export) %>%
+  dplyr::relocate(rock_code, .after = core) %>%
+  dplyr::relocate(rock_type, .after = rock_code) %>%
+  dplyr::relocate(rock_group, .after = rock_type) %>%
+  dplyr::relocate(soil_code, .after = rock_group) %>%
+  dplyr::relocate(generic_soil, .after = soil_code)
+
+# Check it out
+dplyr::glimpse(spatial_export)
 
 # Create folder to export to
 dir.create(path = file.path("extracted_data"), showWarnings = F)
