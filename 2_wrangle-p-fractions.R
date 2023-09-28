@@ -540,6 +540,11 @@ dplyr::glimpse(sparc_v4[1:35])
 # Make a final data object
 final_sparc <- sparc_v4
 
+# # Looking for N and C 
+# site_n <- dplyr::filter(.data = final_sparc, !is.na(N_conc_percent))
+# uni <- as.data.frame(unique(site_n$dataset))
+# site_c <- dplyr::filter(.data = final_sparc, !is.na(C_conc_percent))
+
 # Glimpse it
 dplyr::glimpse(final_sparc)
 
