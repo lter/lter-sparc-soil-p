@@ -157,15 +157,18 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "Jornada_2" ~ (P_conc_mg.kg_3_HCl),
     dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_6_HCl),
     dataset == "Konza_1" ~ (P_conc_mg.kg_3_Ca.bound),
+    dataset == "Konza_2" ~ (P_conc_mg.kg_5_HCl),
     dataset == "Luquillo_1" ~ NA,
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_4_HCl),
-    dataset == "Luquillo_3" ~ (P_conc_mg.kg_3_residual),
+    dataset == "Luquillo_3" ~ NA,
     dataset == "Niwot_1" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Niwot_2" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
+    dataset == "Niwot_5" ~ (Pi_conc_mg.kg_4_HCl),
     dataset == "Sevilleta_1" ~ (P_conc_mg.kg_5_HCl),
     dataset == "Sevilleta_2" ~ NA,
+    dataset == "Tapajos" ~ (P_conc_mg.kg_4_HCl),
     # (vvv) If resulting number is negative it gets set to zero
     dataset == "Toolik_1" ~ ifelse((P_conc_mg.kg_1_HCl - P_conc_mg.kg_1_citrate) < 0,
                                    yes = 0,
@@ -189,14 +192,15 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Bonanza Creek_3" ~ (P_conc_mg.kg_total),
     dataset == "Brazil" ~ (P_conc_mg.kg_total),
     dataset == "Calhoun" ~ (P_conc_mg.kg_total),
-    dataset == "CedarCreek_1" ~ NA,
+    dataset == "CedarCreek_1" ~ (P_conc_mg.kg_total),
+    dataset == "CedarCreek_2" ~ (P_conc_mg.kg_total),
     dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH +
                               P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_total),
     # (vvv) Both HNO3s should be used (3 is cold, 4 is hot)
     dataset == "Hubbard Brook" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_H2O2 +
                                     P_conc_mg.kg_3_HNO3 + P_conc_mg.kg_4_HNO3),
-    dataset == "FloridaCoastal" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3 +
+    dataset == "FloridaCoastal" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3 +
                                      P_conc_mg.kg_3_NaOH + P_conc_mg.kg_4_HCl +
                                      P_conc_mg.kg_5_residual),
     dataset == "Jornada_1" ~ (P_conc_mg.kg_total),
@@ -213,28 +217,31 @@ p_sums_v3 <- p_sums_v2 %>%
                                                 Pi_conc_mg.kg_6_HCl + P_conc_mg.kg_7_residual),
     dataset == "Konza_1" ~ (P_conc_mg.kg_1_Al.Fe + P_conc_mg.kg_2_occluded + 
                               P_conc_mg.kg_3_Ca.bound),
+    dataset == "Konza_2" ~ (P_conc_mg.kg_total),
     dataset == "Luquillo_1" ~ NA,
     ## (vvv) May exchange for pre-existing 'total P' column in raw data
-    dataset == "Luquillo_2" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3 + 
+    dataset == "Luquillo_2" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3 + 
                                  P_conc_mg.kg_3_NaOH + P_conc_mg.kg_4_HCl + 
                                  P_conc_mg.kg_5_residual),
     dataset == "Luquillo_3" ~ (P_conc_mg.kg_total),
-    dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin + 
+    dataset == "Niwot_1" ~ (Pi_conc_mg.kg_1_resin + 
                               Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 + 
                               Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_3_NaOH +
                               P_conc_mg.kg_4_HCl +
                               Pi_conc_mg.kg_5_sonic.HCl + Po_conc_mg.kg_5_sonic.HCl +
                               P_conc_mg.kg_6_residual),
-    dataset == "Niwot_2" ~ (P_conc_mg.kg_1_resin +
+    dataset == "Niwot_2" ~ (Pi_conc_mg.kg_1_resin +
                               Pi_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_2_HCO3 +
                               Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_3_NaOH +
                               P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
     dataset == "Niwot_3" ~ (P_conc_mg.kg_total),
     dataset == "Niwot_4" ~ (P_conc_mg.kg_total),
+    dataset == "Niwot_5" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_1_resin+ Pi_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_4_HCl + Po_conc_mg.kg_2_NaHCO3 + Po_conc_mg.kg_5_sonic.NaOH + Pi_conc_mg.kg_2_NaHCO3 + Pi_conc_mg.kg_5_sonic.NaOH + P_conc_mg.kg_6_NaOH.Fusion + P_conc_mg.kg_order_NaOH.Fusion),
     dataset == "Sevilleta_1" ~ (P_conc_mg.kg_total),
     dataset == "Sevilleta_2" ~ (P_conc_mg.kg_total),
-    dataset == "Toolik_1" ~ NA,
+    dataset == "Toolik_1" ~ (P_conc_mg.kg_1_ashing.HCl),
     dataset == "Toolik_2" ~ (P_conc_mg.kg_total),
+    dataset == "Tapajos" ~ (P_conc_mg.kg_order_total.),
     T ~ NA))
 
 ## ------------------------------------------ ##
@@ -251,28 +258,31 @@ p_sums_v4 <- p_sums_v3 %>%
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Bonanza Creek_3" ~ NA,
     dataset == "Brazil" ~ NA,
-    dataset == "Calhoun" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
+    dataset == "Calhoun" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "CedarCreek_1" ~ NA,
     dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl),
-    dataset == "FloridaCoastal" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3),
-    dataset == "HJAndrews_1" ~ NA,
+    dataset == "FloridaCoastal" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3),
+    dataset == "HJAndrews_1" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3),
     dataset == "Hubbard Brook" ~ NA,
     dataset == "Jornada_1" ~ NA,
     dataset == "Jornada_2" ~ NA,
     dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_1_resin + 
                                           Po_conc_mg.kg_2_NaHCO3 + Pi_conc_mg.kg_2_NaHCO3),
     dataset == "Konza_1" ~ NA,
-    dataset == "Luquillo_1" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_1_HCO3 + Pi_conc_mg.kg_1_HCO3),
-    dataset == "Luquillo_2" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3),
+    dataset == "Konza_2" ~ (Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
+    dataset == "Luquillo_1" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_1_HCO3 + Pi_conc_mg.kg_1_HCO3),
+    dataset == "Luquillo_2" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3),
     dataset == "Luquillo_3" ~ NA,
-    dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
-    dataset == "Niwot_2" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
+    dataset == "Niwot_1" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
+    dataset == "Niwot_2" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
+    dataset == "Niwot_5" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_NaHCO3 + Pi_conc_mg.kg_2_NaHCO3),
     dataset == "Sevilleta_1" ~ (P_conc_mg.kg_2_HCO3),
     dataset == "Sevilleta_2" ~ NA,
-    dataset == "Toolik_1" ~ NA,
+    dataset == "Tapajos" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_NaHCO3),
+    dataset == "Toolik_1" ~ (P_conc_mg.kg_1_K2SO4),
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
 
@@ -301,6 +311,7 @@ p_sums_v5 <- p_sums_v4 %>%
     dataset == "Jornada_2" ~ NA,
     dataset == "Kellogg_Bio_Station" ~ (Po_conc_mg.kg_2_NaHCO3 + Pi_conc_mg.kg_2_NaHCO3),
     dataset == "Konza_1" ~ NA,
+    dataset == "Konza_2" ~ (Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "Luquillo_1" ~ (Po_conc_mg.kg_1_HCO3 + Pi_conc_mg.kg_1_HCO3),
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_2_NaHCO3),
     dataset == "Luquillo_3" ~ NA,
@@ -308,8 +319,10 @@ p_sums_v5 <- p_sums_v4 %>%
     dataset == "Niwot_2" ~ (Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
+    dataset == "Niwot_5" ~ (Po_conc_mg.kg_2_NaHCO3 + Pi_conc_mg.kg_2_NaHCO3),
     dataset == "Sevilleta_1" ~ ( P_conc_mg.kg_2_HCO3),
     dataset == "Sevilleta_2" ~ NA,
+    dataset == "Tapajos" ~ (P_conc_mg.kg_2_NaHCO3),
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
@@ -328,7 +341,7 @@ p_sums_v6 <- p_sums_v5 %>%
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Bonanza Creek_3" ~ NA,
     dataset == "Brazil" ~ NA,
-    dataset == "Calhoun" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
+    dataset == "Calhoun" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
     dataset == "CedarCreek_1" ~ NA,
     dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ NA,
@@ -340,15 +353,18 @@ p_sums_v6 <- p_sums_v5 %>%
     dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_NaHCO3 + 
                                           Po_conc_mg.kg_4_NaOH),
     dataset == "Konza_1" ~ NA,
+    dataset == "Konza_2" ~ (Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_4_NaOH),
     dataset == "Luquillo_1" ~ NA,
     dataset == "Luquillo_2" ~ NA,
     dataset == "Luquillo_3" ~ NA,
-    dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
-    dataset == "Niwot_2" ~ (P_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
+    dataset == "Niwot_1" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
+    dataset == "Niwot_2" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
+    dataset == "Niwot_5" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_NaHCO3 + Po_conc_mg.kg_3_NaOH),
     dataset == "Sevilleta_1" ~ NA,
     dataset == "Sevilleta_2" ~ NA,
+    dataset == "Tapajos" ~ (Pi_conc_mg.kg_1_resin),
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
@@ -367,7 +383,7 @@ p_sums_v7 <- p_sums_v6 %>%
     dataset == "Bonanza Creek_2" ~ NA,
     dataset == "Bonanza Creek_3" ~ NA,
     dataset == "Brazil" ~ NA,
-    dataset == "Calhoun" ~ (P_conc_mg.kg_1_resin +
+    dataset == "Calhoun" ~ (Pi_conc_mg.kg_1_resin +
                               Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3 +
                               Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "CedarCreek_1" ~ NA,
@@ -375,7 +391,7 @@ p_sums_v7 <- p_sums_v6 %>%
     dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_3_NaOH),
     dataset == "FloridaCoastal" ~ (P_conc_mg.kg_2_HCO3 + 
                                      Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
-    dataset == "HJAndrews_1" ~ (P_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH),
+    dataset == "HJAndrews_1" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH),
     dataset == "Hubbard Brook" ~ NA,
     dataset == "Jornada_1" ~ NA,
     dataset == "Jornada_2" ~ (P_conc_mg.kg_1_MgCl2 + P_conc_mg.kg_2_NaOH),
@@ -383,20 +399,25 @@ p_sums_v7 <- p_sums_v6 %>%
                                           Po_conc_mg.kg_2_NaHCO3 + Pi_conc_mg.kg_2_NaHCO3 +
                                           Po_conc_mg.kg_4_NaOH + Pi_conc_mg.kg_4_NaOH),
     dataset == "Konza_1" ~ NA,
+    dataset == "Konza_2" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "Luquillo_1" ~ (Po_conc_mg.kg_1_HCO3 + Pi_conc_mg.kg_1_HCO3 +
                                  Po_conc_mg.kg_2_NaOH + Pi_conc_mg.kg_2_NaOH),
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_2_NaHCO3 + P_conc_mg.kg_3_NaOH),
     dataset == "Luquillo_3" ~ (Po_conc_mg.kg_1_NaOH + Pi_conc_mg.kg_1_NaOH),
-    dataset == "Niwot_1" ~ (P_conc_mg.kg_1_resin +
+    dataset == "Niwot_1" ~ (Pi_conc_mg.kg_1_resin +
                               Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3 +
                               Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
-    dataset == "Niwot_2" ~ (P_conc_mg.kg_1_resin +
+    dataset == "Niwot_2" ~ (Pi_conc_mg.kg_1_resin +
                               Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3 +
                               Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
+    dataset == "Niwot_5" ~ (Pi_conc_mg.kg_1_resin +
+      Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3 +
+      Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "Sevilleta_1" ~ (P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH),
     dataset == "Sevilleta_2" ~ NA,
+    dataset == "Tapajos" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_3_NaOH + P_conc_mg.kg_2_NaHCO3),
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
@@ -426,15 +447,18 @@ p_sums_v8 <- p_sums_v7 %>%
     dataset == "Jornada_2" ~ (P_conc_mg.kg_2_NaOH),
     dataset == "Kellogg_Bio_Station" ~ (Po_conc_mg.kg_4_NaOH + Po_conc_mg.kg_5_sonic.NaOH + Pi_conc_mg.kg_4_NaOH + Pi_conc_mg.kg_5_sonic.NaOH),
     dataset == "Konza_1" ~ NA,
+    dataset == "Konza_2" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "Luquillo_1" ~ (Po_conc_mg.kg_2_NaOH + Pi_conc_mg.kg_2_NaOH),
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_3_NaOH),
-    dataset == "Luquillo_3" ~ (P_conc_mg.kg_1_NaOH),
+    dataset == "Luquillo_3" ~ (Po_conc_mg.kg_1_NaOH + Pi_conc_mg.kg_1_NaOH),
     dataset == "Niwot_1" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "Niwot_2" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "Niwot_3" ~ NA,
     dataset == "Niwot_4" ~ NA,
+    dataset == "Niwot_5" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "Sevilleta_1" ~ (P_conc_mg.kg_3_NaOH),
     dataset == "Sevilleta_2" ~ NA,
+    dataset == "Tapajos" ~ (P_conc_mg.kg_3_NaOH),
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
@@ -452,7 +476,7 @@ p_sums <- p_sums_v8 %>%
   dplyr::distinct()
 
 # Any datasets missing?
-p_sums %>%
+p_sums %>% 
   dplyr::filter(is.na(slow.P_conc_mg.kg) | is.na(total.P_conc_mg.kg) |
                   is.na(available.P_conc_mg.kg) | is.na(bicarb.P_conc_mg.kg) |
                   is.na(biological.P_conc_mg.kg) | is.na(intermediate.P_conc_mg.kg) |
@@ -465,7 +489,8 @@ p_sums %>%
                    bio_mean = mean(biological.P_conc_mg.kg, na.rm = T),
                    inter_mean = mean(intermediate.P_conc_mg.kg, na.rm = T),
                    naoh_mean = mean(NaOH.P_conc_mg.kg, na.rm = T) ) %>%
-  dplyr::distinct()
+  dplyr::distinct() %>% 
+  view()
 
 # Check structure
 dplyr::glimpse(p_sums)
