@@ -18,7 +18,7 @@
 
 3. Attach Ancillary Data - Join on ancillary data to the data created by step 2 for use in statistics/visualization
 
-4. Extract Spatial Information - ...
+4. Extract Spatial Information - Grabs the resulting csv from Step 3 and add on lithology and soil order data for lat/lon coordinates
 
 5. Statistics Prep - Subset the data made by step 3 into scientifically-relevant groups for testing particular hypotheses
 
