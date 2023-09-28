@@ -16,17 +16,18 @@
 librarian::shelf(tidyverse, googledrive, scicomptools, supportR)
 
 # Create necessary sub-folder(s)
-dir.create(path = file.path("tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
 dir.create(path = file.path("stat_results"), showWarnings = F)
 
 # Identify the needed data file(s) in the Drive
 ( file_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")) %>%
-  dplyr::filter(name %in% c("stats-ready_tidy-soil-p.csv", "site-avgs_tidy-soil-p.csv")) )
+  dplyr::filter(name %in% c("sparc-soil-p_stats-ready_mineral_0-10.csv", 
+                            "sparc-soil-p_site-avgs_mineral_0-10.csv")) )
 
 # Download those files
 purrr::walk2(.x = file_ids$id, .y = file_ids$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T, 
-                                                path = file.path("tidy_data", .y)))
+                                                path = file.path("data", "tidy_data", .y)))
   
 # Clear environment
 rm(list = ls())
@@ -35,13 +36,13 @@ rm(list = ls())
 stat_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1it7t9b3JF9V2Tdnt10lR130-CLs0Nxub")
 
 # Read in stats/viz-ready file
-main_df <- read.csv(file.path("tidy_data", "stats-ready_tidy-soil-p.csv"))
+main_df <- read.csv(file.path("data", "tidy_data", "sparc-soil-p_stats-ready_mineral_0-10.csv"))
 
 # Check structure
 dplyr::glimpse(main_df)
 
 # Read in site averages as well
-avgs_df <- read.csv(file.path("tidy_data", "site-avgs_tidy-soil-p.csv"))
+avgs_df <- read.csv(file.path("data", "tidy_data", "sparc-soil-p_site-avgs_mineral_0-10.csv"))
 
 # Check structure
 dplyr::glimpse(avgs_df)

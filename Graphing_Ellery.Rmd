@@ -1,0 +1,427 @@
+---
+title: "Graphing_Ellery"
+author: "Ellery Vaughan"
+date: "2023-09-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Making second round of figures 
+```{r load necessary packages}
+library(tidyverse)
+```
+
+```{r load data}
+site_df <- read_csv("../../sparc-soil-p_site-avgs_mineral_0-10.csv")
+```
+
+```{r copied from Nick's script}
+site_df <- site_df %>% 
+  # Get a column that is the dataset number
+  tidyr::separate_wider_delim(cols = dataset_simp, delim = "_", too_few = "align_start",
+                              names = c("dataset_dup", "dataset_num"), cols_remove = F) %>%
+  # Drop now-duplicated dataset column
+  dplyr::select(-dataset_dup) %>%
+  # If no number, fill with 1
+  dplyr::mutate(dataset_num = ifelse(is.na(dataset_num), yes = 1, no = dataset_num))
+
+# Check structure
+dplyr::glimpse(site_df)
+
+# adding column for HCl/total P 
+site_df <- site_df %>% 
+  mutate(HCl_Total_P = (mean_slow.P_conc_mg.kg/mean_total.P_conc_mg.kg))
+
+# Make one version each for N and C plotting respectively
+site_n <- dplyr::filter(.data = site_df, !is.na(mean_N_conc_percent))
+site_c <- dplyr::filter(.data = site_df, !is.na(mean_C_conc_percent))
+```
+
+```{r Graph housekeeping}
+# Pick a color palette for LTERs
+lter_colors <- c("ARC" = "#264653", "BNZ" = "#2a9d8f", "Brazil" = "#e9c46a", 
+                 "Calhoun" = "#f4a261", "CWT" = "#7209b7", "FCE" = "#00b4d8",
+                 "HBR" = "#e76f51", 
+                 "JRN"  = "#606c38", "KNZ" = "#ffafcc", "LUQ" = "#d9ed92", 
+                 "NWT" = "#06d6a0", "SEV" = "#d62828")
+
+# Shapes for dataset numbers
+data_shapes <- c("1" = 21, "2" = 22, "3" = 24, "4" = 23)
+
+# Define error bars for metrics we're sure to graph
+## Carbon SE
+c_se <- geom_errorbar(aes(ymax = mean_C_conc_percent + std.error_C_conc_percent,
+                             ymin = mean_C_conc_percent - std.error_C_conc_percent),
+                      width = 0, na.rm = T)
+## Nitrogen SE
+n_se <- geom_errorbar(aes(ymax = mean_N_conc_percent + std.error_N_conc_percent,
+                             ymin = mean_N_conc_percent - std.error_N_conc_percent),
+                      width = 0, na.rm = T)
+## Slow P SE
+slowp_se <- geom_errorbarh(aes(xmax = mean_slow.P_conc_mg.kg + std.error_slow.P_conc_mg.kg,
+                                  xmin = mean_slow.P_conc_mg.kg - std.error_slow.P_conc_mg.kg),
+                           height = 0, na.rm = T)
+
+## NaOH P SE
+NaOH_se <- geom_errorbarh(aes(xmax = mean_NaOH.P_conc_mg.kg + std.error_NaOH.P_conc_mg.kg,
+                                  xmin = mean_NaOH.P_conc_mg.kg - std.error_NaOH.P_conc_mg.kg),
+                           height = 0, na.rm = T)
+
+## Total P SE
+totp_se <- geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
+                                 xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg),
+                          height = 0, na.rm = T)
+
+# ## Total P SE
+# totp_se <- geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
+#                                  xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg),
+#                           height = 0, na.rm = T)
+
+# Custom ggplot theme
+sparc_theme <- theme(panel.grid = element_blank(),
+                     panel.background = element_blank(),
+                     axis.line = element_line(color = "black"),
+                     # Facet labels (where applicable)
+                     strip.text = element_text(size = 16),
+                     strip.background = element_rect(color = "black", fill = "white",
+                                                     linewidth = 1),
+                     # Axis tick mark / title elements
+                     axis.text.y = element_text(size = 14),
+                     axis.text.x = element_text(size = 13),
+                     axis.title = element_text(size = 16),
+                     # Legend tweaks
+                     legend.key = element_blank(),
+                     legend.background = element_blank())
+```
+
+```{r Site Average Graphs N and C verus slow and total}
+# N% ~ total P
+xsite_ntotp <- ggplot(data = site_n, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
+  # Error bars (defined above)
+  n_se + totp_se +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
+  sparc_theme +
+  theme(legend.position = "none"); xsite_ntotp
+  
+# N% ~ slow P
+xsite_nslowp <- ggplot(data = site_n, aes(x = mean_slow.P_conc_mg.kg, y = mean_N_conc_percent)) +
+  # Error bars (defined above)
+  n_se + slowp_se +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean N (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
+  sparc_theme +
+  theme(legend.position = "none"); xsite_nslowp
+
+# C% ~ total P
+xsite_ctotp <- ggplot(data = site_c, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
+  # Error bars (defined above)
+  c_se + totp_se +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+  labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  sparc_theme +
+  guides(fill = F) +
+  sparc_theme +
+  theme(legend.position = c(0.4, 0.75),
+        legend.direction = "horizontal"); xsite_ctotp
+
+# C% ~ slow P
+xsite_cslowp <- ggplot(data = site_c, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
+  # Error bars (defined above)
+  c_se + slowp_se +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean C (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+       shape = guide_legend(override.aes = list(size = 5))) +
+  guides(shape = F) +
+  sparc_theme +
+  theme(legend.position = c(0.6, 0.65),
+        legend.direction = "horizontal"); xsite_cslowp
+
+# Assemble a multi-panel figure!
+cowplot::plot_grid(xsite_ntotp, xsite_nslowp, xsite_ctotp, xsite_cslowp,
+                   labels = "AUTO", nrow = 2, ncol = 2)
+
+# Export it
+# ggsave(filename = file.path("graphs_CE_AM", "figure-1_across-sites.png"),
+#        width = 10, height = 10, units = "in") 
+```
+
+```{r Site Average Graphs N and C verus NaOH and total}
+# # N% ~ total P
+# xsite_ntotp <- ggplot(data = site_n, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
+#   # Error bars (defined above)
+#   n_se + totp_se +
+#   # Best fit line
+#   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+#   # Points/labels for each dataset
+#   geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+#   # Customizing theme elements
+#   labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE",
+#        shape = "Dataset Number", fill = "LTER") +
+#   scale_shape_manual(values = data_shapes) +
+#   scale_fill_manual(values = lter_colors) +
+#   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+#          shape = guide_legend(override.aes = list(size = 5))) +
+#   sparc_theme +
+#   theme(legend.position = "none"); xsite_ntotp
+  
+# N% ~ NaOH P
+xsite_nNaOHp <- ggplot(data = site_n, aes(x = mean_NaOH.P_conc_mg.kg, y = mean_N_conc_percent)) +
+  # Error bars (defined above)
+  n_se + NaOH_se +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+ # Customizing theme elements
+  labs(x = "Mean NaOH P (mg/kg) ± SE", y = "Mean N (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  sparc_theme +
+  guides(fill = F) +
+  sparc_theme +
+  theme(legend.position = c(0.4, 0.75),
+        legend.direction = "horizontal"); xsite_nNaOHp
+
+# # C% ~ total P
+# xsite_ctotp <- ggplot(data = site_c, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
+#   # Error bars (defined above)
+#   c_se + totp_se +
+#   # Best fit line
+#   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+#   # Points/labels for each dataset
+#   geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+#   # Customizing theme elements
+#   labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE",
+#        shape = "Dataset Number", fill = "LTER") +
+#   scale_shape_manual(values = data_shapes) +
+#   scale_fill_manual(values = lter_colors) +
+#   sparc_theme +
+#   guides(fill = F) +
+#   sparc_theme +
+#   theme(legend.position = c(0.4, 0.75),
+#         legend.direction = "horizontal"); xsite_ctotp
+
+# C% ~ NaOH P
+xsite_cNaOHp <- ggplot(data = site_c, aes(x = mean_NaOH.P_conc_mg.kg, y = mean_C_conc_percent)) +
+  # Error bars (defined above)
+  c_se + NaOH_se +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+  labs(x = "Mean NaOH P (mg/kg) ± SE", y = "Mean C (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+       shape = guide_legend(override.aes = list(size = 5))) +
+  guides(shape = F) +
+  sparc_theme +
+  theme(legend.position = c(0.6, 0.65),
+        legend.direction = "horizontal"); xsite_cslowp
+
+# Assemble a multi-panel figure!
+plot1 <- cowplot::plot_grid(xsite_cNaOHp, xsite_nNaOHp,
+                   labels = "AUTO")
+# xsite_ntotp,
+
+# , nrow = 2, ncol = 2
+
+# Export it
+# ggsave(filename = file.path("graphs_CE_AM", "figure-1_across-sites.png"),
+#        width = 10, height = 10, units = "in") 
+```
+
+```{r looking for where we're missing NaOH means}
+subset <- which(is.na(site_df$mean_NaOH.P_conc_mg.kg))
+missing <- site_df[subset,]
+
+missing <- missing %>% 
+  select(lter:site,mean_NaOH.P_conc_mg.kg,std.error_NaOH.P_conc_mg.kg)
+```
+
+```{r total C and N versus HCl/total}
+
+# N % ~ HCl/total
+xsite_nHClTotp <- ggplot(data = site_n, aes(x = HCl_Total_P, y = mean_N_conc_percent)) +
+  # Error bars (defined above)
+  # n_se + NaOH_se +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+ # Customizing theme elements
+  labs(x = "HCl / Total P", y = "Mean N (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  sparc_theme +
+  guides(fill = F) +
+  sparc_theme +
+  theme(legend.position = c(0.4, 0.75),
+        legend.direction = "horizontal"); xsite_nHClTotp
+
+# C% ~ HCl/total
+xsite_cHClTotp <- ggplot(data = site_c, aes(x = HCl_Total_P, y = mean_C_conc_percent)) +
+  # Error bars (defined above)
+  # c_se + NaOH_se +
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+  labs(x = "HCl / Total P", y = "Mean C (%) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+         shape = guide_legend(override.aes = list(size = 5))) +
+  guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+       shape = guide_legend(override.aes = list(size = 5))) +
+  guides(shape = F) +
+  sparc_theme +
+  theme(legend.position = c(0.6, 0.65),
+        legend.direction = "horizontal"); xsite_cHClTotp
+
+# Assemble a multi-panel figure!
+plot2 <- cowplot::plot_grid(xsite_nHClTotp, xsite_cHClTotp,
+                   labels = "AUTO")
+```
+
+```{r Site Average Graphs slow versus total}
+# # N% ~ total P
+# xsite_ntotp <- ggplot(data = site_n, aes(x = mean_total.P_conc_mg.kg, y = mean_N_conc_percent)) +
+#   # Error bars (defined above)
+#   n_se + totp_se +
+#   # Best fit line
+#   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+#   # Points/labels for each dataset
+#   geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+#   # Customizing theme elements
+#   labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean N (%) ± SE",
+#        shape = "Dataset Number", fill = "LTER") +
+#   scale_shape_manual(values = data_shapes) +
+#   scale_fill_manual(values = lter_colors) +
+#   guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+#          shape = guide_legend(override.aes = list(size = 5))) +
+#   sparc_theme +
+#   theme(legend.position = "none"); xsite_ntotp
+  
+# N% ~ NaOH P
+xsite_HCL_Tot_p <- ggplot(data = site_n, aes(x = mean_slow.P_conc_mg.kg, y = mean_total.P_conc_mg.kg)) +
+  # Error bars (defined above)
+  # slowp_se + totp_se + 
+  # Best fit line
+  geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # Points/labels for each dataset
+  geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # Customizing theme elements
+ # Customizing theme elements
+  labs(x = "Mean Slow P (mg/kg) ± SE", y = "Mean Total P (mg/kg) ± SE",
+       shape = "Dataset Number", fill = "LTER") +
+  scale_shape_manual(values = data_shapes) +
+  scale_fill_manual(values = lter_colors) +
+  sparc_theme +
+  guides(fill = F) +
+  sparc_theme +
+  theme(legend.position = c(0.4, 0.75),
+        legend.direction = "horizontal"); xsite_HCL_Tot_p 
+
+# # C% ~ total P
+# xsite_ctotp <- ggplot(data = site_c, aes(x = mean_total.P_conc_mg.kg, y = mean_C_conc_percent)) +
+#   # Error bars (defined above)
+#   c_se + totp_se +
+#   # Best fit line
+#   geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+#   # Points/labels for each dataset
+#   geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+#   # Customizing theme elements
+#   labs(x = "Mean Total P (mg/kg) ± SE", y = "Mean C (%) ± SE",
+#        shape = "Dataset Number", fill = "LTER") +
+#   scale_shape_manual(values = data_shapes) +
+#   scale_fill_manual(values = lter_colors) +
+#   sparc_theme +
+#   guides(fill = F) +
+#   sparc_theme +
+#   theme(legend.position = c(0.4, 0.75),
+#         legend.direction = "horizontal"); xsite_ctotp
+
+# C% ~ NaOH P
+# xsite_cNaOHp <- ggplot(data = site_c, aes(x = mean_slow.P_conc_mg.kg, y = mean_C_conc_percent)) +
+  # # Error bars (defined above)
+  # c_se + NaOH_se +
+  # # Best fit line
+  # geom_smooth(method = "lm", formula = "y ~ x", se = F, color = "black") +
+  # # Points/labels for each dataset
+  # geom_point(aes(fill = lter, shape = dataset_num), size = 3, alpha = 0.95) +
+  # # Customizing theme elements
+  # labs(x = "Mean NaOH P (mg/kg) ± SE", y = "Mean C (%) ± SE",
+  #      shape = "Dataset Number", fill = "LTER") +
+  # scale_shape_manual(values = data_shapes) +
+  # scale_fill_manual(values = lter_colors) +
+  # guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+  #        shape = guide_legend(override.aes = list(size = 5))) +
+  # guides(fill = guide_legend(override.aes = list(shape = 21, size = 6)),
+  #      shape = guide_legend(override.aes = list(size = 5))) +
+  # guides(shape = F) +
+  # sparc_theme +
+  # theme(legend.position = c(0.6, 0.65),
+  #       legend.direction = "horizontal"); xsite_cslowp
+
+# Assemble a multi-panel figure!
+data3 <- cowplot::plot_grid(xsite_HCL_Tot_p,
+                   labels = "AUTO")
+# xsite_ntotp,
+
+# , nrow = 2, ncol = 2
+
+# Export it
+# ggsave(filename = file.path("graphs_CE_AM", "figure-1_across-sites.png"),
+#        width = 10, height = 10, units = "in")
+```
+

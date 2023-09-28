@@ -1,0 +1,45 @@
+---
+title: "Tapajos_Conv"
+author: "Ellery Vaughan"
+date: "2023-09-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tapajos Conversion
+```{r reading in data}
+library(tidyverse)
+data_raw <- read.csv("../../NCEAS_SPARC/TG07_km83_Tapajos_P_McGroddy control direct only.csv")
+```
+
+```{r converting from stocks to concentrations}
+# adding depth 
+data <- data_raw %>% 
+  mutate(depth = "0_10") %>% 
+  select(collection:core,depth,everything()) %>% 
+  mutate(bulk_density = as.numeric(bulk_density))
+
+# columns to convert 
+# P_NaHCO3
+# P_NaOH
+# P_1M_HCl
+# P_conc_HCl
+# P_H2SO4
+
+data <- data %>% 
+  mutate(P_NaHCO3 = ((P_NaHCO3/bulk_density)*10^2),
+         P_NaOH = (( P_NaOH/bulk_density)*10^2),
+         P_1M_HCl = ((P_1M_HCl/bulk_density)*10^2),
+          P_conc_HCl =  ((P_conc_HCl/bulk_density)*10^2),
+         P_H2SO4 =  ((P_H2SO4/bulk_density)*10^2))
+```
+
+```{r export data}
+
+write_csv(data,"../Tapajos_McGroddy_Silver.csv")
+
+```
+
