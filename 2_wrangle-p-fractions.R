@@ -4,12 +4,7 @@
 # Script author(s): Nick J Lyon
 
 # Purpose:
-## Process 'archival' data for the purposes of the 'Soil P' LTER SPARC group
-
-# Pre-Requisites:
-## Assumes that "soil_p_harmonize.R" script has been run relatively recently
-## Otherwise risks using a superseded version of the tidy data
-### (that could lack updated raw data/data key information)
+## Flips archival data to wide format and calculates various P fraction sums
 
 ## ------------------------------------------ ##
               # Housekeeping -----
@@ -17,10 +12,10 @@
 
 # Load necessary libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, readxl, magrittr)
+librarian::shelf(tidyverse, googledrive, magrittr)
 
 # Create necessary sub-folder(s)
-dir.create(path = file.path("tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
 
 # Clear environment
 rm(list = ls())
@@ -32,10 +27,11 @@ tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pj
 googledrive::drive_ls(path = tidy_drive) %>%
   dplyr::filter(name == "sparc-soil-p_archival-data.csv") %>%
   googledrive::drive_download(file = .$id, overwrite = T,
-                              path = file.path("tidy_data", .$name))
+                              path = file.path("data", "tidy_data", .$name))
 
 # Read that file in
-sparc_v1 <- read.csv(file = file.path("tidy_data", "sparc-soil-p_archival-data.csv")) %>%
+sparc_v1 <- read.csv(file = file.path("data", "tidy_data", 
+                                      "sparc-soil-p_archival-data.csv")) %>%
   # Drop row number column
   dplyr::select(-row_num)
 
@@ -84,7 +80,7 @@ sparc_v2 <- sparc_v1 %>%
 dplyr::glimpse(sparc_v2)
 
 ## ------------------------------------------ ##
-            # Phosphorus Sums ----
+          # Phosphorus Sums Prep ----
 ## ------------------------------------------ ##
 
 # Glimpse the entire dataset
@@ -107,6 +103,10 @@ p_sums_v1 <- sparc_v2 %>%
 
 # Check that out
 dplyr::glimpse(p_sums_v1)
+
+## ------------------------------------------ ##
+             # P Sums - Slow ----
+## ------------------------------------------ ##
 
 # For the below to work we need to easily reference which P fractions exist for each dataset
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -142,7 +142,7 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "FloridaCoastal" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Jornada_1" ~ NA,
     dataset == "Jornada_2" ~ (P_conc_mg.kg_3_HCl),
-    dataset == "Kellog_Biological_Station" ~ (Pi_conc_mg.kg_6_HCl),
+    dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_6_HCl),
     dataset == "Konza_1" ~ (P_conc_mg.kg_3_Ca.bound),
     dataset == "Luquillo_1" ~ NA,
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_4_HCl),
@@ -159,6 +159,10 @@ p_sums_v2 <- p_sums_v1 %>%
                                    no = P_conc_mg.kg_1_HCl - P_conc_mg.kg_1_citrate),
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
+
+## ------------------------------------------ ##
+            # P Sums - Total ----
+## ------------------------------------------ ##
 
 # Recall P fractions for calculating total P
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -200,7 +204,7 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Jornada_1" ~ (P_conc_mg.kg_total),
     dataset == "Jornada_2" ~ (P_conc_mg.kg_1_MgCl2 + P_conc_mg.kg_2_NaOH + P_conc_mg.kg_3_HCl +
                                 P_conc_mg.kg_4_residual),
-    dataset == "Kellog_Biological_Station" ~ (Pi_conc_mg.kg_1_resin + 
+    dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_1_resin + 
                                                 Pi_conc_mg.kg_2_NaHCO3 + 
                                                 Po_conc_mg.kg_2_NaHCO3 +
                                                 Pi_conc_mg.kg_3_microbial + 
@@ -234,6 +238,10 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ (P_conc_mg.kg_total),
     T ~ NA))
+
+## ------------------------------------------ ##
+            # P Sums - Available ----
+## ------------------------------------------ ##
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -285,6 +293,10 @@ p_sums_v4 <- p_sums_v3 %>%
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
 
+## ------------------------------------------ ##
+              # P Sums - Bicarb ----
+## ------------------------------------------ ##
+
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
   
@@ -333,6 +345,10 @@ p_sums_v5 <- p_sums_v4 %>%
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
+
+## ------------------------------------------ ##
+            # P Sums - Biological ----
+## ------------------------------------------ ##
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -383,6 +399,10 @@ p_sums_v6 <- p_sums_v5 %>%
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
+
+## ------------------------------------------ ##
+        # P Sums - Intermediate ----
+## ------------------------------------------ ##
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -442,6 +462,10 @@ p_sums_v7 <- p_sums_v6 %>%
     dataset == "Toolik_1" ~ NA,
     dataset == "Toolik_2" ~ NA,
     T ~ NA))
+
+## ------------------------------------------ ##
+              # P Sums - NaOH P ----
+## ------------------------------------------ ##
 
 # Recall extant P fractions
 for(data_obj in sort(unique(p_sums_v1$dataset))){
@@ -562,525 +586,24 @@ summary(sparc_v4$total.P_stock_g.m2)
 dplyr::glimpse(sparc_v4[1:35])
 
 ## ------------------------------------------ ##
-        # Standardize Spatial Info ----
+            # Export P Sums Data ----
 ## ------------------------------------------ ##
 
-# Not all datasets are collected at the same level of spatial granularity
-## Those that don't have a given level (e.g., data only at plot level not specific cores)...
-## ...have NA in the levels of information that they are missing
-# We'll fill those with a standard character here so that we can use it for stats/graphing purposes
-
-# Check structure of the relevant columns
-sparc_v4 %>%
-  dplyr::select(lter, dataset, site, block, plot, core) %>%
-  dplyr::glimpse()
-
-# Fill missing entries in a dataset-specific way
-sparc_v5 <- sparc_v4 %>%
-  # If site is missing, fill with dataset name
-  dplyr::mutate(site = ifelse(test = (is.na(site) | nchar(site) == 0),
-                              yes = dataset, no = site)) %>%
-  # If block is missing, fill with site
-  dplyr::mutate(block = ifelse(test = (is.na(block) | nchar(block) == 0),
-                               yes = site, no = block)) %>%
-  # If plot is missing, fill with block
-  dplyr::mutate(plot = ifelse(test = (is.na(plot) | nchar(plot) == 0),
-                               yes = block, no = plot)) %>%
-  # If core is missing, fill with plot
-  dplyr::mutate(core = ifelse(test = (is.na(core) | nchar(core) == 0),
-                              yes = plot, no = core))
-
-# Re-check structure
-sparc_v5 %>%
-  dplyr::select(lter, dataset, site, block, plot, core) %>%
-  dplyr::glimpse()
-
-# Collapse spatial organization to get a quick sense of how many granularity is available
-sparc_v5 %>%
-  dplyr::group_by(lter, dataset) %>%
-  dplyr::summarize(site_ct = length(unique(site)),
-                   sites = paste(unique(site), collapse = "; "),
-                   block_ct = length(unique(block)),
-                   blocks = paste(unique(block), collapse = "; "),
-                   plot_ct = length(unique(plot)),
-                   plots = paste(unique(plot), collapse = "; "),
-                   core_ct = length(unique(core)),
-                   cores = paste(unique(core), collapse = "; "))
-
-## ------------------------------------------ ##
-          # Make Simple Data Names ----
-## ------------------------------------------ ##
-
-# Simplify dataset names to make plot labels neater
-sparc_v6 <- sparc_v5 %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Bonanza Creek", replacement = "BNZ", 
-                                    x = dataset), .before = dataset) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "CedarCreek", replacement = "CDR", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Coweeta", replacement = "CWT", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "FloridaCoastal", replacement = "FCE", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "HJAndrews", replacement = "AND", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Hubbard Brook", replacement = "HBR", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Jornada", replacement = "JRN", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Kellogg_Bio_Station", replacement = "KBS", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Konza", replacement = "KNZ", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Luquillo", replacement = "LUQ", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Niwot", replacement = "NWT", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Sevilleta", replacement = "SEV", 
-                                    x = dataset_simp)) %>%
-  dplyr::mutate(dataset_simp = gsub(pattern = "Toolik", replacement = "ARC", 
-                                    x = dataset_simp))
-
-# Check simplified dataset names
-sort(unique(sparc_v6$dataset_simp))
-
-## ------------------------------------------ ##
-        # Acquire Ancillary Data ----
-## ------------------------------------------ ##
-
-# Identify the desired ancillary data files
-anc_files <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1TwN8AwUKc3iLBsTRRzm68owNlUOgkQeI")) %>%
-  dplyr::filter(name %in% c(paste0("Ancillary_", c("dataset", "site", "block", "plot", "core"))))
-
-# Did that get all five?
-anc_files
-
-# Create a folder for local storage
-dir.create(path = file.path("ancillary_data"), showWarnings = F)
-
-# Download files into that
-purrr::walk2(.x = anc_files$id, .y = anc_files$name,
-             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
-                                                path = file.path("ancillary_data", .y)))
-
-## ------------------------------------------ ##
-          # Attach Ancillary Data ----
-## ------------------------------------------ ##
-
-# Make a new version of our primary data to avoid bad errors
-sparc_v7 <- sparc_v6
-
-# Identify the available ancillary data granularity levels
-gran_levels <- c("dataset", "site", "block", "plot", "core")
-
-# Loop across desired/available ancillary data to integrate with data
-for(granularity in gran_levels){
-  
-  # Starting message
-  message("Integrating ", granularity, "-level ancillary data")
-  
-  # Identify the file
-  gran_path <- file.path("ancillary_data", paste0("Ancillary_", granularity, ".xlsx"))
-  
-  # Read it in
-  gran_df <- readxl::read_xlsx(path = gran_path)
-  
-  # Identify spatial organization columns (in this level of the ancillary data)
-  spatial_cols <- intersect(x = c("lter", "dataset_simp", gran_levels), y = names(gran_df))
-  
-  # Make the non-granularity columns specific to the level from which they were entered
-  ## Note: manual assignment of column names is *risky*! DO NOT ATTEMPT ELSEWHERE!!
-  names(gran_df) <- c(spatial_cols, paste0(granularity, "_", 
-                                           setdiff(x = names(gran_df), y = spatial_cols)))
-  
-  # Now join onto the larger SPARC data
-  sparc_v7 %<>%
-    dplyr::left_join(y = gran_df, by = spatial_cols) }
-
-# Check what that leaves us with
-dplyr::glimpse(sparc_v7)
-
-## ------------------------------------------ ##
-        # Streamline Ancillary Data ----
-## ------------------------------------------ ##
-
-# Now need to collapse 'duplicate' columns from ancillary data into single 'actual' value
-## Will do one pipe/object per set of related columns
-
-# Fix latitude/longitude columns
-sparc_v8a <- sparc_v7 %>%
-  ## Collapse columns together into a single 'actual' one
-  dplyr::mutate(lat_actual = dplyr::coalesce(lat, core_latitude, plot_latitude, 
-                                             block_latitude, site_latitude,
-                                             dataset_latitude),
-                lon_actual = dplyr::coalesce(lon, core_longitude, plot_longitude, 
-                                             block_longitude, site_longitude,
-                                             dataset_longitude),
-                coord_source = dplyr::coalesce(core_coordinate_source, plot_coordinate_source, 
-                                               block_coordinate_source, site_coordinate_source,
-                                               dataset_coordinate_source),
-                .after = raw_filename) %>%
-  # Throw away (sorry) all component columns now that we have 'actual'
-  dplyr::select(-lat, -lon, -dplyr::ends_with("_latitude"), 
-                -dplyr::ends_with("_longitude"), -dplyr::ends_with("_coordinate_source")) %>%
-  # Rename actual
-  dplyr::rename(latitude = lat_actual,
-                longitude = lon_actual)
+# Make a final data object
+final_sparc <- sparc_v4
 
 # Glimpse it
-dplyr::glimpse(sparc_v8a)
+dplyr::glimpse(final_sparc)
 
-## ------------------------------------------ ##
-        # Export Full SPARC Data ----
-## ------------------------------------------ ##
+# Define file name
+sparc_name <- "sparc-soil-p_full-data-p-sums.csv"
 
-# Create a final data object
-sparc_tidy <- sparc_v8a %>%
-  # Drop the one row with an unreasonably high 'total P' value
-  dplyr::filter(is.na(total.P_conc_mg.kg) | total.P_conc_mg.kg <= 5250)
+# Export locally
+write.csv(x = final_sparc, row.names = F, na = '',
+          file = file.path("data", "tidy_data", sparc_name))
 
-# Check its structure
-dplyr::glimpse(sparc_tidy)
-
-# Define the tidy file name
-tidy_name <- "full-data_tidy-soil-p.csv"
-
-# Save out the final data object
-write.csv(x = sparc_tidy, file = file.path("tidy_data", tidy_name), 
-          row.names = F, na = "")
-
-## ------------------------------------------ ##
-    # Statistics / Visualization Prep ----
-## ------------------------------------------ ##
-
-# We definitely want the data we just exported BUT
-## we also want a really simplified version for stats/visualization
-## this will make it much easier to navigate the really fundamental parts of the data
-## while still having easy access to the most granular version of the data (exported above)
-
-# Megadata includes *a lot* of information and we only really need a subset of it for stats
-stats_v1 <- sparc_tidy %>%
-  # Pare down to only columns of interest
-  ## Unspecified columns are implicitly removed
-  dplyr::select(lter, dataset_simp, dataset, site, block, plot, core,
-                dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
-                core.length_cm, bulk.density_g.cm3,
-                dplyr::starts_with("Al_"), dplyr::starts_with("Fe"),
-                dplyr::ends_with(".P_conc_mg.kg"),
-                C_conc_percent, N_conc_percent) %>%
-  # Drop non-unique rows
-  dplyr::distinct()
-
-# How do the dataframe dimensions change?
-dim(sparc_tidy); dim(stats_v1)
-## Lose many columns but no rows? Good!
-
-# Check structure
-dplyr::glimpse(stats_v1)
-
-## ------------------------------------------ ##
- # Statistics / Visualization Subsetting ----
-## ------------------------------------------ ##
-
-# Need to subset to only certain horizons and where N/C data are present
-stats_v2 <- stats_v1 %>%
-  # Keep only mineral layer (and mixed mineral/organic) data 
-  dplyr::filter(horizon_binary %in% c("mineral", "mixed") |
-                  # Also keep unspecified horizon information (assumes mineral)
-                  nchar(horizon_binary) == 0) %>%
-  # For HBR, keep only A horizon
-  dplyr::filter((dataset == "Hubbard Brook" & horizon == "A") |
-                  dataset != "Hubbard Brook") %>%
-  # Coerce empty N/C percents into true NAs
-  dplyr::mutate(C_conc_percent = ifelse(nchar(C_conc_percent) == 0,
-                                        yes = NA, no = C_conc_percent),
-                N_conc_percent = ifelse(nchar(N_conc_percent) == 0,
-                                        yes = NA, no = N_conc_percent)) %>%
-  # Also we need **either** N or C information in addition to P data for statistics
-  dplyr::filter(!is.na(C_conc_percent) | !is.na(N_conc_percent))
-  
-# How do the dataframe dimensions change?
-dim(stats_v1); dim(stats_v2)
-## Lose many rows but no columns? Good!
-
-# Check structure
-dplyr::glimpse(stats_v2)
-
-# Need to do a weighted average across 0-2 and 2-10 depth cores
-luq2_v1 <- stats_v2 %>%
-  # Subset as needed
-  dplyr::filter(dataset_simp == "LUQ_2")
-
-# Calculate across 0-2 and 2-10 depths into a single value
-luq2_v2 <- luq2_v1 %>%
-  # Flip to long format
-  tidyr::pivot_longer(cols = -lter:-bulk.density_g.cm3) %>%
-  # Do needed weighted calculation
-  dplyr::mutate(value = case_when(
-    depth.start_cm == 0 & depth.end_cm == 2 ~ value * 0.2,
-    depth.start_cm == 8 & depth.end_cm == 10 ~ value * 0.8,
-    T ~ value)) %>%
-  # Fix depth values and core lengths
-  dplyr::mutate(core.length_cm = dplyr::case_when(
-    depth.start_cm == 0 & depth.end_cm == 2 ~ 10,
-    depth.start_cm == 2 & depth.end_cm == 10 ~ 10,
-    T ~ core.length_cm)) %>%
-  dplyr::mutate(depth.end_cm = ifelse(depth.start_cm == 0 & depth.end_cm == 2,
-                                      yes = 10, no = depth.end_cm)) %>%
-  dplyr::mutate(depth.start_cm = ifelse(depth.start_cm == 2 & depth.end_cm == 10,
-                                        yes = 0, no = depth.start_cm)) %>%
-  # Sum our resolved depths
-  dplyr::group_by(dplyr::across(.cols = -value)) %>%
-  dplyr::summarize(value = sum(value, na.rm = T)) %>%
-  dplyr::ungroup() %>%
-  # Reshape wider
-  tidyr::pivot_wider(names_from = name, values_from = value)
-
-# Check structure
-dplyr::glimpse(luq2_v2)
-
-# Split off on LUQ_2
-not_luq2 <- stats_v2 %>%
-  dplyr::filter(dataset_simp != "LUQ_2")
-
-# Recombine
-stats_v3 <- dplyr::bind_rows(luq2_v2, not_luq2)
-
-# Finally, we want to subset to only particular depths within those horizons
-stats_v4 <- stats_v3 %>%
-  # Keep only cores beginning at the top of the horizon
-  dplyr::filter(depth.start_cm == 0 | 
-                  # Again, keep missing depths on assumption they start at 0
-                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
-
-# How do the dataframe dimensions change?
-dim(stats_v3); dim(stats_v4)
-## Lose some rows but no columns? Good!
-
-# Check structure
-dplyr::glimpse(stats_v4)
-## tibble::view(stats_v4)
-
-## ------------------------------------------ ##
-          # Export Statistics Data ----
-## ------------------------------------------ ##
-
-# Create a final data object
-sparc_stats <- stats_v4
-
-# Check its structure
-dplyr::glimpse(sparc_stats)
-
-# Define the tidy file name
-stats_name <- "stats-ready_tidy-soil-p.csv"
-
-# Save out the final data object
-write.csv(x = sparc_stats, file = file.path("tidy_data", stats_name), 
-          row.names = F, na = "")
-
-## ------------------------------------------ ##
-            # Spatial Aggregation ----
-## ------------------------------------------ ##
-
-# We also want to average data within progressively coarser units of spatial organization
-## First, average across cores within plots
-## Second, average across plots within blocks
-## Third, average across blocks within sites
-
-# Prepare to take averages by:
-avgs_prep <- sparc_stats %>%
-  # Dropping core-specific depth/horizon columns
-  dplyr::select(-core, -dplyr::starts_with("horizon"),
-                -dplyr::starts_with("depth."), -core.length_cm,
-                -bulk.density_g.cm3) %>%
-  # Flipping to long format
-  tidyr::pivot_longer(cols = slow.P_conc_mg.kg:N_conc_percent,
-                      names_to = "variables", values_to = "vals")
-
-# Check structure
-dplyr::glimpse(avgs_prep)
-
-# Begin with averaging across cores within plots
-plots_v1 <- avgs_prep %>%
-  # Group by everything and average the response variables
-  dplyr::group_by(lter, dataset_simp, dataset, site, block, plot, variables) %>%
-  dplyr::summarize(mean = mean(vals, na.rm = T),
-                   std.dev = sd(vals, na.rm = T),
-                   sample.size = dplyr::n(),
-                   std.error = std.dev / sqrt(sample.size)) %>%
-  dplyr::ungroup()
-
-# Check structure
-dplyr::glimpse(plots_v1)
-
-# Check dimension change from that step
-dim(avgs_prep); dim(plots_v1)
-
-# Next, average across plots within blocks
-blocks_v1 <- plots_v1 %>%
-  # Rename summary metrics columns
-  dplyr::rename(prev_std.dev = std.dev,
-                prev_sample.size = sample.size,
-                prev_std.error = std.error,
-                vals = mean) %>%
-  # Group by everything *except* plot
-  dplyr::group_by(lter, dataset_simp, dataset, site, block, variables) %>%
-  # And get averages (and variation metrics) again
-  dplyr::summarize(sample.size = dplyr::n(),
-                   mean = ifelse(test = all(sample.size) == 1,
-                                 yes = unique(vals),
-                                 no = mean(vals, na.rm = T)),
-                   std.dev = ifelse(test = all(sample.size) == 1,
-                                    yes = unique(prev_std.dev),
-                                    no = sd(vals, na.rm = T)),
-                   std.error = ifelse(test = all(sample.size) == 1,
-                                    yes = unique(prev_std.error),
-                                    no = std.dev / sqrt(sample.size)) ) %>%
-  # And ungroup
-  dplyr::ungroup()
-
-# Check structure
-dplyr::glimpse(blocks_v1)
-
-# Check dimension change from that step
-dim(plots_v1); dim(blocks_v1)
-
-# Finally, average across blocks within sites
-sites_v1 <- blocks_v1 %>%
-  # Rename summary metrics columns
-  dplyr::rename(prev_std.dev = std.dev, prev_sample.size = sample.size,
-                prev_std.error = std.error, vals = mean) %>%
-  # Group by everything *except* block
-  dplyr::group_by(lter, dataset_simp, dataset, site, variables) %>%
-  # And get averages (and variation metrics) again
-  dplyr::summarize(sample.size = dplyr::n(),
-                   mean = ifelse(test = all(sample.size) == 1,
-                                 yes = unique(vals),
-                                 no = mean(vals, na.rm = T)),
-                   std.dev = ifelse(test = all(sample.size) == 1,
-                                    yes = unique(prev_std.dev),
-                                    no = sd(vals, na.rm = T)),
-                   std.error = ifelse(test = all(sample.size) == 1,
-                                      yes = unique(prev_std.error),
-                                      no = std.dev / sqrt(sample.size)) ) %>%
-  # And ungroup
-  dplyr::ungroup()
-
-# Check structure of *that*
-dplyr::glimpse(sites_v1)
-
-# Check dimension change from that step
-dim(blocks_v1); dim(sites_v1)
-
-# Tweak 'shape' of plot and site averages for viz/stats use
-plots_v2 <- plots_v1 %>%
-  # Drop sample size column
-  dplyr::select(-sample.size) %>%
-  # Pivot remaining columns into long format
-  tidyr::pivot_longer(cols = mean:std.error,
-                      names_to = "stat", values_to = "value") %>%
-  # Combine statistic with variable
-  dplyr::mutate(name_actual = paste0(stat, "_", variables)) %>%
-  # Drop now-superseded columns
-  dplyr::select(-stat, -variables) %>%
-  # Flip back to wide format
-  tidyr::pivot_wider(names_from = name_actual,
-                     values_from = value)
-
-# Check structure
-glimpse(plots_v2)
-
-# Do the same for the site-level averages
-sites_v2 <- sites_v1 %>%
-  # Drop sample size column
-  dplyr::select(-sample.size) %>%
-  # Pivot remaining columns into long format
-  tidyr::pivot_longer(cols = mean:std.error,
-                      names_to = "stat", values_to = "value") %>%
-  # Combine statistic with variable
-  dplyr::mutate(name_actual = paste0(stat, "_", variables)) %>%
-  # Drop now-superseded columns
-  dplyr::select(-stat, -variables) %>%
-  # Flip back to wide format
-  tidyr::pivot_wider(names_from = name_actual,
-                     values_from = value)
-
-# Re-check structure
-dplyr::glimpse(sites_v2)
-
-## ------------------------------------------ ##
-        # Export Spatial Aggregations ----
-## ------------------------------------------ ##
-
-# Create a final data object for both
-sparc_site_avgs <- sites_v2
-sparc_plot_avgs <- plots_v2
-
-# Check its structure
-dplyr::glimpse(sparc_site_avgs)
-dplyr::glimpse(sparc_plot_avgs)
-
-# Define the tidy file names
-sites_name <- "site-avgs_tidy-soil-p.csv"
-plots_name <- "plot-avgs_tidy-soil-p.csv"
-
-# Save out the final data objects
-write.csv(x = sparc_site_avgs, file = file.path("tidy_data", sites_name), row.names = F, na = "")
-write.csv(x = sparc_plot_avgs, file = file.path("tidy_data", plots_name), row.names = F, na = "")
-
-## ------------------------------------------ ##
-          # Google Drive Uploads ----
-## ------------------------------------------ ##
-
-# Identify tidy files (other than archival data made by 'harmonize' script)
-( ready_files <- setdiff(x = dir(path = file.path("tidy_data")), 
-                         y = "sparc-soil-p_archival-data.csv") )
-
-# Loop across these files...
-for(file in ready_files){
-  
-  #...and upload to the Drive
-  googledrive::drive_upload(media = file.path("tidy_data", file), 
-                            overwrite = T, path = tidy_drive) }
-
-## ------------------------------------------ ##
-    # Bonus - Nuanced Depth Subsetting ----
-## ------------------------------------------ ##
-
-# We may eventually want a more nuanced depth subset operation
-## I figured this out when it seemed like what we wanted first
-## and am preserving it here if/when we need it later
-
-# Check structure of pre-depth subset version of the stats object
-dplyr::glimpse(stats_v2)
-
-# How many *centimeters* from the first measured depth (of the mineral/A horizon) are allowed?
-depth_cutoff <- 15
-
-# Start with the 
-stats_bonus <- stats_v2 %>%
-  # Group by site-information columns
-  dplyr::group_by(dplyr::across(lter:block)) %>%
-  # Calculate minimum depth within those columns
-  dplyr::mutate(min_depth = ifelse(!all(is.na(depth.start_cm)),
-                                   yes = min(depth.start_cm, na.rm = T),
-                                   no = NA)) %>%
-  # Also calculate the maximum 'allowed' depth using the cutoff defined above
-  dplyr::mutate(max_allowed_depth = (min_depth + depth_cutoff)) %>%
-  # Ungroup
-  dplyr::ungroup() %>%
-  # Now filter to only samples between those bookends
-  dplyr::filter(depth.start_cm >= min_depth & depth.end_cm <= max_allowed_depth) %>%
-  # Drop columns needed for that filter but otherwise not needed
-  dplyr::select(-min_depth, -max_allowed_depth)
-
-# How many rows does that drop?
-nrow(stats_v2); nrow(stats_bonus)
-
-# More or less data in this subset than the simpler 'depth starting at 0' subset?
-nrow(stats_v3); nrow(stats_bonus)
-## *Much* less data with this approach
-
-# Re-check structure
-dplyr::glimpse(stats_bonus)
+# Export to that folder in the Drive
+googledrive::drive_upload(media = file.path("data", "tidy_data", sparc_name), 
+                          overwrite = T, path = tidy_drive)
 
 # End ----

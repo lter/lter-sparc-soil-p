@@ -4,9 +4,8 @@
 # Script author(s): Nick J Lyon
 
 # Purpose:
-## Harmonize soil P, C, and N data from several raw files
-## Do general purpose tidying (bad numbers, redundant columns, etc.)
-## Create an 'archive ready' data file that can be uploaded to a data repository
+## Absorb all raw files and (using data key) combine them
+## Finishes with an 'archive ready' long format data file
 
 ## ------------------------------------------ ##
               # Housekeeping -----
@@ -17,7 +16,10 @@
 librarian::shelf(tidyverse, googledrive, supportR, psych)
 
 # Create necessary sub-folder(s)
-dir.create(path = file.path("raw_data"), showWarnings = F)
+dir.create(path = file.path("data"), showWarnings = F)
+dir.create(path = file.path("data", "raw_data"), showWarnings = F)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "key_files"), showWarnings = F)
 
 # Identify raw data files
 raw_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/10igyNjNSEJDrz5mUtYyxgbUPDUO7bsuW"), type = "csv")
@@ -25,7 +27,7 @@ raw_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/dr
 # Download each data file into the new 'raw_data' folder
 purrr::walk2(.x = raw_ids$id, .y = raw_ids$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T,
-                                                path = file.path("raw_data", .y)))
+                                                path = file.path("data", "raw_data", .y)))
 
 # Clear environment
 rm(list = ls())
@@ -34,16 +36,13 @@ rm(list = ls())
               # Data Key Prep ----
 ## ------------------------------------------ ##
 
-# Make a folder for local storage of the data key
-dir.create(path = file.path("key_files"), showWarnings = F)
-
 # Download data key (connects raw column names with synonymized equivalents)
 googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1WIAo08Jnmp7BdvN8xxobZ_txcFCWZ35w"), pattern = "LTER_P_DataKey") %>%
   googledrive::drive_download(file = .$id, type = "csv", overwrite = T,
-                              path = file.path("key_files", .$name))
+                              path = file.path("data", "key_files", .$name))
 
 # Retrieve the data key
-key_v1 <- read.csv(file = file.path("key_files", "LTER_P_DataKey.csv")) %>%
+key_v1 <- read.csv(file = file.path("data", "key_files", "LTER_P_DataKey.csv")) %>%
   # Remove any rows that lack an entry in the "Variable" column
   dplyr::filter(!is.na(Variable) & nchar(Variable) != 0 & Variable != "NA") %>%
   # Drop unwanted columns
@@ -209,11 +208,11 @@ key_v5 %>%
   dplyr::filter(ct > 1)
 
 ## ------------------------------------------ ##
-                # Data Harmonizing ----
+            # Data Harmonizing ----
 ## ------------------------------------------ ##
 
 # Identify the downloaded raw files
-downloaded_files <- dir(path = file.path("raw_data"))
+downloaded_files <- dir(path = file.path("data", "raw_data"))
 
 # Compare the two to see if all file names in the key were in the Drive
 supportR::diff_check(old = downloaded_files, new = unique(key_v5$Raw_Filename))
@@ -237,7 +236,7 @@ for(j in 1:length(raw_files)){
   key_sub <- dplyr::filter(key, Raw_Filename == focal_raw)
   
   # Load in that file
-  raw_df_v1 <- read.csv(file = file.path("raw_data", focal_raw))
+  raw_df_v1 <- read.csv(file = file.path("data", "raw_data", focal_raw))
   
   # Process it to ready for integration with other raw files
   raw_df_v2 <- raw_df_v1 %>%
@@ -329,7 +328,7 @@ sort(unique(tidy_v1$distance))
 sort(unique(tidy_v1$topography))
 
 # Fix any typos identified above
-tidy_v2 <- tidy_v1 %>%
+tidy_v1b <- tidy_v1 %>%
   # Fix some of the spatial/site columns
   dplyr::mutate(lat = as.numeric(lat),
                 lon = as.numeric(lon),
@@ -374,10 +373,74 @@ tidy_v2 <- tidy_v1 %>%
                                  no = dataset)) %>%
   # And simplify LTER for that dataset
   dplyr::mutate(lter = ifelse(lter == "Chichaqua",
-                                 yes = "CDR", no = lter)) 
+                                 yes = "CDR", no = lter))  %>%
+  # Also make a simplified dataset name for use down the line
+  dplyr::mutate(dataset_simp = gsub(pattern = "Bonanza Creek", replacement = "BNZ", 
+                                    x = dataset), .before = dataset) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "CedarCreek", replacement = "CDR", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Coweeta", replacement = "CWT", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "FloridaCoastal", replacement = "FCE", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "HJAndrews", replacement = "AND", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Hubbard Brook", replacement = "HBR", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Jornada", replacement = "JRN", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Kellogg_Bio_Station", replacement = "KBS", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Konza", replacement = "KNZ", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Luquillo", replacement = "LUQ", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Niwot", replacement = "NWT", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Sevilleta", replacement = "SEV", 
+                                    x = dataset_simp)) %>%
+  dplyr::mutate(dataset_simp = gsub(pattern = "Toolik", replacement = "ARC", 
+                                    x = dataset_simp))
 
 # Check out new LTER column
-sort(unique(tidy_v2$lter))
+sort(unique(tidy_v1b$lter))
+sort(unique(tidy_v1b$dataset_simp))
+
+# Not all datasets are collected at the same level of spatial granularity
+## Those that don't have a given level (e.g., data only at plot level not specific cores)...
+## ...have NA in the levels of information that they are missing
+
+# If any piece of information is missing, fill with the next coarser piece
+tidy_v2 <- tidy_v1b %>%
+  # If site is missing, fill with dataset name
+  dplyr::mutate(site = ifelse(test = (is.na(site) | nchar(site) == 0),
+                              yes = dataset, no = site)) %>%
+  # If block is missing, fill with site
+  dplyr::mutate(block = ifelse(test = (is.na(block) | nchar(block) == 0),
+                               yes = site, no = block)) %>%
+  # If plot is missing, fill with block
+  dplyr::mutate(plot = ifelse(test = (is.na(plot) | nchar(plot) == 0),
+                              yes = block, no = plot)) %>%
+  # If core is missing, fill with plot
+  dplyr::mutate(core = ifelse(test = (is.na(core) | nchar(core) == 0),
+                              yes = plot, no = core))
+
+# Re-check structure
+tidy_v2 %>%
+  dplyr::select(lter, dataset, site, block, plot, core) %>%
+  dplyr::glimpse()
+
+# Collapse spatial organization to get a quick sense of how many granularity is available
+tidy_v2 %>%
+  dplyr::group_by(lter, dataset) %>%
+  dplyr::summarize(site_ct = length(unique(site)),
+                   sites = paste(unique(site), collapse = "; "),
+                   block_ct = length(unique(block)),
+                   blocks = paste(unique(block), collapse = "; "),
+                   plot_ct = length(unique(plot)),
+                   plots = paste(unique(plot), collapse = "; "),
+                   core_ct = length(unique(core)),
+                   cores = paste(unique(core), collapse = "; "))
 
 # Check structure
 dplyr::glimpse(tidy_v2)
@@ -1005,9 +1068,6 @@ final_tidy <- tidy_v8b
 # Check its structure
 dplyr::glimpse(final_tidy)
 
-# Create a folder to export into
-dir.create(path = file.path("tidy_data"), showWarnings = F)
-
 # And identify the tidy data Drive URL
 tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
 
@@ -1016,10 +1076,10 @@ arch_name <- "sparc-soil-p_archival-data.csv"
 
 # Export locally
 write.csv(x = final_tidy, row.names = F, na = '',
-          file = file.path("tidy_data", arch_name))
+          file = file.path("data", "tidy_data", arch_name))
 
 # Upload that to the Drive as well
-googledrive::drive_upload(media = file.path("tidy_data", arch_name), 
+googledrive::drive_upload(media = file.path("data", "tidy_data", arch_name), 
                           overwrite = T, path = tidy_drive)
 
 # End ----
