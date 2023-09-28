@@ -765,7 +765,8 @@ tidy_v3c <- tidy_v3b %>%
 supportR::num_check(data = tidy_v3c, col = "value_actual")
 
 # Identify names of all columns except for sample replicate / old values columns
-(keeps <- setdiff(x = names(tidy_v3c), y = c("sample.replicate", "value_raw", 
+(keeps <- setdiff(x = names(tidy_v3c), y = c("sample.replicate", "sample.replicate.2",
+                                             "value_raw", 
                                              "value_clean", "value_actual")))
 
 # Finish wrangling this object!
@@ -850,6 +851,7 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "Jornada_1" ~ 0.9,
     dataset == "Kellogg_Bio_Station" ~ 0.9,
     dataset == "Konza_1" ~ 0.9,
+    dataset == "Konza_2" ~ 0.9,
     dataset == "Luquillo_1" ~ 0.9,
     dataset == "Luquillo_2" ~ 0.9,
     dataset == "Luquillo_3" ~ 0.9,
@@ -857,9 +859,11 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "Niwot_2" ~ 0.9,
     dataset == "Niwot_3" ~ 0.9,
     dataset == "Niwot_4" ~ 0.9,
+    dataset == "Niwot_5" ~ 0.9,
     dataset == "Niwot_Liptzen2006" ~ 0.9,
     dataset == "Sevilleta_1" ~ 0.9,
     dataset == "Sevilleta_2" ~ 0.9,
+    dataset == "Tapajos" ~ 0.9,
     dataset == "Toolik_1" ~ 0.9,
     dataset == "Toolik_2" ~ 0.9,
     # If no bulk density is supplied by above conditions, fill with NA
