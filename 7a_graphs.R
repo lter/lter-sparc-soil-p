@@ -16,6 +16,7 @@
 librarian::shelf(tidyverse, googledrive, supportR, cowplot)
 
 # Create necessary sub-folder(s)
+dir.create(path = file.path("data"), showWarnings = F)
 dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
 dir.create(path = file.path("graphs"), showWarnings = F)
 dir.create(path = file.path("graphs", "cores"), showWarnings = F)
@@ -118,6 +119,8 @@ slowp_se <- geom_errorbarh(aes(xmax = mean_slow.P_conc_mg.kg + std.error_slow.P_
 totp_se <- geom_errorbarh(aes(xmax = mean_total.P_conc_mg.kg + std.error_total.P_conc_mg.kg,
                                  xmin = mean_total.P_conc_mg.kg - std.error_total.P_conc_mg.kg),
                           height = 0, na.rm = T)
+
+
 
 # Custom ggplot theme
 sparc_theme <- theme(panel.grid = element_blank(),
