@@ -26,11 +26,12 @@ raw_lithology_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.goo
                             "Classnames.txt"))
 
 # Identify raw data files
-raw_ancillary_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1TwN8AwUKc3iLBsTRRzm68owNlUOgkQeI")) %>%
-  dplyr::filter(name %in% c("Ancillary_site"))
+# CHANGE INPUT SOURCE AS SOON AS OVERALL WORKFLOW IS FINALIZED
+raw_latlon_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")) %>%
+  dplyr::filter(name %in% c("sparc-soil-p_stats-ready_mineral_0-10.csv"))
 
 # Combine file IDs
-raw_ids <- rbind(raw_lithology_ids, raw_ancillary_ids)
+raw_ids <- rbind(raw_lithology_ids, raw_latlon_ids)
 
 # For each raw data file
 for(k in 1:nrow(raw_ids)){
@@ -47,6 +48,20 @@ for(k in 1:nrow(raw_ids)){
 rm(list = ls())
 
 ## ------------------------------------------------------- ##
+#             Site Locations - Assemble ----
+## ------------------------------------------------------- ##
+
+# Read in csv with lat/lon coordinates
+locations <- read_csv(file.path("raw_data","sparc-soil-p_stats-ready_mineral_0-10.csv")) %>%
+  dplyr::select(lter, dataset_simp, dataset, raw_filename, site, plot, block, core, longitude, latitude) 
+
+# Convert the dataframe to a terra SpatVector object
+locations_spatvector <- terra::vect(locations, geom=c("longitude", "latitude"), crs="+proj=longlat +datum=WGS84", keepgeom=T)
+
+# Another way to set the CRS
+# locations_spatvector <- terra::vect(locations, geom=c("x", "y"), crs="EPSG:4326", keepgeom=FALSE)
+
+## ------------------------------------------------------- ##
 #                Lithology - Extract ----
 ## ------------------------------------------------------- ##
 
@@ -56,53 +71,26 @@ rocks_raw <- terra::rast(x = file.path("raw_data", "glim_wgs84_0point5deg.txt.as
 # Check CRS
 sf::st_crs(rocks_raw)
 
-# Experimental plotting
-terra::plot(rocks_raw)
-
-# Create a dataframe of some example coordinates
-locations <- data.frame(x = c(-71.889695,
-                               -71.889102,
-                               -71.889058,
-                               -71.889397,
-                               -71.889636,
-                               -71.890073,
-                               -71.889466,
-                               -71.890195,
-                               -71.889306,
-                               -71.890063),
-                           y = c(44.036890,
-                                44.036854,
-                                44.037221,
-                                44.037569,
-                                44.037210,
-                                44.036018,
-                                44.035582,
-                                44.035510,
-                                44.036017,
-                                44.034650))
-
-# Convert the dataframe to a terra SpatVector object
-locations_spatvector <- terra::vect(locations, geom=c("x", "y"), crs="+proj=longlat +datum=WGS84", keepgeom=FALSE)
-
-# Another way to set the CRS
-# locations_spatvector <- terra::vect(locations, geom=c("x", "y"), crs="EPSG:4326", keepgeom=FALSE)
+# Experimental plotting over North America
+frame_rast <- terra::rast(terra::ext(-150, -66, 10, 80))
+plot(frame_rast, axes = F, reset = F)
+terra::plot(rocks_raw, add = T, axes = F)
+terra::plot(locations_spatvector, add = T, axes = F)
 
 # Extract lithology data
 # Each code number corresponds to a rock type, see below for a list of what each code number represents
-terra::extract(rocks_raw, locations_spatvector)
+rocks_out <- terra::extract(rocks_raw, locations_spatvector, bind = T) %>%
+  as.data.frame() %>%
+  dplyr::rename(rock_code = glim_wgs84_0point5deg.txt)
 
-
-
-
-
+# Check it out
+dplyr::glimpse(rocks_out)
 
 ## ------------------------------------------------------- ##
 #              Lithology - Index Prep ----
 ## ------------------------------------------------------- ##
 
 # Bring in the index tying rock code integers with rock abbreviations
-# NOTE: pulling source data from another working group's folder
-# Need to create own folder for SPARC Soil P later and populate it with the source data
 rock_index_raw <- read.table(file = file.path("raw_data", "Classnames.txt"),
                              header = T, sep = ';')
 
@@ -134,7 +122,7 @@ rock_index <- rock_index_raw %>%
       rock_abbrev == 'nd' ~ 'no_data',
       TRUE ~ as.character(rock_abbrev) ) ) %>%
   # Remove unneeded columns
-  dplyr::select(value = rock_code, rock_type) %>%
+  dplyr::select(rock_code, rock_type) %>%
   # Create new column for rock group
   dplyr::mutate(
     rock_group = dplyr::case_when(
@@ -158,5 +146,32 @@ rock_index <- rock_index_raw %>%
 
 # Check that worked
 dplyr::glimpse(rock_index)
+
+## ------------------------------------------------------- ##
+#                 Lithology - Export ----
+## ------------------------------------------------------- ##
+
+# Get ready to export by joining the extracted data with the index
+rocks_export <- rocks_out %>%
+  dplyr::left_join(y = rock_index)
+
+# Check it out
+dplyr::glimpse(rocks_export)
+
+# Create folder to export to
+dir.create(path = file.path("extracted_data"), showWarnings = F)
+
+# Export the summarized lithology data
+write.csv(x = rocks_export, na = '', row.names = F,
+          file = file.path("extracted_data", "soil-p-extract_lithology.csv"))
+
+# Upload to GoogleDrive
+# CHANGE FINAL EXPORT DESTINATION LATER
+googledrive::drive_upload(media = file.path("extracted_data", 
+                                            "soil-p-extract_lithology.csv"),
+                          overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1VUIPgcB3VsF12YWpLobmddgOiwhzvmil"))
+
+# End ----
 
 
