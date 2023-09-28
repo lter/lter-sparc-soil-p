@@ -27,13 +27,13 @@ tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pj
 
 # Identify the archival data in that folder and download it
 googledrive::drive_ls(path = tidy_drive) %>%
-  dplyr::filter(name == "sparc-soil-p_full-data-incl-ancillary.csv") %>%
+  dplyr::filter(name == "sparc-soil-p_full-plus-ancil-and-spatial.csv") %>%
   googledrive::drive_download(file = .$id, overwrite = T,
                               path = file.path("data", "tidy_data", .$name))
 
 # Read that file in
 all_v1 <- read.csv(file = file.path("data", "tidy_data", 
-                                    "sparc-soil-p_full-data-incl-ancillary.csv"))
+                                    "sparc-soil-p_full-plus-ancil-and-spatial.csv"))
 
 # Glimpse it!
 dplyr::glimpse(all_v1)
@@ -44,7 +44,8 @@ dplyr::glimpse(all_v1)
 
 # Only some columns are really needed from here on out
 all_v2 <- all_v1 %>%
-  dplyr::select(lter:core, dplyr::starts_with("mean.annual."), pH,
+  dplyr::select(lter:core, dplyr::starts_with("rock_"), soil_code, generic_soil,
+                dplyr::starts_with("mean.annual."), pH,
                 dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
                 core.length_cm, bulk.density_g.cm3,
                 dplyr::starts_with("Al_"), dplyr::starts_with("Fe"),
