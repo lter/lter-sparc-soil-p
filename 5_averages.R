@@ -161,6 +161,20 @@ for(focal_ready in local_files){
   
 } # Closing loop
 
+## ------------------------------------------ ##
+          # Export Averages to Drive ----
+## ------------------------------------------ ##
 
+# Identify all average files
+( avg_done <- dir(path = file.path("data", "averages")) )
 
+# Loop across these and upload to Drive
+for(focal_avg in avg_done){
+  
+  googledrive::drive_upload(media = file.path("data", "averages", focal_avg),
+                            path = tidy_drive, overwrite = T)
+  
+}
+
+# End ----
 
