@@ -79,6 +79,24 @@ for(granularity in gran_levels){
   # Read it in
   gran_df <- readxl::read_xlsx(path = gran_path)
   
+  # Fix weird issue with numbers in various spatial levels
+  ## Site
+  if("site" %in% names(gran_df)){
+    gran_df <- gran_df %>%
+      dplyr::mutate(site = gsub(pattern = ".0", replacement = "", x = site)) }
+  ## Block
+  if("block" %in% names(gran_df)){
+    gran_df <- gran_df %>%
+      dplyr::mutate(block = gsub(pattern = ".0", replacement = "", x = block)) }
+  ## Plot
+  if("plot" %in% names(gran_df)){
+    gran_df <- gran_df %>%
+      dplyr::mutate(plot = gsub(pattern = ".0", replacement = "", x = plot)) }
+  ## Core
+  if("core" %in% names(gran_df)){
+    gran_df <- gran_df %>%
+      dplyr::mutate(core = gsub(pattern = ".0", replacement = "", x = core)) }
+  
   # Identify spatial organization columns (in this level of the ancillary data)
   spatial_cols <- intersect(x = c("lter", "dataset_simp", gran_levels), y = names(gran_df))
   
