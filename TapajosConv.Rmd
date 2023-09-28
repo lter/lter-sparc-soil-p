@@ -19,7 +19,7 @@ data_raw <- read.csv("../../NCEAS_SPARC/TG07_km83_Tapajos_P_McGroddy control dir
 # adding depth 
 data <- data_raw %>% 
   mutate(depth = "0_10") %>% 
-  select(collection:core,depth,everything()) %>% 
+  select(collection:core, depth, everything()) %>% 
   mutate(bulk_density = as.numeric(bulk_density))
 
 # columns to convert 
@@ -29,17 +29,19 @@ data <- data_raw %>%
 # P_conc_HCl
 # P_H2SO4
 
-data <- data %>% 
-  mutate(P_NaHCO3 = ((P_NaHCO3/bulk_density)*10^2),
-         P_NaOH = (( P_NaOH/bulk_density)*10^2),
-         P_1M_HCl = ((P_1M_HCl/bulk_density)*10^2),
-          P_conc_HCl =  ((P_conc_HCl/bulk_density)*10^2),
-         P_H2SO4 =  ((P_H2SO4/bulk_density)*10^2))
+# Come back and correct this
+# data_converted <- data %>% 
+#   mutate(across(.cols = c(P_NaHCO3, P_NaOH, P_1M_HCl, P_conc_HCl, P_H2SO4), .fns = (./bulk_density)*10^3))
+    
+data_converted <- data %>% 
+  mutate(P_NaHCO3 = ((P_NaHCO3/bulk_density)*10^3),
+         P_NaOH = (( P_NaOH/bulk_density)*10^3),
+         P_1M_HCl = ((P_1M_HCl/bulk_density)*10^3),
+          P_conc_HCl =  ((P_conc_HCl/bulk_density)*10^3),
+         P_H2SO4 =  ((P_H2SO4/bulk_density)*10^3))
 ```
 
 ```{r export data}
-
 write_csv(data,"../Tapajos_McGroddy_Silver.csv")
-
 ```
 
