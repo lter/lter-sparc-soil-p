@@ -97,7 +97,8 @@ p_sums_v1 <- sparc_v2 %>%
   ## Remove NA / missing values
   dplyr::filter(!is.na(values) & nchar(values) != 0) %>%
   ## Pivot back to wide format and fill empty cells with 0
-  tidyr::pivot_wider(names_from = names, values_from = values) %>%
+  tidyr::pivot_wider(names_from = names, values_from = values,
+                     values_fill = 0) %>%
   # Also drop P stocks (mg/m2)
   dplyr::select(-dplyr::contains("_stock_"))
 
