@@ -334,16 +334,12 @@ sort(unique(tidy_v1$plot))
 sort(unique(tidy_v1$block))
 sort(unique(tidy_v1$core))
 sort(unique(tidy_v1$treatment))
-sort(unique(tidy_v1$distance))
-sort(unique(tidy_v1$topography))
 
 # Fix any typos identified above
 tidy_v1b <- tidy_v1 %>%
   # Fix some of the spatial/site columns
   dplyr::mutate(lat = as.numeric(lat),
-                lon = as.numeric(lon),
-                distance = as.numeric(distance),
-                topography = tolower(topography)) %>%
+                lon = as.numeric(lon)) %>%
   # Rename columns so that everything is in snake case except element abbreviations
   ## snake case = "lower_lower_lower"
   dplyr::rename(lter = LTER,
@@ -351,7 +347,7 @@ tidy_v1b <- tidy_v1 %>%
                 raw_filename = Raw_Filename) %>%
   # Relocate all spatial/site columns to the left of the dataframe
   dplyr::relocate(lter, dataset, raw_filename, lat, lon, site, plot, block, core,
-                  sample.replicate, treatment, distance, topography, 
+                  sample.replicate, treatment, 
                   horizon, depth_cm, org.depth_cm, pH,
                   .before = dplyr::everything()) %>%
   # Create a better version of the LTER column
