@@ -536,6 +536,7 @@ tidy_v2c <- tidy_v2b %>%
     dataset == "Konza_1" & depth_raw == "192+" ~ "192-202", 
     dataset == "Konza_1" & depth_raw == "198+" ~ "198-208", 
     dataset == "Konza_1" & depth_raw == "221+" ~ "221-231",
+    dataset == "Konza_2" & depth_raw == "5" ~ "0-5",
     ## Luquillo (1)
     ### No ranges so we'll just add a constant to every depth value to get the end of the range
     dataset == "Luquillo_1" & stringr::str_detect(string = depth_raw, pattern = "-") != T ~ paste0(depth_raw, "-", suppressWarnings(as.numeric(depth_raw)) + 10),
@@ -657,7 +658,7 @@ tidy_v2f <- tidy_v2e %>%
                    "Coweeta", "Jornada_1", "Jornada_2", "Kellogg_Bio_Station", 
                    "Luquillo_1", "Luquillo_2", "Luquillo_3", 
                    "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
-                   "Sevilleta_1", "Sevilleta_2"
+                   "Sevilleta_1", "Sevilleta_2", "HJAndrews_1", "Niwot_5", "Konza_2", "Tapajos"
                    ) ~ "mineral", # Need to double check Brazil & Calhoun
     dataset == "FloridaCoastal" ~ "mixed",
     ### dataset == "HJAndrews_1" ~ "",
@@ -918,7 +919,7 @@ tidy_v5b <- tidy_v5 %>%
   dplyr::rename(N_conc_percent = N_conc_actual,
                 C_conc_percent = C_conc_actual)
 
-# How many NAs did we fill for Nitrogran?
+# How many NAs did we fill for Nitrogen?
 summary(tidy_v5$N_conc_percent); summary(tidy_v5b$N_conc_percent)
 
 # Check Carbon in the same way
