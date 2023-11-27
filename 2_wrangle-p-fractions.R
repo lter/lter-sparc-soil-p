@@ -475,7 +475,7 @@ p_sums <- p_sums_v8 %>%
   # Keep only unique rows
   dplyr::distinct()
 
-# Any datasets missing?
+# Any datasets missing? (This step doesn't update p_sums 1, just double checking that there are data values in columns where there should be for each site)
 p_sums %>% 
   dplyr::filter(is.na(slow.P_conc_mg.kg) | is.na(total.P_conc_mg.kg) |
                   is.na(available.P_conc_mg.kg) | is.na(bicarb.P_conc_mg.kg) |
