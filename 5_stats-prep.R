@@ -35,6 +35,8 @@ googledrive::drive_ls(path = tidy_drive) %>%
 all_v1 <- read.csv(file = file.path("data", "tidy_data", 
                                     "sparc-soil-p_full-plus-ancil-and-spatial.csv"))
 
+# un <- as.tibble(unique(all_v1$dataset))
+
 # Glimpse it!
 dplyr::glimpse(all_v1)
 
@@ -59,6 +61,8 @@ supportR::diff_check(old = names(all_v1), new = names(all_v2), sort = T)
 
 # Look at what you still kept
 dplyr::glimpse(all_v2)
+
+un <- as.tibble(unique(all_v2$dataset))
 
 ## ------------------------------------------ ##
        # Handle Luquillo_2 Core Issue ----
@@ -105,6 +109,8 @@ not_luq2 <- all_v2 %>%
 # Recombine
 all_v3 <- dplyr::bind_rows(luq2_v2, not_luq2)
 
+un <- as.tibble(unique(all_v3$dataset))
+
 ## ------------------------------------------ ##
               # Remove Outliers ----
 ## ------------------------------------------ ##
@@ -136,7 +142,9 @@ mineral_v1 <- stats_v1 %>%
                 N_conc_percent = ifelse(nchar(N_conc_percent) == 0,
                                         yes = NA, no = N_conc_percent)) %>%
   # Also we need **either** N or C information in addition to P data for statistics
-  dplyr::filter(!is.na(C_conc_percent) | !is.na(N_conc_percent))
+  dplyr::filter(!is.na(C_conc_percent) | !is.na(N_conc_percent)) # This step removes HJA & KBS because neither has C or N 
+
+un2 <- as.tibble(unique(mineral_v1$dataset))
 
 # How many rows does that lose?
 nrow(stats_v1) - nrow(mineral_v1)
@@ -144,9 +152,11 @@ nrow(stats_v1) - nrow(mineral_v1)
 # Now subset to only the mineral cores that start at 0
 mineral_v2 <- mineral_v1 %>%
   # Keep only cores beginning at the top of the horizon
-  dplyr::filter(depth.start_cm == 0 | 
+  dplyr::filter(depth.start_cm == 0) | 
                   # Again, keep missing depths on assumption they start at 0
-                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm))
+                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm)) 
+
+un3 <- as.tibble(unique(mineral_v2$dataset))
 
 # How many rows dropped at that step?
 nrow(mineral_v1) - nrow(mineral_v2)
