@@ -58,6 +58,10 @@ rm(list = ls())
 # Read in csv with lat/lon coordinates
 locations <- read_csv(file.path("raw_data","sparc-soil-p_full-data-incl-ancillary.csv")) 
 
+locationsN <- locations %>% 
+  group_by(dataset) %>% 
+  summarise(mean = mean(latitude))
+
 # Convert the dataframe to a terra SpatVector object
 locations_spatvector <- terra::vect(locations, geom=c("longitude", "latitude"), crs="+proj=longlat +datum=WGS84", keepgeom=T)
 
@@ -238,6 +242,11 @@ dir.create(path = file.path("extracted_data"), showWarnings = F)
 # Export the summarized lithology data
 write.csv(x = spatial_export, na = '', row.names = F,
           file = file.path("extracted_data", "sparc-soil-p_full-plus-ancil-and-spatial.csv"))
+
+spatial_exportNA <- rocks_out %>% 
+  group_by(dataset) %>% 
+  summarise(M = mean(latitude))
+
 
 # Upload to GoogleDrive
 # CHANGE FINAL EXPORT DESTINATION LATER
