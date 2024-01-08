@@ -149,6 +149,7 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "Brazil" ~ NA,
     dataset == "Calhoun" ~ (P_conc_mg.kg_4_HCl),
     dataset == "CedarCreek_1" ~ (P_conc_mg.kg_4_HCl),
+    # dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ (P_conc_mg.kg_4_HCl),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Hubbard Brook" ~ (P_conc_mg.kg_3_HNO3),
@@ -193,7 +194,7 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Brazil" ~ (P_conc_mg.kg_total),
     dataset == "Calhoun" ~ (P_conc_mg.kg_total),
     dataset == "CedarCreek_1" ~ (P_conc_mg.kg_total),
-    # dataset == "CedarCreek_2" ~ (P_conc_mg.kg_total),
+    dataset == "CedarCreek_2" ~ (P_conc_mg.kg_total),
     dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH +
                               P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_total),
@@ -201,7 +202,7 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Hubbard Brook" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_H2O2 +
                                     P_conc_mg.kg_3_HNO3 + P_conc_mg.kg_4_HNO3),
     dataset == "FloridaCoastal" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3 +
-                                     P_conc_mg.kg_3_NaOH + P_conc_mg.kg_4_HCl +
+                                     Pi_conc_mg.kg_3_NaOH + Po_conc_mg.kg_3_NaOH + P_conc_mg.kg_4_HCl +
                                      P_conc_mg.kg_5_residual),
     dataset == "Jornada_1" ~ (P_conc_mg.kg_total),
     dataset == "Jornada_2" ~ (P_conc_mg.kg_1_MgCl2 + P_conc_mg.kg_2_NaOH + P_conc_mg.kg_3_HCl +
@@ -260,7 +261,7 @@ p_sums_v4 <- p_sums_v3 %>%
     dataset == "Brazil" ~ NA,
     dataset == "Calhoun" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "CedarCreek_1" ~ (P_conc_mg.kg_2_NaHCO3 + P_conc_mg.kg_1_H2O),
-    # dataset == "CedarCreek_2" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl),
     dataset == "FloridaCoastal" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3),
     dataset == "HJAndrews_1" ~ (Pi_conc_mg.kg_1_resin + P_conc_mg.kg_2_HCO3),
@@ -302,9 +303,9 @@ p_sums_v5 <- p_sums_v4 %>%
     dataset == "Brazil" ~ NA,
     dataset == "Calhoun" ~ (Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3),
     dataset == "CedarCreek_1" ~ (P_conc_mg.kg_2_NaHCO3),
-    # dataset == "CedarCreek_2" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ NA,
-    dataset == "FloridaCoastal" ~ P_conc_mg.kg_2_HCO3,
+    dataset == "FloridaCoastal" ~ (P_conc_mg.kg_2_HCO3),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_2_HCO3),
     dataset == "Hubbard Brook" ~ NA,
     dataset == "Jornada_1" ~ NA,
@@ -343,7 +344,7 @@ p_sums_v6 <- p_sums_v5 %>%
     dataset == "Brazil" ~ NA,
     dataset == "Calhoun" ~ (Pi_conc_mg.kg_1_resin + Po_conc_mg.kg_2_HCO3 + Po_conc_mg.kg_3_NaOH),
     dataset == "CedarCreek_1" ~ NA,
-    # dataset == "CedarCreek_2" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ NA,
     dataset == "FloridaCoastal" ~ NA,
     dataset == "HJAndrews_1" ~ NA,
@@ -387,7 +388,7 @@ p_sums_v7 <- p_sums_v6 %>%
                               Po_conc_mg.kg_2_HCO3 + Pi_conc_mg.kg_2_HCO3 +
                               Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "CedarCreek_1" ~ (P_conc_mg.kg_3_NaOH + P_conc_mg.kg_2_NaHCO3 + P_conc_mg.kg_1_H2O),
-    # dataset == "CedarCreek_2" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_3_NaOH),
     dataset == "FloridaCoastal" ~ (P_conc_mg.kg_2_HCO3 + 
                                      Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
@@ -438,9 +439,9 @@ p_sums_v8 <- p_sums_v7 %>%
     dataset == "Brazil" ~ NA,
     dataset == "Calhoun" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "CedarCreek_1" ~ (P_conc_mg.kg_3_NaOH),
-    # dataset == "CedarCreek_2" ~ NA,
+    dataset == "CedarCreek_2" ~ NA,
     dataset == "Coweeta" ~ (P_conc_mg.kg_3_NaOH),
-    dataset == "FloridaCoastal" ~ (P_conc_mg.kg_3_NaOH),
+    dataset == "FloridaCoastal" ~ (Po_conc_mg.kg_3_NaOH + Pi_conc_mg.kg_3_NaOH),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_3_NaOH),
     dataset == "Hubbard Brook" ~ NA,
     dataset == "Jornada_1" ~ NA,

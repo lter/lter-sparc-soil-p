@@ -516,7 +516,8 @@ tidy_v2c <- tidy_v2b %>%
     dataset == "Coweeta" & depth_raw == "10" ~ "10-30", # All other begin at 10 are 10-30
     dataset == "Coweeta" & depth_raw == "30+" ~ "30-60", # End of range is a guess
     ## Florida
-    dataset == "FloridaCoastal" & depth_raw == "hurricane-sediment" ~ "",
+    # dataset == "FloridaCoastal" & depth_raw == "0_10" ~ "0-10",
+    dataset == "FloridaCoastal" & depth_raw == "hurricane_sediment" ~ "",
     ## Hubbard Brook
     dataset == "Hubbard Brook" & depth_raw == "30+" ~ "30-40",
     dataset == "Hubbard Brook" & depth_raw == "C+" ~ "", # guess needed
@@ -660,7 +661,8 @@ tidy_v2f <- tidy_v2e %>%
                    "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
                    "Sevilleta_1", "Sevilleta_2", "HJAndrews_1", "Niwot_5", "Konza_2", "Tapajos"
                    ) ~ "mineral", # Need to double check Brazil & Calhoun
-    dataset == "FloridaCoastal" ~ "mixed",
+    dataset == "FloridaCoastal" & horizon_raw == "mixed" ~ "mixed",
+    dataset == "FloridaCoastal" & horizon_raw == "hurricane_sediment" ~ "hurricane_sediment",
     ### dataset == "HJAndrews_1" ~ "",
     # If not in data and not known, fill with NA
     T ~ NA), .after = horizon_raw) %>%
@@ -686,8 +688,8 @@ tidy_v2f <- tidy_v2e %>%
   dplyr::mutate(horizon_binary = dplyr::case_when(
     horizon_actual %in% c("organic", "O", "Oi", "Oe", "Oa", "o", "oi", "oe", "oa") ~ "organic",
     horizon_actual %in% c("mineral", "A", "B", "C", "AEB") ~ "mineral",
-    horizon_actual == "T" ~ "hurricane",
-    horizon_actual == "mixed" ~ "mixed",
+    horizon_actual == "h" ~ "hurricane",
+    horizon_actual == "m" ~ "mixed",
     T ~ NA), .after = horizon_source) %>%
   # Drop depth horizon column and original (un-tidied) horizon column
   dplyr::select(-depth_horizon, -horizon_simp) %>%
@@ -709,6 +711,17 @@ tidy_v3 <- tidy_v2f %>%
   # Once subtraction from end is done, change start to 0
   dplyr::mutate(depth.start_cm = ifelse(dataset == "Toolik_1" & horizon == "mineral",
                                         yes = 0, no = depth.start_cm))
+
+# Adding start and end depths for Niwot 1 
+tidy_v3 <- tidy_v3 %>% 
+  dplyr::mutate(depth.end_cm = ifelse(dataset == "Niwot_1",
+                                      10,
+                                      depth.end_cm))
+
+tidy_v3 <- tidy_v3 %>% 
+  dplyr::mutate(depth.start_cm = ifelse(dataset == "Niwot_1",
+                                      0,
+                                      depth.start_cm))
 
 # Check contents of the specific horizon columns
 sort(unique(tidy_v3$horizon_raw))

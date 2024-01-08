@@ -149,12 +149,22 @@ un2 <- as.tibble(unique(mineral_v1$dataset))
 # How many rows does that lose?
 nrow(stats_v1) - nrow(mineral_v1)
 
-# Now subset to only the mineral cores that start at 0
+# US PLAYING AROUND 
+# this is top horizone of each core for BNZ_1
+BNZ <- mineral_v1 %>%
+  filter(dataset_simp == "BNZ_1") %>%
+  group_by(site,plot,block,core) %>% 
+  filter(depth.start_cm == min(depth.start_cm))
+
 mineral_v2 <- mineral_v1 %>%
+  filter(dataset_simp != "BNZ_1") %>% 
   # Keep only cores beginning at the top of the horizon
-  dplyr::filter(depth.start_cm == 0) | 
-                  # Again, keep missing depths on assumption they start at 0
-                  nchar(depth.start_cm) == 0 | is.na(depth.start_cm)) 
+  dplyr::filter(depth.start_cm == 0) 
+  # Again, keep missing depths on assumption they start at 0
+  # nchar(depth.start_cm) == 0 | is.na(depth.start_cm) # removing this for now because we feel like we addressed all situations where start depth was 0 or missing
+
+# recombining BNZ_1 mineral cores with the rest of the cores after filtering to keep the top mineral layer in each core (because the start depth for these wasn't zero) 
+mineral_v2 <- rbind(mineral_v2,BNZ)
 
 un3 <- as.tibble(unique(mineral_v2$dataset))
 
