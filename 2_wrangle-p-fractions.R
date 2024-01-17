@@ -159,7 +159,7 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_6_HCl),
     dataset == "Konza_1" ~ (P_conc_mg.kg_3_Ca.bound),
     dataset == "Konza_2" ~ (P_conc_mg.kg_5_HCl),
-    dataset == "Luquillo_1" ~ NA,
+    dataset == "Luquillo_1" ~ (Pi_conc_mg.kg_2_NaOH + ),
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Luquillo_3" ~ NA,
     dataset == "Niwot_1" ~ (P_conc_mg.kg_4_HCl),

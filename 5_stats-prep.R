@@ -150,7 +150,7 @@ un2 <- as.tibble(unique(mineral_v1$dataset))
 nrow(stats_v1) - nrow(mineral_v1)
 
 # US PLAYING AROUND 
-# this is top horizone of each core for BNZ_1
+# this is top horizon of each core for BNZ_1
 BNZ <- mineral_v1 %>%
   filter(dataset_simp == "BNZ_1") %>%
   group_by(site,plot,block,core) %>% 
@@ -159,7 +159,7 @@ BNZ <- mineral_v1 %>%
 mineral_v2 <- mineral_v1 %>%
   filter(dataset_simp != "BNZ_1") %>% 
   # Keep only cores beginning at the top of the horizon
-  dplyr::filter(depth.start_cm == 0) 
+  dplyr::filter(depth.start_cm == 0 | dataset == "Toolik_2" | dataset == "Luquillo_3" | dataset == "Niwot_2") # janky but works
   # Again, keep missing depths on assumption they start at 0
   # nchar(depth.start_cm) == 0 | is.na(depth.start_cm) # removing this for now because we feel like we addressed all situations where start depth was 0 or missing
 
