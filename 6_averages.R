@@ -52,14 +52,14 @@ for(focal_ready in local_files){
   # Prepare to do averaging steps flexibly
   avgs_prep <- focal_df %>%
     # Move site information columns to left and all together
-    dplyr::relocate(lter:raw_filename, site:core, 
+    dplyr::relocate(lter:raw_filename, site:core, rock_code:generic_soil, 
                     .before = dplyr::everything()) %>%
     # Drop core-specific depth/horizon info
     dplyr::select(-dplyr::starts_with("horizon"),
                   -dplyr::starts_with("depth."), 
                   -core.length_cm, -bulk.density_g.cm3) %>%
     # Reshape to long format so all number columns are together
-    tidyr::pivot_longer(cols = -lter:-core,
+    tidyr::pivot_longer(cols = -lter:-generic_soil,
                         names_to = "variables", values_to = "vals")
   
   # Begin with averaging across cores within plots
