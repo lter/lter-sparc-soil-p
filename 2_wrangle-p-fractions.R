@@ -35,6 +35,14 @@ sparc_v1 <- read.csv(file = file.path("data", "tidy_data",
   # Drop row number column
   dplyr::select(-row_num)
 
+# HERE WE'RE ASSIGNING ARBITRARY START AND END DEPTHS TO THE HURRICAN SEDIMENT HORIZON OF FCE, BECAUSE THE REAL END DEPTHS WERE A RANGE 0.5-4.5 THAT WE DON'T HAVE THE DATA FOR. BUT WE NEED TO ADD VALUES SO P_FRACTIONS FUNCTION WILL WORK. 
+# We revert these values back to NA at the end of the script 
+sparc_v1$depth.start_cm <- ifelse(sparc_v1$horizon_binary == "hurricane",0,sparc_v1$depth.start_cm)
+sparc_v1$depth.end_cm <- ifelse(sparc_v1$horizon_binary == "hurricane",0,sparc_v1$depth.end_cm)
+
+test <- sparc_v1 %>% 
+  filter(dataset_simp == "FCE")
+
 # Glimpse it!
 dplyr::glimpse(sparc_v1)
 
@@ -159,7 +167,7 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "Kellogg_Bio_Station" ~ (Pi_conc_mg.kg_6_HCl),
     dataset == "Konza_1" ~ (P_conc_mg.kg_3_Ca.bound),
     dataset == "Konza_2" ~ (P_conc_mg.kg_5_HCl),
-    dataset == "Luquillo_1" ~ (Pi_conc_mg.kg_2_NaOH + ),
+    dataset == "Luquillo_1" ~ (Pi_conc_mg.kg_2_NaOH),
     dataset == "Luquillo_2" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Luquillo_3" ~ NA,
     dataset == "Niwot_1" ~ (P_conc_mg.kg_4_HCl),
@@ -540,6 +548,10 @@ dplyr::glimpse(sparc_v4[1:35])
 
 # Make a final data object
 final_sparc <- sparc_v4
+
+# Here we are reverting the FCE hurricane sediment horizon values back to NAs 
+final_sparc$depth.start_cm <- ifelse(final_sparc$horizon_binary == "hurricane",NA,final_sparc$depth.start_cm)
+final_sparc$depth.end_cm <- ifelse(final_sparc$horizon_binary == "hurricane",NA,final_sparc$depth.end_cm)
 
 # # Looking for N and C 
 # site_n <- dplyr::filter(.data = final_sparc, !is.na(N_conc_percent))

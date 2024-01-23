@@ -517,7 +517,7 @@ tidy_v2c <- tidy_v2b %>%
     dataset == "Coweeta" & depth_raw == "30+" ~ "30-60", # End of range is a guess
     ## Florida
     # dataset == "FloridaCoastal" & depth_raw == "0_10" ~ "0-10",
-    dataset == "FloridaCoastal" & depth_raw == "hurricane_sediment" ~ "",
+    dataset == "FloridaCoastal" & depth_raw == "hurricane_sediment" ~ "0-1",
     ## Hubbard Brook
     dataset == "Hubbard Brook" & depth_raw == "30+" ~ "30-40",
     dataset == "Hubbard Brook" & depth_raw == "C+" ~ "", # guess needed
