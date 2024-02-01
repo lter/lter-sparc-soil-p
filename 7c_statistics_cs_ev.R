@@ -45,6 +45,7 @@ library(nlme) # to run mixed effects models
 library(sjPlot) # to get tab model
 library(lme4)
 library(lmerTest)
+library(tidyverse)
 
 # Subsetting data to keep only sites we want to retain slow P data for for now
 # keeping all sites we have slow P for
@@ -76,3 +77,103 @@ plot <- ggplot(data=avgs, aes(x=mean_slow.P_conc_mg.kg, y=mean_N_conc_percent) )
   geom_point()
 
 plot(avgs$mean_slow.P_conc_mg.kg,avgs$mean_N_conc_percent)
+
+## ------------------------------------------ ##
+# Within Site Slow P Models  -----
+## ------------------------------------------ ##
+# Starting 01/31/24
+
+## Hubbard Brook (Slow P is cold nitric acid = "apatite" extraction)
+
+HBR <- subset(all_v1, dataset_simp == "HBR") 
+
+HBR_lm <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = HBR)
+anova(HBR_lm)
+summary(HBR_lm)
+tab_model(HBR_lm)
+
+# not letting slopes vary 
+# singularity issue = convergence issues
+# slope is the exact same between lm and lmer 
+HBR_M1 <-lmer(N_conc_percent ~ slow.P_conc_mg.kg + (1 | site) , data = HBR)
+
+anova(HBR_M1)
+summary(HBR_M1)
+tab_model(HBR_M1)
+
+## Sevilleta 
+
+SEV1 <- subset(all_v1, dataset_simp == "SEV_1") 
+
+SEV1 <- SEV1 %>% 
+  mutate(site = factor(site),
+         plot = factor(plot),
+         block = factor(block),
+         core = factor(core))
+
+SEV1_lm <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = SEV1)
+
+anova(SEV1_lm)
+summary(SEV1_lm)
+tab_model(SEV1_lm)
+
+# not letting slopes vary 
+# singularity issue = convergence issues
+# slope is the exact same between lm and lmer 
+SEV1_M1 <-lmer(N_conc_percent ~ slow.P_conc_mg.kg + (slow.P_conc_mg.kg | site/block/plot) , data = SEV1)
+
+anova(SEV1_M1)
+summary(SEV1_M1)
+tab_model(SEV1_M1)
+
+## Coweeta
+
+CWT <- subset(all_v1, dataset_simp == "CWT") 
+
+CWT <- CWT %>% 
+  mutate(site = factor(site),
+         plot = factor(plot),
+         block = factor(block),
+         core = factor(core))
+
+CWT_lm <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = CWT)
+
+anova(CWT_lm)
+summary(CWT_lm)
+tab_model(CWT_lm)
+
+# not letting slopes vary 
+# singularity issue = convergence issues
+# slope is the exact same between lm and lmer 
+CWT_M1 <-lmer(N_conc_percent ~ slow.P_conc_mg.kg + (slow.P_conc_mg.kg | site) , data = CWT)
+
+anova(CWT_M1)
+summary(CWT_M1)
+tab_model(CWT_M1)
+
+## Florida Everglades
+
+FCE <- subset(all_v1, dataset_simp == "FCE") 
+
+FCE <- FCE %>% 
+  mutate(site = factor(site),
+         plot = factor(plot),
+         block = factor(block),
+         core = factor(core))
+
+FCE_lm <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = FCE)
+
+anova(FCE_lm)
+summary(FCE_lm)
+tab_model(FCE_lm)
+
+# not letting slopes vary 
+# singularity issue = convergence issues
+# slope is the exact same between lm and lmer 
+FCE_M1 <-lmer(N_conc_percent ~ slow.P_conc_mg.kg + (slow.P_conc_mg.kg | site) , data = FCE)
+
+anova(FCE_M1)
+summary(FCE_M1)
+tab_model(FCE_M1)
+
+
