@@ -46,7 +46,7 @@ dplyr::glimpse(all_v1)
 
 # Only some columns are really needed from here on out
 all_v2 <- all_v1 %>%
-  dplyr::select(lter:core, dplyr::starts_with("rock_"), soil_code, generic_soil,
+  dplyr::select(lter:core, treatment, dplyr::starts_with("rock_"), soil_code, generic_soil,
                 dplyr::starts_with("mean.annual."), pH,
                 dplyr::starts_with("horizon"), dplyr::starts_with("depth."),
                 core.length_cm, bulk.density_g.cm3,
@@ -170,6 +170,20 @@ un3 <- as.tibble(unique(mineral_v2$dataset))
 
 # How many rows dropped at that step?
 nrow(mineral_v1) - nrow(mineral_v2)
+
+# Adding new treatment type category
+## Adding by manually looking at the raw data of each site to remember what each treatment variable means and updating here 
+
+mineral_v2_TEST <- mineral_v2 %>% 
+  mutate(treatment = ifelse(treatment == "",NA,treatment)) %>% 
+  mutate(treatment_type = ifelse(is.na(treatment),NA,treatment)) %>% # adding a new column called treatment_type that is NA for all sites/observations that don't have treatment filled, but filling in with treatment value for now for those that do have treatment info. Although I'm going to update this manually by site 
+  select(lter:treatment,treatment_type,everything())
+
+mineral_v2_TEST <- mineral_v2_TEST %>% 
+  mutate(treatment_type = ifelse(dataset_simp == "Calhoun","landscape_position",treatment_type)) %>% 
+  mutate(treatment_type = ifelse(dataset_simp == "NWT_1","location",treatment_type))
+
+unique(mineral_v2_TEST$dataset_simp)
 
 ## ------------------------------------------ ##
           # Mineral Export (Local) ----
