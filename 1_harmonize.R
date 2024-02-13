@@ -123,6 +123,7 @@ key_v3 <- key_v2 %>%
     Variable == "precipitation" ~ "no",
     Variable == "depth" ~ "no",
     Variable == "org depth" ~ "no",
+    Variable == "treatment" ~ "no", # EV added this 02/13/24
     stringr::str_detect(string = Variable, pattern = "bulk") ~ "no",
     stringr::str_detect(string = Variable, pattern = "soil") ~ "no",
     stringr::str_detect(string = Variable, pattern = "coarse") ~ "no",
