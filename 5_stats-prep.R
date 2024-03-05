@@ -80,7 +80,7 @@ luq2_v2 <- luq2_v1 %>%
   # Do needed weighted calculation
   dplyr::mutate(value = case_when(
     depth.start_cm == 0 & depth.end_cm == 2 ~ value * 0.2,
-    depth.start_cm == 8 & depth.end_cm == 10 ~ value * 0.8,
+    depth.start_cm == 2 & depth.end_cm == 10 ~ value * 0.8,
     T ~ value)) %>%
   # Fix depth values and core lengths
   dplyr::mutate(core.length_cm = dplyr::case_when(
@@ -174,12 +174,12 @@ nrow(mineral_v1) - nrow(mineral_v2)
 # Adding new treatment type category
 ## Adding by manually looking at the raw data of each site to remember what each treatment variable means and updating here 
 
-mineral_v2_TEST <- mineral_v2 %>% 
+mineral_v2 <- mineral_v2 %>% 
   mutate(treatment = ifelse(treatment == "",NA,treatment)) %>% 
   mutate(treatment_type = ifelse(is.na(treatment),NA,treatment)) %>% # adding a new column called treatment_type that is NA for all sites/observations that don't have treatment filled, but filling in with treatment value for now for those that do have treatment info. Although I'm going to update this manually by site 
   select(lter:treatment,treatment_type,everything())
 
-mineral_v2_TEST <- mineral_v2_TEST %>% 
+mineral_v2 <- mineral_v2 %>% 
   mutate(treatment_type = ifelse(dataset_simp == "Calhoun","landscape_position",treatment_type)) %>% 
   mutate(treatment_type = ifelse(dataset_simp == "NWT_1","location",treatment_type)) %>% 
   mutate(treatment_type = ifelse(dataset_simp == "SEV_1","site",treatment_type)) %>% 
@@ -188,10 +188,10 @@ mineral_v2_TEST <- mineral_v2_TEST %>%
   mutate(treatment_type = ifelse(dataset_simp == "LUQ_2","cover",treatment_type)) %>%
   mutate(treatment_type = ifelse(dataset_simp == "Brazil","treatment",treatment_type)) %>% # this one is confusing to, because treatment category type seems to differ between the two sites, with it being a burn treatment in the Southern Amazon and a plant cover type in the Atlantic forest
   mutate(treatment_type = ifelse(dataset_simp == "SEV_2","location",treatment_type)) %>% # should distance be a block for this site? 
-  mutate(treatment_type = ifelse(dataset_simp == "ARC_1","core_ID",treatment_type)) %>%
+  mutate(treatment_type = ifelse(dataset_simp == "ARC_1","core_ID",treatment_type)) 
   
 
-unique(mineral_v2_TEST$dataset_simp)
+unique(mineral_v2$dataset_simp)
 
 ## ------------------------------------------ ##
           # Mineral Export (Local) ----
