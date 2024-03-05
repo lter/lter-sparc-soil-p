@@ -905,7 +905,7 @@ tidy_v5 %>%
                 dplyr::starts_with("Ni_"), dplyr::starts_with("Ci_")) %>%
   dplyr::glimpse()
 
-# Convert N & C concentrations into percents
+# Convert N & C concentrations into percentages
 tidy_v5b <- tidy_v5 %>%
   # Standardize Nitrogen concentration units
   dplyr::mutate(N_conc_actual = dplyr::case_when(
@@ -913,8 +913,8 @@ tidy_v5b <- tidy_v5 %>%
     !is.na(N_conc_percent) ~ N_conc_percent,
     ## _g / _g
     !is.na(N_conc_mg.kg) ~ N_conc_mg.kg * 0.0001,
-    !is.na(N_conc_mg.g) ~ (N_conc_mg.g * 10^3) * 0.0001,
-    !is.na(N_conc_g.kg) ~ (N_conc_g.kg / 10^3) * 0.0001,
+    !is.na(N_conc_mg.g) ~ N_conc_mg.g * 0.1,
+    !is.na(N_conc_g.kg) ~ N_conc_g.kg * 0.1,
     # If nothing exists, fill with NA
     TRUE ~ NA), .before = N_conc_percent) %>%
   # Do the same for Carbon
@@ -1041,6 +1041,7 @@ sort(unique(tidy_v7$units))
 
 # In this format we can _much_ more easily do our unit conversions!
 ## In part because units are semi-independent of rest of context for the value
+## This step is converting all P measurements into mg/kg units 
 tidy_v8a <- tidy_v7 %>%
   # Start with mass / mass (i.e., concentration)
   ## Conditional on units, do appropriate algebra
