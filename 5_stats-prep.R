@@ -186,10 +186,13 @@ mineral_v2 <- mineral_v2 %>%
   mutate(treatment_type = ifelse(dataset_simp == "HBR","siteage_yrs",treatment_type)) %>% 
   mutate(treatment_type = ifelse(dataset_simp == "LUQ_1","cover",treatment_type)) %>% # not sure if cover is best description for this, the treatment variable is just called treatment in the dataset. Should verify with Whendee what this means. 
   mutate(treatment_type = ifelse(dataset_simp == "LUQ_2","cover",treatment_type)) %>%
-  mutate(treatment_type = ifelse(dataset_simp == "Brazil","treatment",treatment_type)) %>% # this one is confusing to, because treatment category type seems to differ between the two sites, with it being a burn treatment in the Southern Amazon and a plant cover type in the Atlantic forest
+  mutate(treatment_type = ifelse(dataset_simp == "Brazil_SA","burn_history",treatment_type)) %>% 
+  mutate(treatment_type = ifelse(dataset_simp == "Brazil_AF","hillslope_position",treatment_type)) %>%  
   mutate(treatment_type = ifelse(dataset_simp == "SEV_2","location",treatment_type)) %>% # should distance be a block for this site? 
-  mutate(treatment_type = ifelse(dataset_simp == "ARC_1","core_ID",treatment_type)) 
-  
+  mutate(treatment_type = ifelse(dataset_simp == "ARC_1","core_ID",treatment_type)) %>% 
+  mutate(treatment_type = ifelse(dataset_simp == "FCE_1","distance",treatment_type)) %>% 
+  mutate(treatment_type = ifelse(dataset_simp == "KBS","tillage",treatment_type)) %>% # educated guess, need to double check this  
+  mutate(treatment_type = ifelse(dataset_simp == "KBS","tillage",treatment_type)) 
 
 unique(mineral_v2$dataset_simp)
 

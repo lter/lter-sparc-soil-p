@@ -369,7 +369,7 @@ tidy_v1b <- tidy_v1 %>%
     lter %in% c("Sevilleta_1", "Sevilleta_2") ~ "SEV",
     lter %in% c("Toolik_1", "Toolik_2") ~ "ARC",
     # Non-LTER sites
-    lter %in% c("Brazil", "Tapajos") ~ "Brazil",
+    lter %in% c("Brazil_SouthernAmazon","Brazil_AtlanticForest","Tapajos") ~ "Brazil",
     lter %in% c("Calhoun") ~ "Calhoun",
     lter %in% c("Fernow") ~ "Fernow",
     # Otherwise retain whatever was in that column originally
@@ -407,6 +407,10 @@ tidy_v1b <- tidy_v1 %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Sevilleta", replacement = "SEV", 
                                     x = dataset_simp)) %>%
   dplyr::mutate(dataset_simp = gsub(pattern = "Toolik", replacement = "ARC", 
+                                    x = dataset_simp)) %>% 
+  dplyr::mutate(dataset_simp = gsub(pattern = "SouthernAmazon", replacement = "SA", 
+                                    x = dataset_simp)) %>% 
+  dplyr::mutate(dataset_simp = gsub(pattern = "AtlanticForest", replacement = "AF", 
                                     x = dataset_simp))
 
 # Check out new LTER column
@@ -510,9 +514,12 @@ tidy_v2c <- tidy_v2b %>%
     dataset == "Bonanza Creek_2" ~ paste0("0-", depth_raw),
     ## Bonanza (3)
     # dataset == "Bonanza Creek_3" ~ "0-10",
-    ## Brazil
-    dataset == "Brazil" & depth_raw == "0--10" ~ "0-10",
-    dataset == "Brazil" & depth_raw == "10--30" ~ "10-30",
+    ## Brazil_SouthernAmazon
+    dataset == "Brazil_SouthernAmazon" & depth_raw == "0--10" ~ "0-10",
+    dataset == "Brazil_SouthernAmazon" & depth_raw == "10--30" ~ "10-30",
+    ## Brazil_AtlanticForest
+    dataset == "Brazil_AtlanticForest" & depth_raw == "0--10" ~ "0-10",
+    dataset == "Brazil_AtlanticForest" & depth_raw == "10--30" ~ "10-30",
     ## Coweeta
     dataset == "Coweeta" & depth_raw == "10" ~ "10-30", # All other begin at 10 are 10-30
     dataset == "Coweeta" & depth_raw == "30+" ~ "30-60", # End of range is a guess
@@ -657,8 +664,7 @@ tidy_v2f <- tidy_v2e %>%
     dataset == "Bonanza Creek_1" & depth.start_cm == 0 ~ "O",
     dataset == "Bonanza Creek_1" & depth.start_cm != 0 ~ "mineral",
     dataset == "Bonanza Creek_2" ~ "mixed",
-    dataset %in% c("Brazil", "Calhoun", "CedarCreek_1", "CedarCreek_2",
-                   "Coweeta", "Jornada_1", "Jornada_2", "Kellogg_Bio_Station", 
+    dataset %in% c("Brazil_SouthernAmazon", "Brazil_AtlanticForest", "Calhoun", "CedarCreek_1", "CedarCreek_2", "Coweeta", "Jornada_1", "Jornada_2", "Kellogg_Bio_Station", 
                    "Luquillo_1", "Luquillo_2", "Luquillo_3", 
                    "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
                    "Sevilleta_1", "Sevilleta_2", "HJAndrews_1", "Niwot_5", "Konza_2", "Tapajos"
@@ -675,7 +681,7 @@ tidy_v2f <- tidy_v2e %>%
     !is.na(depth_horizon) & nchar(depth_horizon) != 0 ~ "in data",
     # If filled conditionally, enter that 
     dataset %in% c("Bonanza Creek_1", "Bonanza Creek_2" ,
-                   "Brazil", "Calhoun", "CedarCreek_1", "CedarCreek_2",
+                   "Brazil_SouthernAmazon","Brazil_AtlanticForest", "Calhoun", "CedarCreek_1", "CedarCreek_2",
                    "Coweeta", "FloridaCoastal", "Jornada_1", "Jornada_2",
                    "Kellogg_Bio_Station", "Luquillo_1", "Luquillo_2", "Luquillo_3", 
                    "Niwot_1", "Niwot_2", "Niwot_3", "Niwot_4", 
@@ -852,7 +858,8 @@ tidy_v5 <- tidy_v4 %>%
     dataset == "Bonanza Creek_1" ~ 0.9,
     dataset == "Bonanza Creek_2" ~ 0.9,
     dataset == "Bonanza Creek_3" ~ 0.9,
-    dataset == "Brazil" ~ 0.9,
+    dataset == "Brazil_SouthernAmazon" ~ 0.9,
+    dataset == "Brazil_AtlanticForest" ~ 0.9,
     dataset == "Calhoun" ~ 0.9,
     dataset == "CedarCreek_1" ~ 0.9,
     dataset == "CedarCreek_2" ~ 0.9,
