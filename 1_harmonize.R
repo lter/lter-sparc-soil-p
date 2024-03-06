@@ -627,9 +627,10 @@ tidy_v2e <- tidy_v2d %>%
                   .after = horizon_raw)
 
 # Check distribution of the new depth columns we just extracted
-psych::multi.hist(x = tidy_v2e$depth.start_cm)
-psych::multi.hist(x = tidy_v2e$depth.end_cm)
-psych::multi.hist(x = tidy_v2e$core.length_cm)
+# hashtagged out these histograms because on 03/06/24 the code kept breaking here with the following error, "Error in par(old.par) : invalid value specified for graphical parameter "pin""
+# psych::multi.hist(x = tidy_v2e$depth.start_cm)
+# psych::multi.hist(x = tidy_v2e$depth.end_cm)
+# psych::multi.hist(x = tidy_v2e$core.length_cm)
 
 # Check structure yet again
 tidy_v2e %>%
