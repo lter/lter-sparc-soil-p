@@ -106,7 +106,7 @@ p_sums_v1 <- sparc_v2 %>%
   dplyr::filter(!is.na(values) & nchar(values) != 0) %>%
   ## Pivot back to wide format and fill empty cells with 0
   tidyr::pivot_wider(names_from = names, values_from = values,
-                     values_fill = 0) %>%
+                     values_fill = NA) %>% # on 3/26 replacing this with NA (from zero) just to see if it resolves NWT_1 issue where one site doesn't have slow P info, so it shows up as NA instead of zero.  
   # Also drop P stocks (mg/m2)
   dplyr::select(-dplyr::contains("_stock_"))
 
