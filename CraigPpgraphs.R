@@ -1,13 +1,46 @@
+
+
 ## ------------------------------------------ ##
 # Within-site N and P relationships  ----
 ## ------------------------------------------ ##
-library(dplyr)
+# Load necessary libraries
 library(Rmisc)
 library(ggplot2)
-#read in the data with shallow soil P and N concentrations
-setwd("C:/Users/craig/Dropbox/PC (3)/Desktop")
-cores<-read.csv("sparc-soil-p_stats-ready_mineral_0-10.csv", header=T)
+library(dplyr)
+
+## ------------------------------------------ ##
+# Housekeeping -----
+## ------------------------------------------ ##
+
+# loading stats ready data from google drive 
+# install.packages("librarian")
+librarian::shelf(tidyverse, googledrive, supportR)
+
+# Create necessary sub-folder(s)
+dir.create(path = file.path("data", "tidy_data"), showWarnings = F)
+dir.create(path = file.path("data", "stats_ready"), showWarnings = F)
+
+# Clear environment
+rm(list = ls())
+
+# Identify needed tidy file(s)
+tidy_drive <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1pjgN-wRlec65NDLBvryibifyx6k9Iqy9")
+
+# Identify the archival data in that folder and download it
+googledrive::drive_ls(path = tidy_drive) %>%
+  dplyr::filter(name == "sparc-soil-p_full-plus-ancil-and-spatial.csv") %>%
+  googledrive::drive_download(file = .$id, overwrite = T,
+                              path = file.path("data", "tidy_data", .$name))
+
+# Read that file in
+cores <- read.csv(file = file.path("data", "tidy_data", 
+                                    "sparc-soil-p_stats-ready_mineral_0-10.csv"))
+
 #cores$set<-as.numeric(as.factor(cores$dataset))
+
+## ------------------------------------------ ##
+# Making summary datasets and running linear models -----
+## ------------------------------------------ ##
 
 #create a data frame that contains the number of rows with which we have sites
 Final_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=1))
@@ -15,6 +48,7 @@ names(Final_table) <- c('dataset')
 Final_table$dataset<-unique(cores$dataset)
 
 # SIMPLE LINEAR REGRESSIONS BY SITE OF TOTAL P VS TOTAL N
+# 
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Total_P.N_slope', 'Total_P.N_.pvalue')
 cores_totalP<-cores
@@ -35,6 +69,7 @@ Final_table<-merge(Final_table,sum_table,all.x = T)
 
 
 # SIMPLE LINEAR REGRESSIONS BY SITE OF SLOW P VS TOTAL N
+# 
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Slow_P.N_slope', 'Slow_P.N_.pvalue')
 cores_SlowP<-cores
@@ -95,8 +130,6 @@ for(i in 1:max(plot_slowP$set)){
 }
 Final_table<-merge(Final_table,sum_table,all.x = T)   
 
-
-
 #SITE LEVEL
 
 site_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site,mean, data=cores,na.rm=T)
@@ -143,7 +176,38 @@ for(i in 1:max(site_slowP$set)){
 }
 Final_table<-merge(Final_table,sum_table,all.x = T)   
 
+# dataset LEVEL SLOW P
+summary <- site_slowP %>% 
+  select(dataset,N_conc_percent,slow.P_conc_mg.kg) %>% 
+  group_by(dataset) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
 
+# mean 
+dataset_slowP_mean <- aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset,mean,data=cores,na.rm=T)
+
+# standard deviation 
+dataset_slowP_sd <- aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset,sd,data=cores,na.rm=T)
+
+# sample size
+dataset_slowP_ss <- aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset,n(),data=cores,na.rm=T)
+
+
+sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
+names(sum_table) <- c('dataset', 'Slow_P.N_slope_dataset', 'Slow_P.N_.pvalue_dataset')
+dataset_slowP<-subset(dataset_slowP,is.na(slow.P_conc_mg.kg)==F)
+dataset_slowP<-subset(dataset_slowP,is.na(N_conc_percent)==F)
+dataset_slowP<-subset(dataset_slowP,dataset!="CedarCreek_1")#remove CDR because only 1 observation
+dataset_slowP<-subset(dataset_slowP,dataset!="Konza_2")#remove Konza_2 because only 1 observation
+dataset_slowP<-subset(dataset_slowP,dataset!="Niwot_5")# 
+dataset_slowP$set<-as.numeric(as.factor(dataset_slowP$dataset))
+for(i in 1:max(dataset_slowP$set)){
+  a<-subset(dataset_slowP,set==i)
+  b<-summary(lm(N_conc_percent~slow.P_conc_mg.kg,data = a))
+  sum_table[i,1]<-first(a$dataset)
+  sum_table[i,2]<-b$coefficients[2,1]
+  sum_table[i,3]<-b$coefficients[2,4]
+}
+Final_table<-merge(Final_table,sum_table,all.x = T)  
 
 
 
