@@ -42,22 +42,23 @@ cores <- read.csv(file = file.path("data", "tidy_data",
 # Making summary datasets and running linear models -----
 ## ------------------------------------------ ##
 
-#create a data frame that contains the number of rows with which we have sites
+# create a data frame that contains the number of rows with which we have sites
 Final_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=1))
 names(Final_table) <- c('dataset')
 Final_table$dataset<-unique(cores$dataset)
 
 # SIMPLE LINEAR REGRESSIONS BY SITE OF TOTAL P VS TOTAL N
 # 
-sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
+sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3)) 
 names(sum_table) <- c('dataset', 'Total_P.N_slope', 'Total_P.N_.pvalue')
 cores_totalP<-cores
-cores_totalP<-subset(cores_totalP,is.na(total.P_conc_mg.kg)==F)
-cores_totalP<-subset(cores_totalP,is.na(N_conc_percent)==F)
+cores_totalP<-subset(cores_totalP,is.na(total.P_conc_mg.kg)==F) # keep rows where total P is not not na 
+cores_totalP<-subset(cores_totalP,is.na(N_conc_percent)==F) # same for total N
 cores_totalP<-subset(cores_totalP,lter!="CDR")#remove CDR because only 1 observation
 cores_totalP<-subset(cores_totalP,dataset!="Konza_2")#remove Konza_2 because only 1 observation
 cores_totalP<-subset(cores_totalP,dataset!="Toolik_1")# Total P showing up as zero but should be NA
-cores_totalP$set<-as.numeric(as.factor(cores_totalP$dataset))
+cores_totalP$set<-as.numeric(as.factor(cores_totalP$dataset)) # produces table with only observations that have both total P and total N
+# for loop subsets by dataset and produces the summary of an lm for each dataset, pulls parameters from summary and includes in table for each site 
 for(i in 1:max(cores_totalP$set)){
   a<-subset(cores_totalP,set==i)
   b<-summary(lm(N_conc_percent~total.P_conc_mg.kg,data = a))
@@ -65,7 +66,7 @@ for(i in 1:max(cores_totalP$set)){
     sum_table[i,2]<-b$coefficients[2,1]
     sum_table[i,3]<-b$coefficients[2,4]
     }
-Final_table<-merge(Final_table,sum_table,all.x = T)               
+Final_table<-merge(Final_table,sum_table,all.x = T) # merging the looped product table with final table that has all possible datasets in our study                
 
 
 # SIMPLE LINEAR REGRESSIONS BY SITE OF SLOW P VS TOTAL N
@@ -89,17 +90,21 @@ for(i in 1:max(cores_SlowP$set)){
 Final_table<-merge(Final_table,sum_table,all.x = T)               
 
 # PLOT LEVEL ANALYSES
-plot_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site+block+plot,mean, data=cores,na.rm=T)
+
+# plot_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site+block+plot, mean, data=cores, na.rm=T)
+
+plot_totalP <-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site+block+plot,mean, data=cores, na.rm=T)
 
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Total_P.N_slope_Plot', 'Total_P.N_.pvalue_Plot')
-plot_totalP<-cores
+# plot_totalP<-cores
 plot_totalP<-subset(plot_totalP,is.na(total.P_conc_mg.kg)==F)
 plot_totalP<-subset(plot_totalP,is.na(N_conc_percent)==F)
 plot_totalP<-subset(plot_totalP,lter!="CDR")#remove CDR because only 1 observation
 plot_totalP<-subset(plot_totalP,dataset!="Konza_2")#remove Konza_2 because only 1 observation
 plot_totalP<-subset(plot_totalP,dataset!="Toolik_1")# Total P showing up as zero but should be NA
 plot_totalP$set<-as.numeric(as.factor(plot_totalP$dataset))
+
 for(i in 1:max(plot_totalP$set)){
   a<-subset(plot_totalP,set==i)
   b<-summary(lm(N_conc_percent~total.P_conc_mg.kg,data = a))
@@ -107,11 +112,12 @@ for(i in 1:max(plot_totalP$set)){
   sum_table[i,2]<-b$coefficients[2,1]
   sum_table[i,3]<-b$coefficients[2,4]
 }
+
 Final_table<-merge(Final_table,sum_table,all.x = T)               
 
 
 #PLOT LEVEL SLOW P
-plot_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site+block+plot,mean, data=cores,na.rm=T)
+plot_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site+block+plot,mean, data=cores, na.rm=T)
 
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Slow_P.N_slope_Plot', 'Slow_P.N_.pvalue_Plot')
@@ -132,7 +138,8 @@ Final_table<-merge(Final_table,sum_table,all.x = T)
 
 #SITE LEVEL
 
-site_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site,mean, data=cores,na.rm=T)
+# changing data to plot slow P - this means the site means is the mean of the plot means 
+site_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site,mean, data=plot_totalP,na.rm=T)
 
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Total_P.N_slope_site', 'Total_P.N_.pvalue_site')
@@ -157,7 +164,7 @@ Final_table<-merge(Final_table,sum_table,all.x = T)
 
 
 #site LEVEL SLOW P
-site_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site+block+site,mean, data=cores,na.rm=T)
+site_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site+block+site,mean, data=plot_slowP,na.rm=T)
 
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Slow_P.N_slope_site', 'Slow_P.N_.pvalue_site')
@@ -177,11 +184,81 @@ for(i in 1:max(site_slowP$set)){
 Final_table<-merge(Final_table,sum_table,all.x = T)   
 
 # dataset LEVEL SLOW P
-summary <- site_slowP %>% 
+site_means_slowP <- site_slowP %>% 
   select(dataset,N_conc_percent,slow.P_conc_mg.kg) %>% 
   group_by(dataset) %>% 
   dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
 
+site_means_totalP <- site_totalP %>% 
+  select(dataset,N_conc_percent,total.P_conc_mg.kg) %>% 
+  group_by(dataset) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(total.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(total.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(total.P_conc_mg.kg, na.rm = TRUE))
+
+## RUNNING THE CROSS SITE MODEL 
+
+SlowPfig <- site_means_slowP %>% 
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
+
+SlowP_fig <- ggplot(data = SlowPfig, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point(aes(size = 1/se_P)) +
+  labs(title = "Slow P versus Total N",
+       x = "Slow P",
+       y = "Total N")
+
+SlowP <- lm(mean_N ~ mean_P, data = SlowPfig)
+
+#  weights = 1/se_P
+
+summary(SlowP)
+
+TotalPfig <- site_means_totalP %>% 
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
+
+TotalP_fig <- ggplot(data = TotalPfig, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point(aes(size = 1/se_P)) +
+  labs(title = "Total P versus Total N",
+       x = "Total P",
+       y = "Total N")
+
+TotalP <- lm(mean_N ~ mean_P, data = TotalPfig)
+
+# , weights = 1/se_P
+
+summary(TotalP)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# LOWERING CODE WE DONT NEED FOR NOW
 # mean 
 dataset_slowP_mean <- aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset,mean,data=cores,na.rm=T)
 
