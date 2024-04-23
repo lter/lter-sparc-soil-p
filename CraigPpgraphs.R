@@ -7,6 +7,7 @@
 library(Rmisc)
 library(ggplot2)
 library(dplyr)
+library(MuMIn)
 
 ## ------------------------------------------ ##
 # Housekeeping -----
@@ -166,6 +167,9 @@ Final_table<-merge(Final_table,sum_table,all.x = T)
 #site LEVEL SLOW P
 site_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site+block+site,mean, data=plot_slowP,na.rm=T)
 
+# checking how many sites we have per dataset 
+table(site_slowP$dataset)
+
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Slow_P.N_slope_site', 'Slow_P.N_.pvalue_site')
 site_slowP<-subset(site_slowP,is.na(slow.P_conc_mg.kg)==F)
@@ -203,7 +207,9 @@ SlowP_fig <- ggplot(data = SlowPfig, aes(x=mean_P, y=mean_N, color = dataset) ) 
   geom_point(aes(size = 1/se_P)) +
   labs(title = "Slow P versus Total N",
        x = "Slow P",
-       y = "Total N")
+       y = "Total N") + 
+  geom_text(data = SlowPfig, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T)
 
 SlowP <- lm(mean_N ~ mean_P, data = SlowPfig)
 
@@ -212,10 +218,11 @@ SlowP <- lm(mean_N ~ mean_P, data = SlowPfig)
 summary(SlowP)
 
 TotalPfig <- site_means_totalP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
+  filter(dataset %in% c("Bonanza Creek_1","Bonanza Creek_2","Bonanza Creek_3","Brazil","Calhoun","CedarCreek_1","CedarCreek_2","Coweeta","Hubbard Brook","Jornada_1","Jornada_2","Konza_1","Konza_2","Luquillo_2","Luquillo_3","Niwot_1","Niwot_3","Niwot_4","Niwot_5","Sevilleta_1" ,"Sevilleta_2","Tapajos","Toolik_1","Toolik_2","FloridaCoastal") )
 
 TotalP_fig <- ggplot(data = TotalPfig, aes(x=mean_P, y=mean_N, color = dataset) ) +
   geom_point(aes(size = 1/se_P)) +
+  geom_label(data = TotalPfig, label = dataset) +
   labs(title = "Total P versus Total N",
        x = "Total P",
        y = "Total N")
@@ -226,11 +233,18 @@ TotalP <- lm(mean_N ~ mean_P, data = TotalPfig)
 
 summary(TotalP)
 
+## Trying exponential decay models 
 
+NLS_SlowP_TotalN <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.005), data = SlowPfig)
+summary(NLS_SlowP_TotalN)
 
-
-
-
+# Adding model fit line 
+SlowP_fig_model <- SlowP_fig + 
+  stat_smooth(method = 'nls', 
+              method.args = list(start = c(a=-0.4121, b=0.0005)), 
+              formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
+  theme_minimal() 
+  
 
 
 
