@@ -8,6 +8,7 @@ library(Rmisc)
 library(ggplot2)
 library(dplyr)
 library(MuMIn)
+library(sjPlot)
 
 ## ------------------------------------------ ##
 # Housekeeping -----
@@ -188,15 +189,12 @@ for(i in 1:max(site_slowP$set)){
 Final_table<-merge(Final_table,sum_table,all.x = T)   
 
 # dataset LEVEL SLOW P
-site_means_slowP <- site_slowP %>% 
-  select(dataset,N_conc_percent,slow.P_conc_mg.kg) %>% 
-  group_by(dataset) %>% 
-  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
 
-site_means_totalP <- site_totalP %>% 
-  select(dataset,N_conc_percent,total.P_conc_mg.kg) %>% 
-  group_by(dataset) %>% 
-  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(total.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(total.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(total.P_conc_mg.kg, na.rm = TRUE))
+### TOTAL P ANALYSIS
+site_means_slowP <- site_slowP %>% 
+  select(dataset,site,N_conc_percent,slow.P_conc_mg.kg) %>% 
+  group_by(dataset,site) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
 
 ## RUNNING THE CROSS SITE MODEL 
 
@@ -211,11 +209,54 @@ SlowP_fig <- ggplot(data = SlowPfig, aes(x=mean_P, y=mean_N, color = dataset) ) 
   geom_text(data = SlowPfig, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
             check_overlap=T)
 
-SlowP <- lm(mean_N ~ mean_P, data = SlowPfig)
+# Slow P modeling with site averages
+site_means_slowP <- site_means_slowP %>% 
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
 
-#  weights = 1/se_P
+SlowP_fig_sites <- ggplot(data = site_means_slowP, aes(x=mean_P, y=mean_N, color = dataset)) +
+  geom_point(aes()) + # size = 1/se_P
+  labs(title = "Slow P versus Total N by Site",
+       x = "Slow P",
+       y = "Total N") + 
+  geom_text(data = SlowPfig, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T) +
+  theme_minimal()
+
+SlowP_site <- lm(mean_N ~ mean_P, data = site_means_slowP)
+summary(SlowP_site)
+tab_model(SlowP_site)
+
+
+# Slow P modeling with dataset averages
+SlowP <- lm(mean_N ~ mean_P, data = SlowPfig)
+SlowP <- lm(log(mean_N) ~ log(mean_P), data = SlowPfig)
+summary(SlowP)
+tab_model(SlowP)
+
+# , weights = 1/se_P
 
 summary(SlowP)
+tab_model(SlowP)
+
+## Trying exponential decay models 
+
+NLS_SlowP_TotalN <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.4121), data = SlowPfig)
+summary(NLS_SlowP_TotalN)
+tab_model(NLS_SlowP_TotalN)
+
+# Adding model fit line 
+SlowP_fig_model <- SlowP_fig + 
+  stat_smooth(method = 'nls', 
+              method.args = list(start = c(a=-0.4121, b=0.005)), 
+              formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
+  theme_minimal() 
+
+### TOTAL P ANALYSIS
+
+site_means_totalP <- site_totalP %>% 
+  select(dataset,N_conc_percent,total.P_conc_mg.kg) %>% 
+  group_by(dataset) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(total.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(total.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(total.P_conc_mg.kg, na.rm = TRUE))
 
 TotalPfig <- site_means_totalP %>% 
   filter(dataset %in% c("Bonanza Creek_1","Bonanza Creek_2","Bonanza Creek_3","Brazil","Calhoun","CedarCreek_1","CedarCreek_2","Coweeta","Hubbard Brook","Jornada_1","Jornada_2","Konza_1","Konza_2","Luquillo_2","Luquillo_3","Niwot_1","Niwot_3","Niwot_4","Niwot_5","Sevilleta_1" ,"Sevilleta_2","Tapajos","Toolik_1","Toolik_2","FloridaCoastal") )
@@ -233,18 +274,7 @@ TotalP <- lm(mean_N ~ mean_P, data = TotalPfig)
 
 summary(TotalP)
 
-## Trying exponential decay models 
 
-NLS_SlowP_TotalN <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.005), data = SlowPfig)
-summary(NLS_SlowP_TotalN)
-
-# Adding model fit line 
-SlowP_fig_model <- SlowP_fig + 
-  stat_smooth(method = 'nls', 
-              method.args = list(start = c(a=-0.4121, b=0.0005)), 
-              formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
-  theme_minimal() 
-  
 
 
 
