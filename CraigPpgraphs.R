@@ -202,7 +202,7 @@ SlowPfig <- site_means_slowP %>%
   filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
 
 SlowP_fig <- ggplot(data = SlowPfig, aes(x=mean_P, y=mean_N, color = dataset) ) +
-  geom_point(aes(size = 1/se_P)) +
+  geom_point() + # removing se size for now 
   labs(title = "Slow P versus Total N",
        x = "Slow P",
        y = "Total N") + 
@@ -228,9 +228,9 @@ tab_model(SlowP_site)
 
 
 # Slow P modeling with dataset averages
-SlowP <- lm(mean_N ~ mean_P, data = SlowPfig)
+SlowP_lm <- lm(mean_N ~ mean_P, data = SlowPfig)
 SlowP <- lm(log(mean_N) ~ log(mean_P), data = SlowPfig)
-summary(SlowP)
+summary(SlowP_lm)
 tab_model(SlowP)
 
 # , weights = 1/se_P

@@ -920,9 +920,9 @@ tidy_v5b <- tidy_v5 %>%
     ## Percent
     !is.na(N_conc_percent) ~ N_conc_percent,
     ## _g / _g
-    !is.na(N_conc_mg.kg) ~ N_conc_mg.kg * 10000,
-    !is.na(N_conc_mg.g) ~ N_conc_mg.g * 10,
-    !is.na(N_conc_g.kg) ~ N_conc_g.kg * 10,
+    !is.na(N_conc_mg.kg) ~ N_conc_mg.kg / 10000,
+    !is.na(N_conc_mg.g) ~ N_conc_mg.g / 10,
+    !is.na(N_conc_g.kg) ~ N_conc_g.kg / 10,
     # If nothing exists, fill with NA
     TRUE ~ NA), .before = N_conc_percent) %>%
   # Do the same for Carbon
@@ -930,9 +930,9 @@ tidy_v5b <- tidy_v5 %>%
     ## Percent
     !is.na(C_conc_percent) ~ C_conc_percent,
     ## _g / _g
-    !is.na(C_conc_mg.kg) ~ C_conc_mg.kg * 0.0001,
-    !is.na(C_conc_mg.g) ~ C_conc_mg.g * 0.1,
-    !is.na(C_conc_g.kg) ~ C_conc_g.kg * 0.1,
+    !is.na(C_conc_mg.kg) ~ C_conc_mg.kg / 10000,
+    !is.na(C_conc_mg.g) ~ C_conc_mg.g / 10,
+    !is.na(C_conc_g.kg) ~ C_conc_g.kg / 10,
     TRUE ~ NA), .before = C_conc_percent) %>%
   # Drop now-superseded columns
   dplyr::select(-N_conc_percent, -N_conc_mg.kg, -N_conc_mg.g, -N_conc_g.kg,
