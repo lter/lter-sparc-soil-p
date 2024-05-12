@@ -206,7 +206,7 @@ final_mineral <- mineral_v2
 # Define the name for this file
 mineral_name <- "sparc-soil-p_stats-ready_mineral_0-10.csv"
 
-# Export locally as a CSV
+# Export locally as a CSV to "stats_ready" folder 
 write.csv(x = final_mineral, row.names = F, na = "",
           file = file.path("data", "stats_ready", mineral_name))
 

@@ -247,6 +247,9 @@ spatial_exportNA <- rocks_out %>%
   group_by(dataset) %>% 
   summarise(M = mean(latitude))
 
+# Save out the final data object / Export locally
+write.csv(x = spatial_export, file = file.path("data", "tidy_data", "sparc-soil-p_full-plus-ancil-and-spatial.csv"), 
+          row.names = F, na = "")
 
 # Upload to GoogleDrive
 # CHANGE FINAL EXPORT DESTINATION LATER

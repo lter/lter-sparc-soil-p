@@ -1,18 +1,20 @@
 
 
 ## ------------------------------------------ ##
-# Within-site N and P relationships  ----
+# Across-site and Within-site N and P relationships  ----
 ## ------------------------------------------ ##
+
+
+## ------------------------------------------ ##
+# Housekeeping / Loading libraries and data -----
+## ------------------------------------------ ##
+
 # Load necessary libraries
 library(Rmisc)
 library(ggplot2)
 library(dplyr)
 library(MuMIn)
 library(sjPlot)
-
-## ------------------------------------------ ##
-# Housekeeping -----
-## ------------------------------------------ ##
 
 # loading stats ready data from google drive 
 # install.packages("librarian")
@@ -35,13 +37,11 @@ googledrive::drive_ls(path = tidy_drive) %>%
                               path = file.path("data", "tidy_data", .$name))
 
 # Read that file in
-cores <- read.csv(file = file.path("data", "tidy_data", 
+cores <- read.csv(file = file.path("data", "stats_ready", 
                                     "sparc-soil-p_stats-ready_mineral_0-10.csv"))
 
-#cores$set<-as.numeric(as.factor(cores$dataset))
-
 ## ------------------------------------------ ##
-# Making summary datasets and running linear models -----
+# Making summary datasets -----
 ## ------------------------------------------ ##
 
 # create a data frame that contains the number of rows with which we have sites
@@ -49,8 +49,182 @@ Final_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=1))
 names(Final_table) <- c('dataset')
 Final_table$dataset<-unique(cores$dataset)
 
-# SIMPLE LINEAR REGRESSIONS BY SITE OF TOTAL P VS TOTAL N
+# PLOT LEVEL DATASETS
+
+## TOTAL P 
+plot_totalP <-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site+block+plot,mean, data=cores, na.rm=T)
+
+## SLOW P
+plot_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site+block+plot,mean, data=cores, na.rm=T)
+
+# SITE LEVEL DATASETS
+
+## TOTAL P 
+site_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site,mean, data=plot_totalP,na.rm=T) # changing data to plot slow P - this means the site means is the mean of the plot means 
+
+## SLOW P
+site_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site,mean, data=plot_slowP,na.rm=T)
+
+# checking how many sites we have per dataset 
+table(site_slowP$dataset)
+
+## SLOW P SUMMARIZED AND SITE SELECTED DATASETS 
+
+# Grouping site Slow P dataset by DATASET and adding columns for mean, standard deviation and standard error for N and P 
+dataset_means_slowP <- site_slowP %>% 
+  select(dataset,N_conc_percent,slow.P_conc_mg.kg) %>% 
+  group_by(dataset) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
+
+## SELECTING ONLY THE SITES WHERE WE HAVE SLOW P (AND REMOVING FCE AND TOOLIK 1)
+dataset_means_slowP <- dataset_means_slowP %>% 
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
+
+# Grouping site Slow P dataset by SITE and adding columns for mean, standard deviation and standard error for N and P 
+site_means_slowP <- site_slowP %>% 
+  select(dataset,site,N_conc_percent,slow.P_conc_mg.kg) %>% 
+  group_by(dataset,site) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
+
+site_means_slowP <- site_means_slowP %>% 
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
+
+
+## TOTAL P SUMMARIZED AND SITE SELECTED DATASETS 
+dataset_means_totalP <- site_totalP %>% 
+  select(dataset,N_conc_percent,total.P_conc_mg.kg) %>% 
+  group_by(dataset) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(total.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(total.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(total.P_conc_mg.kg, na.rm = TRUE))
+
+# selecting all sites with full total P info 
+dataset_means_totalP <- dataset_means_totalP %>% 
+  filter(dataset %in% c("Bonanza Creek_1","Bonanza Creek_2","Bonanza Creek_3","Brazil","Calhoun","CedarCreek_1","CedarCreek_2","Coweeta","Hubbard Brook","Jornada_1","Jornada_2","Konza_1","Konza_2","Luquillo_2","Luquillo_3","Niwot_1","Niwot_3","Niwot_4","Niwot_5","Sevilleta_1" ,"Sevilleta_2","Tapajos","Toolik_1","Toolik_2","FloridaCoastal") )
+
+site_means_totalP <- site_totalP %>% 
+  select(dataset,site,N_conc_percent,total.P_conc_mg.kg) %>% 
+  group_by(dataset,site) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(total.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(total.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(total.P_conc_mg.kg, na.rm = TRUE))
+
+# selecting all sites with full total P info 
+site_means_totalP <- site_means_totalP %>% 
+  filter(dataset %in% c("Bonanza Creek_1","Bonanza Creek_2","Bonanza Creek_3","Brazil","Calhoun","CedarCreek_1","CedarCreek_2","Coweeta","Hubbard Brook","Jornada_1","Jornada_2","Konza_1","Konza_2","Luquillo_2","Luquillo_3","Niwot_1","Niwot_3","Niwot_4","Niwot_5","Sevilleta_1" ,"Sevilleta_2","Tapajos","Toolik_1","Toolik_2","FloridaCoastal") )
+
+## ------------------------------------------ ##
+# SIMPLE LINEAR REGRESSIONS AND EXPONENTIAL DECAY MODEL FOR CROSS-SITE ANALYSES FOR SLOW AND TOTAL P -----
+## ------------------------------------------ ##
+
+### SLOW P ANALYSES
+
+## MAKING FIGURES 
+SlowPfig_dataset <- ggplot(data = dataset_means_slowP, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point() + # removing se size for now 
+  labs(title = "Slow P versus Total N by Dataset",
+       x = "Slow P mg/kg",
+       y = "Total N %") + 
+  geom_text(data = dataset_means_slowP, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T) +
+  theme_minimal()
+
+SlowPfig_site <- ggplot(data = site_means_slowP, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point() + #size = 1/se_P removing se size for now 
+  labs(title = "Slow P versus Total N by Site",
+       x = "Slow P mg/kg",
+       y = "Total N %") + 
+  geom_text(data = site_means_slowP, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T) +
+  theme_minimal()
+
+## RUNNING MODELS
+
+# Slow P modeling with SITE averages
+SlowP_site_lm <- lm(mean_N ~ mean_P, data = site_means_slowP)
+summary(SlowP_site_lm)
+tab_model(SlowP_site_lm)
+
+
+# Slow P modeling with DATASET averages
+
+# Simple linear model
+SlowP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_slowP)
+summary(SlowP_dataset_lm)
+tab_model(SlowP_dataset_lm)
+
+# Log-log transformed linear model 
+SlowP_dataset_lm_log <- lm(log(mean_N) ~ log(mean_P), data = dataset_means_slowP)
+summary(SlowP_dataset_lm_log)
+tab_model(SlowP_dataset_lm_log)
+# , weights = 1/se_P
+
+## Exponential decay models 
+SlowP_dataset_ExpDec <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.4096), data = dataset_means_slowP)
+summary(SlowP_dataset_ExpDec)
+tab_model(SlowP_dataset_ExpDec)
+
+# Adding model fit line to figure 
+SlowPfig_dataset <- SlowPfig_dataset + 
+  stat_smooth(method = 'nls', 
+              method.args = list(start = c(a=-0.4096, b=0.005)), 
+              formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
+  theme_minimal() 
+
+### TOTAL P ANALYSES
+
+## MAKING FIGURES 
+TotalPfig_dataset <- ggplot(data = dataset_means_totalP, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point() + # removing se size for now 
+  labs(title = "Total P versus Total N by Dataset",
+       x = "Total P mg/kg",
+       y = "Total N %") + 
+  geom_text(data = dataset_means_totalP, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T) +
+  theme_minimal()
+
+TotalPfig_site <- ggplot(data = site_means_totalP, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point() + #size = 1/se_P removing se size for now 
+  labs(title = "Total P versus Total N by Site",
+       x = "Total P mg/kg",
+       y = "Total N %") + 
+  geom_text(data = site_means_totalP, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T) +
+  theme_minimal()
+
+## RUNNING MODELS
+
+# Total P modeling with SITE averages
+TotalP_site_lm <- lm(mean_N ~ mean_P, data = site_means_totalP)
+summary(TotalP_site_lm)
+tab_model(TotalP_site_lm)
+
+# Slow P modeling with DATASET averages
+
+# Simple linear model
+TotalP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_totalP)
+summary(TotalP_dataset_lm)
+tab_model(TotalP_dataset_lm)
+
+# Log-log transformed linear model 
+TotalP_dataset_lm_log <- lm(log(mean_N) ~ log(mean_P), data = dataset_means_totalP)
+summary(TotalP_dataset_lm_log)
+tab_model(TotalP_dataset_lm_log)
+# , weights = 1/se_P
+
+# THIS MODEL FIT DOESN'T REALLY MAKE SENSE ANYMORE
+## Exponential decay models 
+# TotalP_dataset_ExpDec <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.4096), data = dataset_means_totalP)
+# summary(TotalP_dataset_ExpDec)
+# tab_model(TotalP_dataset_ExpDec)
 # 
+# # Adding model fit line to figure 
+# SlowPfig_dataset <- SlowPfig_dataset + 
+#   stat_smooth(method = 'nls', 
+#               method.args = list(start = c(a=-0.4096, b=0.005)), 
+#               formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
+#   theme_minimal() 
+
+## ------------------------------------------ ##
+# Moving previous code down here that we don't need for now 5/12/24 EV  -----
+## ------------------------------------------ ##
+
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3)) 
 names(sum_table) <- c('dataset', 'Total_P.N_slope', 'Total_P.N_.pvalue')
 cores_totalP<-cores
@@ -64,12 +238,11 @@ cores_totalP$set<-as.numeric(as.factor(cores_totalP$dataset)) # produces table w
 for(i in 1:max(cores_totalP$set)){
   a<-subset(cores_totalP,set==i)
   b<-summary(lm(N_conc_percent~total.P_conc_mg.kg,data = a))
-    sum_table[i,1]<-first(a$dataset)
-    sum_table[i,2]<-b$coefficients[2,1]
-    sum_table[i,3]<-b$coefficients[2,4]
-    }
+  sum_table[i,1]<-first(a$dataset)
+  sum_table[i,2]<-b$coefficients[2,1]
+  sum_table[i,3]<-b$coefficients[2,4]
+}
 Final_table<-merge(Final_table,sum_table,all.x = T) # merging the looped product table with final table that has all possible datasets in our study                
-
 
 # SIMPLE LINEAR REGRESSIONS BY SITE OF SLOW P VS TOTAL N
 # 
@@ -89,13 +262,7 @@ for(i in 1:max(cores_SlowP$set)){
   sum_table[i,2]<-b$coefficients[2,1]
   sum_table[i,3]<-b$coefficients[2,4]
 }
-Final_table<-merge(Final_table,sum_table,all.x = T)               
-
-# PLOT LEVEL ANALYSES
-
-# plot_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site+block+plot, mean, data=cores, na.rm=T)
-
-plot_totalP <-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site+block+plot,mean, data=cores, na.rm=T)
+Final_table<-merge(Final_table,sum_table,all.x = T)     
 
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Total_P.N_slope_Plot', 'Total_P.N_.pvalue_Plot')
@@ -117,10 +284,6 @@ for(i in 1:max(plot_totalP$set)){
 
 Final_table<-merge(Final_table,sum_table,all.x = T)               
 
-
-#PLOT LEVEL SLOW P
-plot_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site+block+plot,mean, data=cores, na.rm=T)
-
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Slow_P.N_slope_Plot', 'Slow_P.N_.pvalue_Plot')
 plot_slowP<-subset(plot_slowP,is.na(slow.P_conc_mg.kg)==F)
@@ -137,11 +300,6 @@ for(i in 1:max(plot_slowP$set)){
   sum_table[i,3]<-b$coefficients[2,4]
 }
 Final_table<-merge(Final_table,sum_table,all.x = T)   
-
-#SITE LEVEL
-
-# changing data to plot slow P - this means the site means is the mean of the plot means 
-site_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~dataset+site,mean, data=plot_totalP,na.rm=T)
 
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Total_P.N_slope_site', 'Total_P.N_.pvalue_site')
@@ -164,13 +322,6 @@ for(i in 1:max(site_totalP$set)){
 }
 Final_table<-merge(Final_table,sum_table,all.x = T)               
 
-
-#site LEVEL SLOW P
-site_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg)~dataset+site+block+site,mean, data=plot_slowP,na.rm=T)
-
-# checking how many sites we have per dataset 
-table(site_slowP$dataset)
-
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3))
 names(sum_table) <- c('dataset', 'Slow_P.N_slope_site', 'Slow_P.N_.pvalue_site')
 site_slowP<-subset(site_slowP,is.na(slow.P_conc_mg.kg)==F)
@@ -187,118 +338,6 @@ for(i in 1:max(site_slowP$set)){
   sum_table[i,3]<-b$coefficients[2,4]
 }
 Final_table<-merge(Final_table,sum_table,all.x = T)   
-
-# dataset LEVEL SLOW P
-
-### TOTAL P ANALYSIS
-site_means_slowP <- site_slowP %>% 
-  select(dataset,site,N_conc_percent,slow.P_conc_mg.kg) %>% 
-  group_by(dataset,site) %>% 
-  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
-
-## RUNNING THE CROSS SITE MODEL 
-
-SlowPfig <- site_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
-
-SlowP_fig <- ggplot(data = SlowPfig, aes(x=mean_P, y=mean_N, color = dataset) ) +
-  geom_point() + # removing se size for now 
-  labs(title = "Slow P versus Total N",
-       x = "Slow P",
-       y = "Total N") + 
-  geom_text(data = SlowPfig, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
-            check_overlap=T)
-
-# Slow P modeling with site averages
-site_means_slowP <- site_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
-
-SlowP_fig_sites <- ggplot(data = site_means_slowP, aes(x=mean_P, y=mean_N, color = dataset)) +
-  geom_point(aes()) + # size = 1/se_P
-  labs(title = "Slow P versus Total N by Site",
-       x = "Slow P",
-       y = "Total N") + 
-  geom_text(data = SlowPfig, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
-            check_overlap=T) +
-  theme_minimal()
-
-SlowP_site <- lm(mean_N ~ mean_P, data = site_means_slowP)
-summary(SlowP_site)
-tab_model(SlowP_site)
-
-
-# Slow P modeling with dataset averages
-SlowP_lm <- lm(mean_N ~ mean_P, data = SlowPfig)
-SlowP <- lm(log(mean_N) ~ log(mean_P), data = SlowPfig)
-summary(SlowP_lm)
-tab_model(SlowP)
-
-# , weights = 1/se_P
-
-summary(SlowP)
-tab_model(SlowP)
-
-## Trying exponential decay models 
-
-NLS_SlowP_TotalN <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.4121), data = SlowPfig)
-summary(NLS_SlowP_TotalN)
-tab_model(NLS_SlowP_TotalN)
-
-# Adding model fit line 
-SlowP_fig_model <- SlowP_fig + 
-  stat_smooth(method = 'nls', 
-              method.args = list(start = c(a=-0.4121, b=0.005)), 
-              formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
-  theme_minimal() 
-
-### TOTAL P ANALYSIS
-
-site_means_totalP <- site_totalP %>% 
-  select(dataset,N_conc_percent,total.P_conc_mg.kg) %>% 
-  group_by(dataset) %>% 
-  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(total.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(total.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(total.P_conc_mg.kg, na.rm = TRUE))
-
-TotalPfig <- site_means_totalP %>% 
-  filter(dataset %in% c("Bonanza Creek_1","Bonanza Creek_2","Bonanza Creek_3","Brazil","Calhoun","CedarCreek_1","CedarCreek_2","Coweeta","Hubbard Brook","Jornada_1","Jornada_2","Konza_1","Konza_2","Luquillo_2","Luquillo_3","Niwot_1","Niwot_3","Niwot_4","Niwot_5","Sevilleta_1" ,"Sevilleta_2","Tapajos","Toolik_1","Toolik_2","FloridaCoastal") )
-
-TotalP_fig <- ggplot(data = TotalPfig, aes(x=mean_P, y=mean_N, color = dataset) ) +
-  geom_point(aes(size = 1/se_P)) +
-  geom_label(data = TotalPfig, label = dataset) +
-  labs(title = "Total P versus Total N",
-       x = "Total P",
-       y = "Total N")
-
-TotalP <- lm(mean_N ~ mean_P, data = TotalPfig)
-
-# , weights = 1/se_P
-
-summary(TotalP)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
