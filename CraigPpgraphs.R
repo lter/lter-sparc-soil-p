@@ -144,12 +144,12 @@ tab_model(SlowP_site_lm)
 
 # Slow P modeling with DATASET averages
 
-# Simple linear model
+# Simple linear model# = p-value: 0.1401
 SlowP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_slowP)
 summary(SlowP_dataset_lm)
 tab_model(SlowP_dataset_lm)
 
-# Log-log transformed linear model 
+# Log-log transformed linear model # p-value: 0.2318
 SlowP_dataset_lm_log <- lm(log(mean_N) ~ log(mean_P), data = dataset_means_slowP)
 summary(SlowP_dataset_lm_log)
 tab_model(SlowP_dataset_lm_log)
@@ -167,17 +167,45 @@ SlowPfig_dataset <- SlowPfig_dataset +
               formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
   theme_minimal() 
 
+### Running model making Luquillo means zero 
+dataset_means_slowP_LUQ_Zero <- dataset_means_slowP
+dataset_means_slowP_LUQ_Zero$mean_P <- ifelse(dataset_means_slowP_LUQ_Zero$dataset == "Luquillo_1",0.00001,dataset_means_slowP_LUQ_Zero$mean_P)
+dataset_means_slowP_LUQ_Zero$mean_P <- ifelse(dataset_means_slowP_LUQ_Zero$dataset == "Luquillo_2",0.00001,dataset_means_slowP_LUQ_Zero$mean_P)
+
+# fig and model 
+SlowPfig_dataset_Luqillo_zero <- ggplot(data = dataset_means_slowP_LUQ_Zero, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point() + # removing se size for now 
+  labs(title = "Slow P versus Total N by Dataset",
+       x = "Slow P mg/kg",
+       y = "Total N %") + 
+  geom_text(data = dataset_means_slowP_LUQ_Zero, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T) +
+  theme_minimal()
+
+# Simple linear model # = p-value: 0.1078
+SlowP_dataset_lm_LUQ0 <- lm(mean_N ~ mean_P, data = dataset_means_slowP_LUQ_Zero)
+summary(SlowP_dataset_lm_LUQ0)
+tab_model(SlowP_dataset_lm_LUQ0)
+
+## Exponential decay models p-value = 0.11
+SlowP_dataset_ExpDec_LUQ0 <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.1), data = dataset_means_slowP_LUQ_Zero)
+summary(SlowP_dataset_ExpDec_LUQ0)
+tab_model(SlowP_dataset_ExpDec_LUQ0)
+
+
 ### TOTAL P ANALYSES
 
 ## MAKING FIGURES 
-TotalPfig_dataset <- ggplot(data = dataset_means_totalP, aes(x=mean_P, y=mean_N, color = dataset) ) +
-  geom_point() + # removing se size for now 
+TotalPfig_dataset <- ggplot(data = dataset_means_totalP, aes(x=mean_P, y=mean_N) ) +
+  geom_point(aes(color = dataset)) + # removing se size for now 
+  geom_smooth(method=lm, se=FALSE, color = "black") +
   labs(title = "Total P versus Total N by Dataset",
        x = "Total P mg/kg",
        y = "Total N %") + 
-  geom_text(data = dataset_means_totalP, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+  geom_text(data = dataset_means_totalP, aes(label = dataset,color = dataset), nudge_x=0.45, nudge_y=0.025,
             check_overlap=T) +
-  theme_minimal()
+  theme_minimal() 
+  
 
 TotalPfig_site <- ggplot(data = site_means_totalP, aes(x=mean_P, y=mean_N, color = dataset) ) +
   geom_point() + #size = 1/se_P removing se size for now 
