@@ -125,6 +125,8 @@ SlowPfig_dataset <- ggplot(data = dataset_means_slowP, aes(x=mean_P, y=mean_N, c
             check_overlap=T) +
   theme_minimal()
 
+ggsave(plot = SlowPfig_dataset, filename = "figures/SlowP_TotalN_datasets.png", width = 7, height = 4)
+
 SlowPfig_site <- ggplot(data = site_means_slowP, aes(x=mean_P, y=mean_N, color = dataset) ) +
   geom_point() + #size = 1/se_P removing se size for now 
   labs(title = "Slow P versus Total N by Site",
@@ -136,7 +138,7 @@ SlowPfig_site <- ggplot(data = site_means_slowP, aes(x=mean_P, y=mean_N, color =
 
 ## RUNNING MODELS
 
-# Slow P modeling with SITE averages
+# Slow P modeling with SITE averages # p-value: 0.8663
 SlowP_site_lm <- lm(mean_N ~ mean_P, data = site_means_slowP)
 summary(SlowP_site_lm)
 tab_model(SlowP_site_lm)
@@ -145,17 +147,21 @@ tab_model(SlowP_site_lm)
 # Slow P modeling with DATASET averages
 
 # Simple linear model# = p-value: 0.1401
+# woah p-value went way up after the edit to SEV, p-value: 0.8467
 SlowP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_slowP)
 summary(SlowP_dataset_lm)
 tab_model(SlowP_dataset_lm)
 
 # Log-log transformed linear model # p-value: 0.2318
+# After editing, SEV p-value: 0.818
 SlowP_dataset_lm_log <- lm(log(mean_N) ~ log(mean_P), data = dataset_means_slowP)
 summary(SlowP_dataset_lm_log)
 tab_model(SlowP_dataset_lm_log)
 # , weights = 1/se_P
 
 ## Exponential decay models 
+# After editing, SEV p-value: 0.3
+# Hmm not sure if this is working well anymore after adding the SEV data 
 SlowP_dataset_ExpDec <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.4096), data = dataset_means_slowP)
 summary(SlowP_dataset_ExpDec)
 tab_model(SlowP_dataset_ExpDec)
