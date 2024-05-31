@@ -143,7 +143,6 @@ SlowP_site_lm <- lm(mean_N ~ mean_P, data = site_means_slowP)
 summary(SlowP_site_lm)
 tab_model(SlowP_site_lm)
 
-
 # Slow P modeling with DATASET averages
 
 # Simple linear model# = p-value: 0.1401
@@ -214,7 +213,8 @@ TotalPfig_dataset <- ggplot(data = dataset_means_totalP, aes(x=mean_P, y=mean_N)
   
 
 TotalPfig_site <- ggplot(data = site_means_totalP, aes(x=mean_P, y=mean_N, color = dataset) ) +
-  geom_point() + #size = 1/se_P removing se size for now 
+  geom_point() + #size = 1/se_P removing se size for now +
+  geom_smooth(method=lm, se=FALSE, color = "black") +
   labs(title = "Total P versus Total N by Site",
        x = "Total P mg/kg",
        y = "Total N %") + 
@@ -224,7 +224,8 @@ TotalPfig_site <- ggplot(data = site_means_totalP, aes(x=mean_P, y=mean_N, color
 
 ## RUNNING MODELS
 
-# Total P modeling with SITE averages
+# Total P modeling with SITE 
+# After fixing SEV, p-value: 6.301e-06
 TotalP_site_lm <- lm(mean_N ~ mean_P, data = site_means_totalP)
 summary(TotalP_site_lm)
 tab_model(TotalP_site_lm)
@@ -232,6 +233,7 @@ tab_model(TotalP_site_lm)
 # Slow P modeling with DATASET averages
 
 # Simple linear model
+# After fixing SEV, p-value: p-value: 0.03679
 TotalP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_totalP)
 summary(TotalP_dataset_lm)
 tab_model(TotalP_dataset_lm)
