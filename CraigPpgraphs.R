@@ -80,6 +80,12 @@ dataset_means_slowP <- site_slowP %>%
 dataset_means_slowP <- dataset_means_slowP %>% 
   filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
 
+# MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
+# Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
+dataset_means_slowP <- dataset_means_slowP %>% 
+  mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
+
+
 # Grouping site Slow P dataset by SITE and adding columns for mean, standard deviation and standard error for N and P 
 site_means_slowP <- site_slowP %>% 
   select(dataset,site,N_conc_percent,slow.P_conc_mg.kg) %>% 
@@ -89,6 +95,8 @@ site_means_slowP <- site_slowP %>%
 site_means_slowP <- site_means_slowP %>% 
   filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
 
+site_means_slowP <- site_means_slowP %>% 
+  mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
 
 ## TOTAL P SUMMARIZED AND SITE SELECTED DATASETS 
 dataset_means_totalP <- site_totalP %>% 
@@ -99,6 +107,11 @@ dataset_means_totalP <- site_totalP %>%
 # selecting all sites with full total P info 
 dataset_means_totalP <- dataset_means_totalP %>% 
   filter(dataset %in% c("Bonanza Creek_1","Bonanza Creek_2","Bonanza Creek_3","Brazil","Calhoun","CedarCreek_1","CedarCreek_2","Coweeta","Hubbard Brook","Jornada_1","Jornada_2","Konza_1","Konza_2","Luquillo_2","Luquillo_3","Niwot_1","Niwot_3","Niwot_4","Niwot_5","Sevilleta_1" ,"Sevilleta_2","Tapajos","Toolik_1","Toolik_2","FloridaCoastal") )
+
+# MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
+# Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
+dataset_means_totalP <- dataset_means_totalP %>% 
+  mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
 
 site_means_totalP <- site_totalP %>% 
   select(dataset,site,N_conc_percent,total.P_conc_mg.kg) %>% 
@@ -147,6 +160,7 @@ tab_model(SlowP_site_lm)
 
 # Simple linear model# = p-value: 0.1401
 # woah p-value went way up after the edit to SEV, p-value: 0.8467
+# after manually updating Sev1 mean p-value: 0.128
 SlowP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_slowP)
 summary(SlowP_dataset_lm)
 tab_model(SlowP_dataset_lm)
@@ -161,7 +175,7 @@ tab_model(SlowP_dataset_lm_log)
 ## Exponential decay models 
 # After editing, SEV p-value: 0.3
 # Hmm not sure if this is working well anymore after adding the SEV data 
-SlowP_dataset_ExpDec <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.4096), data = dataset_means_slowP)
+SlowP_dataset_ExpDec <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.5), data = dataset_means_slowP)
 summary(SlowP_dataset_ExpDec)
 tab_model(SlowP_dataset_ExpDec)
 
@@ -172,7 +186,7 @@ SlowPfig_dataset <- SlowPfig_dataset +
               formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
   theme_minimal() 
 
-### Running model making Luquillo means zero 
+### Running dataset model making Luquillo means zero 
 dataset_means_slowP_LUQ_Zero <- dataset_means_slowP
 dataset_means_slowP_LUQ_Zero$mean_P <- ifelse(dataset_means_slowP_LUQ_Zero$dataset == "Luquillo_1",0.00001,dataset_means_slowP_LUQ_Zero$mean_P)
 dataset_means_slowP_LUQ_Zero$mean_P <- ifelse(dataset_means_slowP_LUQ_Zero$dataset == "Luquillo_2",0.00001,dataset_means_slowP_LUQ_Zero$mean_P)
@@ -193,10 +207,23 @@ summary(SlowP_dataset_lm_LUQ0)
 tab_model(SlowP_dataset_lm_LUQ0)
 
 ## Exponential decay models p-value = 0.11
-SlowP_dataset_ExpDec_LUQ0 <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.1), data = dataset_means_slowP_LUQ_Zero)
+SlowP_dataset_ExpDec_LUQ0 <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.5), data = dataset_means_slowP_LUQ_Zero)
 summary(SlowP_dataset_ExpDec_LUQ0)
 tab_model(SlowP_dataset_ExpDec_LUQ0)
 
+### Running site model making Luquillo means zero 
+site_means_slowP_LUQ_Zero <- site_means_slowP
+site_means_slowP_LUQ_Zero$mean_P <- ifelse(site_means_slowP_LUQ_Zero$dataset == "Luquillo_1",0.00001,site_means_slowP_LUQ_Zero$mean_P)
+site_means_slowP_LUQ_Zero$mean_P <- ifelse(site_means_slowP_LUQ_Zero$dataset == "Luquillo_2",0.00001,site_means_slowP_LUQ_Zero$mean_P)
+
+SlowPfig_site_Luqillo_zero <- ggplot(data = site_means_slowP_LUQ_Zero, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point() + #size = 1/se_P removing se size for now 
+  labs(title = "Slow P versus Total N by Site",
+       x = "Slow P mg/kg",
+       y = "Total N %") + 
+  geom_text(data = site_means_slowP_LUQ_Zero, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T) +
+  theme_minimal()
 
 ### TOTAL P ANALYSES
 
