@@ -288,6 +288,10 @@ tab_model(TotalP_dataset_lm_log)
 # Moving previous code down here that we don't need for now 5/12/24 EV  -----
 ## ------------------------------------------ ##
 
+# SIMPLE LINEAR REGRESSIONS BY SITE OF TOTAL P VS TOTAL N
+
+# This code produces a summary table with the slope and p-value for each dataset,doing a simple linear model
+# Write 1-2 sentences in results section just summarizing this table (put table in appendix and reference)
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3)) 
 names(sum_table) <- c('dataset', 'Total_P.N_slope', 'Total_P.N_.pvalue')
 cores_totalP<-cores
