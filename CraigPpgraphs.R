@@ -191,6 +191,30 @@ dataset_means_slowP_LUQ_Zero <- dataset_means_slowP
 dataset_means_slowP_LUQ_Zero$mean_P <- ifelse(dataset_means_slowP_LUQ_Zero$dataset == "Luquillo_1",0.00001,dataset_means_slowP_LUQ_Zero$mean_P)
 dataset_means_slowP_LUQ_Zero$mean_P <- ifelse(dataset_means_slowP_LUQ_Zero$dataset == "Luquillo_2",0.00001,dataset_means_slowP_LUQ_Zero$mean_P)
 
+model_params <- dataset_means_slowP_LUQ_Zero %>%       # save the regression line yhat points
+  mutate(fit=fitted(SlowP_dataset_lm_LUQ0))
+
+# slow P fig with Luquillo being 0.00001
+SlowPfig_dataset_LUQZERO <- ggplot(data = dataset_means_slowP_LUQ_Zero, aes(x=mean_P, y=mean_N, color = dataset) ) +
+  geom_point() + # removing se size for now 
+  labs(title = "Slow Phosphorus versus Total Nitrogen by Dataset",
+       x = "Slow P mg/kg",
+       y = "Total N %") + 
+  geom_text(data = dataset_means_slowP_LUQ_Zero, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+            check_overlap=T) +
+  theme_minimal() +
+  geom_line(data = model_params, aes(y=fit), color='blue')
+  
+  # stat_smooth(method = 'lm',
+  #             method.args = list(start = c(m=-0.02, b=0.005)),
+  #             formula = mean_N~m*log(mean_P)+b, colour = 'black', linetype="dashed", se = FALSE, data = dataset_means_slowP_LUQ_Zero)
+ 
+# #   stat_smooth(method = 'nls', 
+#   method.args = list(start = c(a=-0.4096, b=0.005)), 
+# formula = y~a*exp(b*x), colour = 'black', linetype="dashed", se = FALSE) +
+
+
+
 # fig and model 
 SlowPfig_dataset_Luqillo_zero <- ggplot(data = dataset_means_slowP_LUQ_Zero, aes(x=mean_P, y=mean_N, color = dataset) ) +
   geom_point() + # removing se size for now 
@@ -202,7 +226,7 @@ SlowPfig_dataset_Luqillo_zero <- ggplot(data = dataset_means_slowP_LUQ_Zero, aes
   theme_minimal()
 
 # Simple linear model # = p-value: 0.1078
-SlowP_dataset_lm_LUQ0 <- lm(mean_N ~ mean_P, data = dataset_means_slowP_LUQ_Zero)
+SlowP_dataset_lm_LUQ0 <- lm(mean_N ~ log(mean_P), data = dataset_means_slowP_LUQ_Zero)
 summary(SlowP_dataset_lm_LUQ0)
 tab_model(SlowP_dataset_lm_LUQ0)
 
@@ -210,6 +234,8 @@ tab_model(SlowP_dataset_lm_LUQ0)
 SlowP_dataset_ExpDec_LUQ0 <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.5), data = dataset_means_slowP_LUQ_Zero)
 summary(SlowP_dataset_ExpDec_LUQ0)
 tab_model(SlowP_dataset_ExpDec_LUQ0)
+
+AIC(SlowP_dataset_lm_LUQ0,SlowP_dataset_ExpDec_LUQ0)
 
 ### Running site model making Luquillo means zero 
 site_means_slowP_LUQ_Zero <- site_means_slowP
