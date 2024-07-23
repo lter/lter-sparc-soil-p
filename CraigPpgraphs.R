@@ -78,13 +78,12 @@ dataset_means_slowP <- site_slowP %>%
 
 ## SELECTING ONLY THE SITES WHERE WE HAVE SLOW P (AND REMOVING FCE AND TOOLIK 1)
 dataset_means_slowP <- dataset_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_2","Niwot_5","Sevilleta_1","Tapajos"))
 
 # MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
 # Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
 dataset_means_slowP <- dataset_means_slowP %>% 
   mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
-
 
 # Grouping site Slow P dataset by SITE and adding columns for mean, standard deviation and standard error for N and P 
 site_means_slowP <- site_slowP %>% 
@@ -93,7 +92,7 @@ site_means_slowP <- site_slowP %>%
   dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
 
 site_means_slowP <- site_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_1","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos"))
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_2","Luquillo_2","Niwot_5","Sevilleta_1","Tapajos"))
 
 site_means_slowP <- site_means_slowP %>% 
   mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
@@ -129,14 +128,15 @@ site_means_totalP <- site_means_totalP %>%
 ### SLOW P ANALYSES
 
 ## MAKING FIGURES 
-SlowPfig_dataset <- ggplot(data = dataset_means_slowP, aes(x=mean_P, y=mean_N, color = dataset) ) +
-  geom_point() + # removing se size for now 
+SlowPfig_dataset <- ggplot(data = dataset_means_slowP, aes(x=mean_P, y=mean_N) ) +
+  geom_point(aes(color = dataset)) + # removing se size for now 
   labs(title = "Slow P versus Total N by Dataset",
        x = "Slow P mg/kg",
        y = "Total N %") + 
   geom_text(data = dataset_means_slowP, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
             check_overlap=T) +
-  theme_minimal()
+  stat_smooth(method = 'lm', se = TRUE, color = "black") +
+  theme_bw() 
 
 ggsave(plot = SlowPfig_dataset, filename = "figures/SlowP_TotalN_datasets.png", width = 7, height = 4)
 
@@ -147,7 +147,10 @@ SlowPfig_site <- ggplot(data = site_means_slowP, aes(x=mean_P, y=mean_N, color =
        y = "Total N %") + 
   geom_text(data = site_means_slowP, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
             check_overlap=T) +
-  theme_minimal()
+  stat_smooth(method = 'lm', se = TRUE, color = "black") +
+  theme_bw()
+
+ggsave(plot = SlowPfig_site, filename = "figures/SlowP_TotalN_sites.png", width = 7, height = 4)
 
 ## RUNNING MODELS
 
@@ -256,14 +259,15 @@ SlowPfig_site_Luqillo_zero <- ggplot(data = site_means_slowP_LUQ_Zero, aes(x=mea
 ## MAKING FIGURES 
 TotalPfig_dataset <- ggplot(data = dataset_means_totalP, aes(x=mean_P, y=mean_N) ) +
   geom_point(aes(color = dataset)) + # removing se size for now 
-  geom_smooth(method=lm, se=FALSE, color = "black") +
+  # geom_smooth(method=lm, se=TRUE, color = "black") +
   labs(title = "Total P versus Total N by Dataset",
        x = "Total P mg/kg",
        y = "Total N %") + 
   geom_text(data = dataset_means_totalP, aes(label = dataset,color = dataset), nudge_x=0.45, nudge_y=0.025,
             check_overlap=T) +
-  theme_minimal() 
+  theme_bw() 
   
+ggsave(plot = TotalPfig_dataset, filename = "figures/SlowP_TotalN_datasets.png", width = 7, height = 4)
 
 TotalPfig_site <- ggplot(data = site_means_totalP, aes(x=mean_P, y=mean_N, color = dataset) ) +
   geom_point() + #size = 1/se_P removing se size for now +

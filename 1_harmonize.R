@@ -633,6 +633,12 @@ tidy_v2e <- tidy_v2d %>%
   dplyr::relocate(depth.start_cm, depth.end_cm, core.length_cm, 
                   .after = horizon_raw)
 
+# Manually assigning start and end depth for Niwot 5
+tidy_v2e <- tidy_v2e %>% 
+  mutate(depth.start_cm = ifelse(dataset_simp == "NWT_5",0,depth.start_cm) ) %>% 
+  mutate(depth.end_cm = ifelse(dataset_simp == "NWT_5",10,depth.end_cm) ) %>% 
+  mutate(horizon_raw = ifelse(dataset_simp == "NWT_5","mineral",horizon_raw) )
+
 # Check distribution of the new depth columns we just extracted
 # hashtagged out these histograms because on 03/06/24 the code kept breaking here with the following error, "Error in par(old.par) : invalid value specified for graphical parameter "pin""
 # psych::multi.hist(x = tidy_v2e$depth.start_cm)
