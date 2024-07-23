@@ -267,7 +267,7 @@ TotalPfig_dataset <- ggplot(data = dataset_means_totalP, aes(x=mean_P, y=mean_N)
             check_overlap=T) +
   theme_bw() 
   
-ggsave(plot = TotalPfig_dataset, filename = "figures/SlowP_TotalN_datasets.png", width = 7, height = 4)
+ggsave(plot = TotalPfig_dataset, filename = "figures/TotalP_TotalN_datasets.png", width = 7, height = 4)
 
 TotalPfig_site <- ggplot(data = site_means_totalP, aes(x=mean_P, y=mean_N, color = dataset) ) +
   geom_point() + #size = 1/se_P removing se size for now +
