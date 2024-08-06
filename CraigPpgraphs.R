@@ -40,6 +40,14 @@ googledrive::drive_ls(path = tidy_drive) %>%
 cores <- read.csv(file = file.path("data", "stats_ready", 
                                     "sparc-soil-p_stats-ready_mineral_0-10.csv"))
 
+# Subset data to konza 1 
+cores$dataset <- ifelse(cores$dataset == "Konza_1", cores$site, cores$dataset )
+
+  
+# Adding code to subset to only observations where both slow P and total N values exist for Niwot 1 
+cores$slow.P_conc_mg.kg <- ifelse(is.na(cores$N_conc_percent) == TRUE, NA, cores$slow.P_conc_mg.kg)
+cores$N_conc_percent <- ifelse(is.na(cores$slow.P_conc_mg.kg) == TRUE, NA, cores$N_conc_percent)
+
 ## ------------------------------------------ ##
 # Making summary datasets -----
 ## ------------------------------------------ ##
@@ -72,13 +80,18 @@ table(site_slowP$dataset)
 
 # Grouping site Slow P dataset by DATASET and adding columns for mean, standard deviation and standard error for N and P 
 dataset_means_slowP <- site_slowP %>% 
-  select(dataset,N_conc_percent,slow.P_conc_mg.kg) %>% 
-  group_by(dataset) %>% 
-  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
+  dplyr::select(dataset,N_conc_percent,slow.P_conc_mg.kg) %>% 
+  dplyr::group_by(dataset) %>% 
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),
+                   mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),
+                   sd_N = sd(N_conc_percent, na.rm = TRUE),
+                   sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),
+                   se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),
+                   se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE) )
 
 ## SELECTING ONLY THE SITES WHERE WE HAVE SLOW P (AND REMOVING FCE AND TOOLIK 1)
 dataset_means_slowP <- dataset_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_2","Niwot_5","Sevilleta_1","Tapajos"))
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_2","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos","Smokey Valley","Hays","Arikaree"))
 
 # MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
 # Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
@@ -128,6 +141,12 @@ site_means_totalP <- site_means_totalP %>%
 ### SLOW P ANALYSES
 
 ## MAKING FIGURES 
+# library(MASS) # to access Animals data sets
+# library(scales) # to access break formatting functions
+
+dataset_means_slowP <- dataset_means_slowP %>% 
+  mutate(log_mean_N = log(mean_N) )
+
 SlowPfig_dataset <- ggplot(data = dataset_means_slowP, aes(x=mean_P, y=mean_N) ) +
   geom_point(aes(color = dataset)) + # removing se size for now 
   labs(title = "Slow P versus Total N by Dataset",
@@ -136,9 +155,16 @@ SlowPfig_dataset <- ggplot(data = dataset_means_slowP, aes(x=mean_P, y=mean_N) )
   geom_text(data = dataset_means_slowP, aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
             check_overlap=T) +
   stat_smooth(method = 'lm', se = TRUE, color = "black") +
-  theme_bw() 
+  theme_bw()  
 
-ggsave(plot = SlowPfig_dataset, filename = "figures/SlowP_TotalN_datasets.png", width = 7, height = 4)
+# +
+#   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+#                 labels = trans_format("log10", math_format(10^.x)))
+
+# +
+#   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x) )
+
+ggsave(plot = SlowPfig_dataset, filename = "figures/SlowP_TotalN_datasets.png", width = 10, height = 8)
 
 SlowPfig_site <- ggplot(data = site_means_slowP, aes(x=mean_P, y=mean_N, color = dataset) ) +
   geom_point() + #size = 1/se_P removing se size for now 
