@@ -91,7 +91,7 @@ dataset_means_slowP <- site_slowP %>%
 
 ## SELECTING ONLY THE SITES WHERE WE HAVE SLOW P (AND REMOVING FCE AND TOOLIK 1)
 dataset_means_slowP <- dataset_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_2","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos","Smokey Valley","Hays","Arikaree"))
+  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Konza_2","Luquillo_2","Niwot_1","Sevilleta_1","Tapajos","Smokey Valley","Hays","Arikaree"))
 
 # MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
 # Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
