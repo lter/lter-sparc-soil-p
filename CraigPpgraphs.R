@@ -39,14 +39,12 @@ googledrive::drive_ls(path = tidy_drive) %>%
 # Read that file in
 cores <- read.csv(file = file.path("data", "stats_ready", 
                                     "sparc-soil-p_stats-ready_mineral_0-10.csv"))
-
 # Subset data to konza 1 
 cores$dataset <- ifelse(cores$dataset == "Konza_1", cores$site, cores$dataset )
 
 cores <- cores %>% 
   mutate(PropSlowTotal = slow.P_conc_mg.kg/total.P_conc_mg.kg)
 
-  
 # Adding code to subset to only observations where both slow P and total N values exist for Niwot 1 
 cores$slow.P_conc_mg.kg <- ifelse(is.na(cores$N_conc_percent) == TRUE, NA, cores$slow.P_conc_mg.kg)
 cores$N_conc_percent <- ifelse(is.na(cores$slow.P_conc_mg.kg) == TRUE, NA, cores$N_conc_percent)
@@ -83,7 +81,7 @@ plot_slowP <- cores %>%
 # SITE LEVEL DATASETS
 
 ## TOTAL P 
-site_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,PropSlowTotal)~dataset+site,mean, data=plot_totalP,na.rm=T) # changing data to plot slow P - this means the site means is the mean of the plot means 
+# site_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,PropSlowTotal)~dataset+site,mean, data=plot_totalP,na.rm=T) # changing data to plot slow P - this means the site means is the mean of the plot means 
 
 site_totalP <- plot_totalP %>% 
   group_by(dataset,site) %>% 
@@ -92,7 +90,7 @@ site_totalP <- plot_totalP %>%
             PropSlowTotal = mean(PropSlowTotal) )
 
 ## SLOW P
-site_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg,PropSlowTotal)~dataset+site,mean, data=plot_slowP,na.rm=T)
+# site_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg,PropSlowTotal)~dataset+site,mean, data=plot_slowP,na.rm=T)
 
 site_slowP <- plot_slowP %>% 
   group_by(dataset,site) %>% 
@@ -178,8 +176,8 @@ site_means_totalP <- site_means_totalP %>%
 ### SLOW P ANALYSES
 
 ## MAKING FIGURES 
-library(MASS) # to access Animals data sets
-library(scales) # to access break formatting functions
+# library(MASS) # to access Animals data sets
+# library(scales) # to access break formatting functions
 
 dataset_means_slowP <- dataset_means_slowP %>% 
   mutate(log_mean_N = log(mean_N) )
@@ -203,11 +201,11 @@ TotalN_SlowPfig_dataset <- ggplot(data = dataset_means_slowP,
   labs(title = "Slow P versus Total N",
        y = "Total N (%)") + 
   xlab(bquote(Slow~P~(mg~"*"~kg^-1))) +
-  geom_label_repel(data = dataset_means_slowP, 
+  geom_label_repel(data = dataset_means_slowP,
             aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
             arrow=NULL) +
   stat_smooth(method = 'lm', se = TRUE, color = "black") +
-  theme_bw()  +
+  theme_bw() +
   scale_color_gradientn(colours = rainbow(5)) +
   labs(color = "Ratio of Slow P over Total P") 
 
