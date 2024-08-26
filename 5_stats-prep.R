@@ -177,7 +177,7 @@ nrow(mineral_v1) - nrow(mineral_v2)
 mineral_v2 <- mineral_v2 %>% 
   mutate(treatment = ifelse(treatment == "",NA,treatment)) %>% 
   mutate(treatment_type = ifelse(is.na(treatment),NA,treatment)) %>% # adding a new column called treatment_type that is NA for all sites/observations that don't have treatment filled, but filling in with treatment value for now for those that do have treatment info. Although I'm going to update this manually by site 
-  select(lter:treatment,treatment_type,everything())
+  dplyr::select(lter:treatment,treatment_type,everything())
 
 mineral_v2 <- mineral_v2 %>% 
   mutate(treatment_type = ifelse(dataset_simp == "Calhoun","landscape_position",treatment_type)) %>% 

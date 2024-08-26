@@ -205,7 +205,7 @@ p_sums_v3 <- p_sums_v2 %>%
     dataset == "Calhoun" ~ (P_conc_mg.kg_total),
     dataset == "CedarCreek_1" ~ (P_conc_mg.kg_total),
     dataset == "CedarCreek_2" ~ (P_conc_mg.kg_total),
-    dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_HCO3 + P_conc_mg.kg_3_NaOH +
+    dataset == "Coweeta" ~ (P_conc_mg.kg_1_NH4Cl + P_conc_mg.kg_2_HCO3Na2S2O4 + P_conc_mg.kg_3_NaOH +
                               P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_total),
     # (vvv) Both HNO3s should be used (3 is cold, 4 is hot)
