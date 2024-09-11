@@ -67,6 +67,7 @@ plot_totalP  <- cores %>%
   group_by(dataset,site,block,plot) %>% 
   summarise(N_conc_percent = mean(N_conc_percent),
             total.P_conc_mg.kg = mean(total.P_conc_mg.kg),
+            mean.annual.precip_mm = mean(mean.annual.precip_mm),
             PropSlowTotal = mean(PropSlowTotal) )
 
 ## SLOW P
@@ -87,6 +88,7 @@ site_totalP <- plot_totalP %>%
   group_by(dataset,site) %>% 
   summarise(N_conc_percent = mean(N_conc_percent),
             total.P_conc_mg.kg = mean(total.P_conc_mg.kg),
+            mean.annual.precip_mm = mean(mean.annual.precip_mm),
             PropSlowTotal = mean(PropSlowTotal) )
 
 ## SLOW P
@@ -139,10 +141,11 @@ site_means_slowP <- site_means_slowP %>%
 
 ## TOTAL P SUMMARIZED AND SITE SELECTED DATASETS 
 dataset_means_totalP <- site_totalP %>% 
-  dplyr::select(dataset, N_conc_percent, total.P_conc_mg.kg, PropSlowTotal) %>% 
+  dplyr::select(dataset, N_conc_percent, total.P_conc_mg.kg, PropSlowTotal, mean.annual.precip_mm) %>% 
   group_by(dataset) %>% 
   dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),
                    mean_P = mean(total.P_conc_mg.kg, na.rm = TRUE),
+                   mean_precip = mean(mean.annual.precip_mm, na.rm = TRUE),
                    mean_ratio = mean(PropSlowTotal, na.rm = TRUE),
                    sd_N = sd(N_conc_percent, na.rm = TRUE),
                    sd_P = sd(total.P_conc_mg.kg, na.rm = TRUE),
@@ -214,7 +217,7 @@ ggsave(plot = TotalN_SlowPfig_dataset, filename = "figures/TotalN_SlowPfig_datas
 
 TotalN_TotalPfig_dataset <- ggplot(data = dataset_means_totalP,
                                   aes(x=mean_P, y=mean_N) ) +
-  geom_point(aes(color = dataset), size=3) + # removing se size for now 
+  geom_point(aes(color = mean_precip), size=3) + # removing se size for now 
   labs(title = "Total P versus Total N",
        y = "Total N (%)") + 
   xlab(bquote(Total~P~(mg~"*"~kg^-1))) +
@@ -222,11 +225,11 @@ TotalN_TotalPfig_dataset <- ggplot(data = dataset_means_totalP,
                    aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
                    arrow=NULL) +
   stat_smooth(method = 'lm', se = TRUE, color = "black") +
-  theme_bw()  +
-  scale_color_gradientn(colours = rainbow(5)) +
-  labs(color = "Ratio of Slow P over Total P") 
+  theme_bw()  
+  # scale_color_gradientn(colours = rainbow(5)) +
+  # labs(color = "Ratio of Slow P over Total P") 
 
-ggsave(plot = TotalN_SlowPfig_dataset, filename = "figures/TotalN_SlowPfig_dataset.png", width = 15, height = 10)
+ggsave(plot = TotalN_TotalPfig_dataset, filename = "figures/TotalN_TotalPfig_dataset.png", width = 15, height = 10)
 
 
 

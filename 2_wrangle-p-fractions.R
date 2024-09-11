@@ -247,7 +247,7 @@ p_sums_v3 <- p_sums_v2 %>%
                               P_conc_mg.kg_4_HCl + P_conc_mg.kg_5_residual),
     dataset == "Niwot_3" ~ (P_conc_mg.kg_total),
     dataset == "Niwot_4" ~ (P_conc_mg.kg_total),
-    dataset == "Niwot_5" ~ (P_conc_mg.kg_total),
+    dataset == "Niwot_5" ~ (P_conc_mg.kg_order_total.),
     dataset == "Sevilleta_1" ~ (P_conc_mg.kg_total),
     dataset == "Sevilleta_2" ~ (P_conc_mg.kg_total),
     dataset == "Toolik_1" ~ (P_conc_mg.kg_1_ashing.HCl),
