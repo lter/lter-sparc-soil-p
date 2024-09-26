@@ -158,7 +158,7 @@ p_sums_v2 <- p_sums_v1 %>%
     dataset == "Brazil_AtlanticForest" ~ NA,
     dataset == "Calhoun" ~ (P_conc_mg.kg_4_HCl),
     dataset == "CedarCreek_1" ~ (P_conc_mg.kg_4_HCl),
-    # dataset == "CedarCreek_2" ~ NA,
+    dataset == "CedarCreek_2" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Coweeta" ~ (P_conc_mg.kg_4_HCl),
     dataset == "HJAndrews_1" ~ (P_conc_mg.kg_4_HCl),
     dataset == "Hubbard Brook" ~ (P_conc_mg.kg_3_HNO3),
