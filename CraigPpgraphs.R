@@ -15,6 +15,7 @@ library(ggplot2)
 library(dplyr)
 library(MuMIn)
 library(sjPlot)
+library(tidyverse)
 
 # loading stats ready data from google drive 
 # install.packages("librarian")
@@ -40,10 +41,14 @@ googledrive::drive_ls(path = tidy_drive) %>%
 cores <- read.csv(file = file.path("data", "stats_ready", 
                                     "sparc-soil-p_stats-ready_mineral_0-10.csv"))
 # Subset data to konza 1 
+# not sure we want/need to do this anymore, hashtagging it out for now - EV 10/08
+# JK this code makes it so that the three sites withing the Konza 1 dataset show up as their own datasets
 cores$dataset <- ifelse(cores$dataset == "Konza_1", cores$site, cores$dataset )
 
 cores <- cores %>% 
   mutate(PropSlowTotal = slow.P_conc_mg.kg/total.P_conc_mg.kg)
+
+# Double checking all sites exist for slow P dataset here that shouls before subset code below
 
 # Adding code to subset to only observations where both slow P and total N values exist for Niwot 1 
 cores$slow.P_conc_mg.kg <- ifelse(is.na(cores$N_conc_percent) == TRUE, NA, cores$slow.P_conc_mg.kg)
@@ -64,8 +69,8 @@ Final_table$dataset<-unique(cores$dataset)
 # plot_totalP <-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,PropSlowTotal)~dataset+site+block+plot,mean, data=cores, na.rm=T)
 
 plot_totalP  <- cores %>% 
-  group_by(dataset,site,block,plot) %>% 
-  summarise(N_conc_percent = mean(N_conc_percent),
+  dplyr::group_by(dataset,site,block,plot) %>% 
+  dplyr::summarise(N_conc_percent = mean(N_conc_percent),
             total.P_conc_mg.kg = mean(total.P_conc_mg.kg),
             mean.annual.precip_mm = mean(mean.annual.precip_mm),
             PropSlowTotal = mean(PropSlowTotal) )
@@ -74,8 +79,8 @@ plot_totalP  <- cores %>%
 # plot_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg,PropSlowTotal)~dataset+site+block+plot, mean, data=cores, na.rm = F)
 
 plot_slowP <- cores %>% 
-  group_by(dataset,site,block,plot) %>% 
-  summarise(N_conc_percent = mean(N_conc_percent),
+  dplyr::group_by(dataset,site,block,plot) %>% 
+  dplyr::summarise(N_conc_percent = mean(N_conc_percent),
             slow.P_conc_mg.kg = mean(slow.P_conc_mg.kg),
             PropSlowTotal = mean(PropSlowTotal) )
 
@@ -85,8 +90,8 @@ plot_slowP <- cores %>%
 # site_totalP<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,PropSlowTotal)~dataset+site,mean, data=plot_totalP,na.rm=T) # changing data to plot slow P - this means the site means is the mean of the plot means 
 
 site_totalP <- plot_totalP %>% 
-  group_by(dataset,site) %>% 
-  summarise(N_conc_percent = mean(N_conc_percent),
+  dplyr::group_by(dataset,site) %>% 
+  dplyr::summarise(N_conc_percent = mean(N_conc_percent),
             total.P_conc_mg.kg = mean(total.P_conc_mg.kg),
             mean.annual.precip_mm = mean(mean.annual.precip_mm),
             PropSlowTotal = mean(PropSlowTotal) )
@@ -95,8 +100,8 @@ site_totalP <- plot_totalP %>%
 # site_slowP<-aggregate(cbind(N_conc_percent,slow.P_conc_mg.kg,PropSlowTotal)~dataset+site,mean, data=plot_slowP,na.rm=T)
 
 site_slowP <- plot_slowP %>% 
-  group_by(dataset,site) %>% 
-  summarise(N_conc_percent = mean(N_conc_percent),
+  dplyr::group_by(dataset,site) %>% 
+  dplyr::summarise(N_conc_percent = mean(N_conc_percent),
             slow.P_conc_mg.kg = mean(slow.P_conc_mg.kg),
             PropSlowTotal = mean(PropSlowTotal) )
 
@@ -120,7 +125,7 @@ dataset_means_slowP <- site_slowP %>%
 
 ## SELECTING ONLY THE SITES WHERE WE HAVE SLOW P (AND REMOVING FCE AND TOOLIK 1)
 dataset_means_slowP <- dataset_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_2","Niwot_1","Niwot_5","Sevilleta_1","Tapajos","Smokey Valley","Hays","Arikaree","Konza_2","CedarCreek_1"))
+  filter(dataset %in% c("Calhoun","Niwot_1","Sevilleta_1","Coweeta","Hubbard Brook","Luquillo_2","Niwot_2","Konza_1","HJ_Andrews_1","CedarCreek","Jornada_2","Luquillo_3","Tapajos","Niwot_5","Konza_2","Smokey Valley","Hays","Arikaree") )
 
 # MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
 # Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
@@ -131,10 +136,15 @@ dataset_means_slowP <- dataset_means_slowP %>%
 site_means_slowP <- site_slowP %>% 
   select(dataset,site,N_conc_percent,slow.P_conc_mg.kg) %>% 
   group_by(dataset,site) %>% 
-  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),sd_N = sd(N_conc_percent, na.rm = TRUE),sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
+  dplyr::summarise(mean_N = mean(N_conc_percent, na.rm = TRUE),
+                   mean_P = mean(slow.P_conc_mg.kg, na.rm = TRUE),
+                   sd_N = sd(N_conc_percent, na.rm = TRUE),
+                   sd_P = sd(slow.P_conc_mg.kg, na.rm = TRUE),
+                   se_N = plotrix::std.error(N_conc_percent, na.rm = TRUE),
+                   se_P = plotrix::std.error(slow.P_conc_mg.kg, na.rm = TRUE))
 
 site_means_slowP <- site_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Coweeta","Hubbard Brook","Jornada_2","Konza_1","Luquillo_2","Luquillo_2","Niwot_5","Sevilleta_1","Tapajos"))
+  filter(dataset %in% c("Calhoun","Niwot_1","Sevilleta_1","Coweeta","Hubbard Brook","Luquillo_2","Niwot_2","Konza_1","HJ_Andrews_1","CedarCreek","Jornada_2","Luquillo_3","Tapajos","Niwot_5","Konza_2","Smokey Valley","Hays","Arikaree") )
 
 site_means_slowP <- site_means_slowP %>% 
   mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
@@ -156,7 +166,7 @@ dataset_means_totalP <- site_totalP %>%
 
 # selecting all sites with full total P info 
 dataset_means_totalP <- dataset_means_totalP %>% 
-  filter(dataset %in% c("Bonanza Creek_1","Bonanza Creek_2","Bonanza Creek_3","Brazil","Calhoun","CedarCreek_1","CedarCreek_2","Coweeta","Hubbard Brook","Jornada_1","Jornada_2","Konza_1","Konza_2","Luquillo_2","Luquillo_3","Niwot_1","Niwot_3","Niwot_4","Niwot_5","Sevilleta_1" ,"Sevilleta_2","Tapajos","Toolik_1","Toolik_2") )
+  filter(dataset %in% c("Calhoun","Niwot_1","Sevilleta_1","Coweeta","Bonanza Creek_1","Hubbard Brook","Luquillo_1","Luquillo_2","Brazil_SouthernAmazon","Brazil_AtlanticForest","Jornada_1","Bonanza Creek_2","Sevilleta_2","Niwot_2","Niwot_3","Niwot_4","Toolik_1","Kellogg_Bio_Station","Konza_1","HJAndrews_1","CedarCreek","ChichaquaBottoms","Jornada_2","Toolik_2","Bonanza Creek_3","Luquillo_3","Tapajos","Niwot_5","Konza_2","Smokey Valley","Hays","Arikaree") )
 
 # MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
 # Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
@@ -170,7 +180,7 @@ site_means_totalP <- site_totalP %>%
 
 # selecting all sites with full total P info 
 site_means_totalP <- site_means_totalP %>% 
-  filter(dataset %in% c("Bonanza Creek_1","Bonanza Creek_2","Bonanza Creek_3","Brazil","Calhoun","CedarCreek_1","CedarCreek_2","Coweeta","Hubbard Brook","Jornada_1","Jornada_2","Konza_1","Konza_2","Luquillo_2","Luquillo_3","Niwot_1","Niwot_3","Niwot_4","Niwot_5","Sevilleta_1" ,"Sevilleta_2","Tapajos","Toolik_1","Toolik_2","FloridaCoastal") )
+  filter(dataset %in% c("Calhoun","Niwot_1","Sevilleta_1","Coweeta","Bonanza Creek_1","Hubbard Brook","Luquillo_1","Luquillo_2","Brazil_SouthernAmazon","Brazil_AtlanticForest","Jornada_1","Bonanza Creek_2","Sevilleta_2","Niwot_2","Niwot_3","Niwot_4","Toolik_1","Kellogg_Bio_Station","Konza_1","HJAndrews_1","CedarCreek","ChichaquaBottoms","Jornada_2","Toolik_2","Bonanza Creek_3","Luquillo_3","Tapajos","Niwot_5","Konza_2","Smokey Valley","Hays","Arikaree") )
 
 ## ------------------------------------------ ##
 # SIMPLE LINEAR REGRESSIONS AND EXPONENTIAL DECAY MODEL FOR CROSS-SITE ANALYSES FOR SLOW AND TOTAL P -----
@@ -187,11 +197,16 @@ dataset_means_slowP <- dataset_means_slowP %>%
 
 # Renaming datasets to remomve underscores 
 dataset_means_slowP <- dataset_means_slowP %>% 
-  mutate(dataset = recode(dataset, CedarCreek_1 = 'CedarCreek',
-                           Jornada_2 = "Jornada (2)",
-                           Luquillo_2 = "Luquillo (2)",
-                           Niwot_1 = "Niwot (1)",
-                           Sevilleta_1 = "Sevilleta (1)")) 
+  mutate(dataset = recode(dataset, 
+                          Jornada_2 = "Jornada (2)",
+                          Luquillo_1= "Luquillo (1)",
+                          Luquillo_2 = "Luquillo (2)",
+                          Luquillo_3 = "Luquillo (3)",
+                          Niwot_1 = "Niwot (1)",
+                          Niwot_2 = "Niwot (2)",
+                          Niwot_5 = "Niwot (5)",
+                          Konza_2 = "Konza (2)",
+                          Sevilleta_1 = "Sevilleta (1)")) 
 
 # %>% 
 # rename('Ratio of Slow P over Total P' = mean_ratio) 
@@ -210,26 +225,62 @@ TotalN_SlowPfig_dataset <- ggplot(data = dataset_means_slowP,
   stat_smooth(method = 'lm', se = TRUE, color = "black") +
   theme_bw() +
   scale_color_gradientn(colours = rainbow(5)) +
-  labs(color = "Ratio of Slow P over Total P") 
+  labs(color = "Ratio of Slow P to Total P")  +
+  theme(
+    plot.title = element_text(size = 20),        # Title text size
+    axis.title.x = element_text(size = 14),      # X-axis title text size
+    axis.title.y = element_text(size = 14),      # Y-axis title text size
+    axis.text.x = element_text(size = 12),       # X-axis text size
+    axis.text.y = element_text(size = 12),       # Y-axis text size
+    legend.title = element_text(size = 14),      # Legend title text size
+    legend.text = element_text(size = 12)        # Legend text size
+  ) 
 
 ggsave(plot = TotalN_SlowPfig_dataset, filename = "figures/TotalN_SlowPfig_dataset.png", width = 15, height = 10)
 
 
+dataset_means_totalP <- dataset_means_totalP %>% 
+  mutate(dataset = recode(dataset, 
+                          Jornada_2 = "Jornada (2)",
+                          # Luquillo_1= "Luquillo (1)",
+                          Luquillo_2 = "Luquillo (2)",
+                          # Luquillo_3 = "Luquillo (3)",
+                          Niwot_1 = "Niwot (1)",
+                          # Niwot_2 = "Niwot (2)",
+                          Niwot_5 = "Niwot (5)",
+                          Konza_2 = "Konza (2)",
+                          Sevilleta_1 = "Sevilleta (1)")) 
+
 TotalN_TotalPfig_dataset <- ggplot(data = dataset_means_totalP,
                                   aes(x=mean_P, y=mean_N) ) +
-  geom_point(aes(color = mean_precip), size=3) + # removing se size for now 
+  geom_point(aes(color=dataset), size=3) + # removing se size for now 
   labs(title = "Total P versus Total N",
        y = "Total N (%)") + 
   xlab(bquote(Total~P~(mg~"*"~kg^-1))) +
   geom_label_repel(data = dataset_means_totalP, 
                    aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
-                   arrow=NULL) +
+                   arrow=NULL, max.overlaps = 11) +
   stat_smooth(method = 'lm', se = TRUE, color = "black") +
-  theme_bw()  
-  # scale_color_gradientn(colours = rainbow(5)) +
-  # labs(color = "Ratio of Slow P over Total P") 
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 20),        # Title text size
+    axis.title.x = element_text(size = 14),      # X-axis title text size
+    axis.title.y = element_text(size = 14),      # Y-axis title text size
+    axis.text.x = element_text(size = 12),       # X-axis text size
+    axis.text.y = element_text(size = 12),       # Y-axis text size
+    legend.title = element_text(size = 14),      # Legend title text size
+    legend.text = element_text(size = 12)        # Legend text size
+  ) +
+  labs(color = "Dataset")  
 
 ggsave(plot = TotalN_TotalPfig_dataset, filename = "figures/TotalN_TotalPfig_dataset.png", width = 15, height = 10)
+
+comb <- cowplot::plot_grid(TotalN_SlowPfig_dataset,TotalN_TotalPfig_dataset)
+
+# controls_y_FIXED <- cowplot::plot_grid(group1_fig_F, group2_fig_F, group3_fig_F, group4_fig_F)
+
+
+ggsave(plot = comb, filename = "figures/Figure_1.png", width = 25, height = 10)
 
 
 
@@ -237,7 +288,7 @@ ggsave(plot = TotalN_TotalPfig_dataset, filename = "figures/TotalN_TotalPfig_dat
 SlowPfig_dataset2 <- ggplot(data = subset(dataset_means_slowP, dataset != "Niwot_5"),
                            aes(x=mean_ratio, y=mean_N) ) +
   geom_point(aes(color = dataset), ) + # removing se size for now 
-  labs(title =ge "Slow P versus Total N by Dataset",
+  labs(title = "Slow P versus Total N by Dataset",
        x = "Ratio of Slow P over Total P",
        y = "Total N %") + 
   geom_text_repel(data = subset(dataset_means_slowP, dataset != "Niwot_5"), 
