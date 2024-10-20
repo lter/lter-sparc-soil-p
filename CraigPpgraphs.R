@@ -51,8 +51,9 @@ cores <- cores %>%
 # Double checking all sites exist for slow P dataset here that shouls before subset code below
 
 # Adding code to subset to only observations where both slow P and total N values exist for Niwot 1 
-cores$slow.P_conc_mg.kg <- ifelse(is.na(cores$N_conc_percent) == TRUE, NA, cores$slow.P_conc_mg.kg)
-cores$N_conc_percent <- ifelse(is.na(cores$slow.P_conc_mg.kg) == TRUE, NA, cores$N_conc_percent)
+# Hashtag out to make total P figure (come back and make separate dataset later)
+# cores$slow.P_conc_mg.kg <- ifelse(is.na(cores$N_conc_percent) == TRUE, NA, cores$slow.P_conc_mg.kg)
+# cores$N_conc_percent <- ifelse(is.na(cores$slow.P_conc_mg.kg) == TRUE, NA, cores$N_conc_percent)
 
 ## ------------------------------------------ ##
 # Making summary datasets -----
@@ -218,7 +219,7 @@ TotalN_SlowPfig_dataset <- ggplot(data = dataset_means_slowP,
   geom_point(aes(color = mean_ratio), size=3) + # removing se size for now 
   labs(title = "Slow P versus Total N",
        y = "Total N (%)") + 
-  xlab(bquote(Slow~P~(mg~"*"~kg^-1))) +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
   geom_label_repel(data = dataset_means_slowP,
             aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
             arrow=NULL) +
@@ -256,10 +257,10 @@ TotalN_TotalPfig_dataset <- ggplot(data = dataset_means_totalP,
   geom_point(aes(color=dataset), size=3) + # removing se size for now 
   labs(title = "Total P versus Total N",
        y = "Total N (%)") + 
-  xlab(bquote(Total~P~(mg~"*"~kg^-1))) +
-  geom_label_repel(data = dataset_means_totalP, 
-                   aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
-                   arrow=NULL, max.overlaps = 11) +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  # geom_label_repel(data = dataset_means_totalP, 
+  #                  aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+  #                  arrow=NULL, max.overlaps = 20) +
   stat_smooth(method = 'lm', se = TRUE, color = "black") +
   theme_bw() +
   theme(
@@ -275,14 +276,12 @@ TotalN_TotalPfig_dataset <- ggplot(data = dataset_means_totalP,
 
 ggsave(plot = TotalN_TotalPfig_dataset, filename = "figures/TotalN_TotalPfig_dataset.png", width = 15, height = 10)
 
-comb <- cowplot::plot_grid(TotalN_SlowPfig_dataset,TotalN_TotalPfig_dataset)
+comb <- cowplot::plot_grid(TotalN_TotalPfig_dataset,TotalN_SlowPfig_dataset)
 
 # controls_y_FIXED <- cowplot::plot_grid(group1_fig_F, group2_fig_F, group3_fig_F, group4_fig_F)
 
 
 ggsave(plot = comb, filename = "figures/Figure_1.png", width = 25, height = 10)
-
-
 
 
 SlowPfig_dataset2 <- ggplot(data = subset(dataset_means_slowP, dataset != "Niwot_5"),
@@ -735,122 +734,179 @@ dplyr::mutate(slow.P_conc_mg.kg = 1) %>%
 #   dataset == "Toolik_1" ~ NA, 
 #   TRUE ~ NA )) %>%
 
+#### Sevilleta ##### 
+aa<-subset(cores,dataset=="Sevilleta_1")
+plot<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~plot,mean, data=aa,na.rm=T)
+
+Sevilleta_1 <-ggplot(data = aa, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = plot) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = plot, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = plot, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = plot),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Sevilleta") + ylab ("Soil N (%)") +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Sevilleta_1 
+
+summary(lm(aa$N_conc_percent ~ aa$slow.P_conc_mg.kg))
+summary(lm(plot$N_conc_percent ~ plot$slow.P_conc_mg.kg))
+
+
 #### CALHOUN #####
 aa<-subset(cores,dataset=="Calhoun")
 site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
 
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
-  geom_point(size = 2 ) +
-  geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
-  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-  ggtitle("Calhoun")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-  theme_bw()
-  f
+Calhoun <-ggplot(data = aa, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Calhoun") + ylab ("Soil N (%)") +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() )
 
+Calhoun
+
+summary(lm(aa$N_conc_percent ~ aa$slow.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$slow.P_conc_mg.kg))
+  
 #### COWEETA #####  
 aa<-subset(cores,dataset=="Coweeta")
 site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
 
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
-  geom_point(size = 2 ) +
-  geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
-  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-  ggtitle("Coweeta")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-  theme_bw()
-  f
+Coweeta <- ggplot(data = aa, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Coweeta") + ylab ("Soil N (%)") +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() )
+Coweeta
+
+summary(lm(aa$N_conc_percent ~ aa$slow.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$slow.P_conc_mg.kg))
 
 #### FLO RIDA #####  
-aa<-subset(cores,dataset=="FloridaCoastal")
-site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
-
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
-  geom_point(size = 2 ) +
-  geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
-  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-  ggtitle("Everglades")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-  theme_bw()
-  f
+# aa<-subset(cores,dataset=="FloridaCoastal")
+# site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+# 
+# f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
+#   geom_point(size = 2 ) +
+#   geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
+#   geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
+#   geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
+#   ggtitle("Everglades")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
+#   theme_bw()
+#   f
 
 #### HubbardBrook #####  
   aa<-subset(cores,dataset=="Hubbard Brook")
   site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
   
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
-    geom_point(size = 2 ) +
-    geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-    geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
-    geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-    ggtitle("Hubbard Brook")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-    theme_bw()
-f  
+Hubbard_Brook <- ggplot(data = aa, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Hubbard Brook") + ylab ("Soil N (%)") +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() )
+Hubbard_Brook
+
+summary(lm(aa$N_conc_percent ~ aa$slow.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$slow.P_conc_mg.kg))
 
 #### Jornada #####  
 aa<-subset(cores,dataset=="Jornada_2")
 site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
 
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
-  geom_point(size = 2 ) +
-  geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
-  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-  ggtitle("Jornada")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-  theme_bw()
-f  
+Jornada_2<-ggplot(data = aa, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Jornada") + ylab ("Soil N (%)") +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() )
+Jornada_2 
+
+summary(lm(aa$N_conc_percent ~ aa$slow.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$slow.P_conc_mg.kg))
 
 #### Luquillo ##### 
 aa<-subset(cores,dataset=="Luquillo_2")
 site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
 
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
-  geom_point(size = 2 ) +
-  geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
-  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-  ggtitle("Luquillo")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-  theme_bw()
-f  
+Luquillo_2<-ggplot(data = aa, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Luquillo") + ylab ("Soil N (%)") +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() )
+Luquillo_2 
+
+summary(lm(aa$N_conc_percent ~ aa$slow.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$slow.P_conc_mg.kg))
 
 #### Niwot ##### 
-aa<-subset(cores,dataset=="Niwot_1")
+aa<-subset(cores,dataset=="Niwot_5")
 site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
 
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
-  geom_point(size = 2 ) +
-  geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
-  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-  ggtitle("Niwot Ridge")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-  theme_bw()
-f  
+Niwot_5<-ggplot(data = aa, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Niwot Ridge") + ylab ("Soil N (%)") +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() )
+Niwot_5 
 
-#### Sevilleta ##### 
-aa<-subset(cores,dataset=="Sevilleta_1")
-plot<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~plot,mean, data=aa,na.rm=T)
-
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = plot)) +
-  geom_point(size = 2 ) +
-  geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-  geom_point(data = plot, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = plot),size=4, alpha=0.5)+
-  geom_smooth(data = plot, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-  ggtitle("Sevilleta")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-  theme_bw()
-f  
+summary(lm(aa$N_conc_percent ~ aa$slow.P_conc_mg.kg))
 
 
 #### Tapajos ##### 
 aa<-subset(cores,dataset=="Tapajos")
 site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
 
-f<-ggplot(aa, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site)) +
-  geom_point(size = 2 ) +
-  #geom_smooth(aes(group = 1),method = "lm", colour="black", se = FALSE) +
-  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  colour = site),size=4, alpha=0.5)+
-  #geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="red", se = FALSE)+
-  ggtitle("Tapajos")+ xlab("Slowly Cycling P (mg/kg)") + ylab ("Soil N (%)")+
-  theme_bw()
-f  
+Tapajos<-ggplot(data = aa, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  # geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  # geom_smooth(data = site, aes(slow.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(slow.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Tapajos") + ylab ("Soil N (%)") +
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() )
+Tapajos 
 
+CrossSiteTotal <- cowplot::plot_grid(Jornada_2,Sevilleta_1,Calhoun,Coweeta,Hubbard_Brook,Luquillo_2,Niwot_5,Tapajos)
+CrossSiteTotal
 
