@@ -52,9 +52,9 @@ cores <- cores %>%
 
 # Adding code to subset to only observations where both slow P and total N values exist for Niwot 1 
 # Hashtag out to make total P figure (come back and make separate dataset later)
-# cores$slow.P_conc_mg.kg <- ifelse(is.na(cores$N_conc_percent) == TRUE, NA, cores$slow.P_conc_mg.kg)
-# cores$N_conc_percent <- ifelse(is.na(cores$slow.P_conc_mg.kg) == TRUE, NA, cores$N_conc_percent)
-
+cores$slow.P_conc_mg.kg <- ifelse(cores$dataset == "Niwot_1" & is.na(cores$N_conc_percent) == TRUE, NA, cores$slow.P_conc_mg.kg)
+cores$N_conc_percent <- ifelse(cores$dataset == "Niwot_1" & is.na(cores$slow.P_conc_mg.kg) == TRUE, NA, cores$N_conc_percent)
+  
 ## ------------------------------------------ ##
 # Making summary datasets -----
 ## ------------------------------------------ ##
@@ -734,6 +734,11 @@ dplyr::mutate(slow.P_conc_mg.kg = 1) %>%
 #   dataset == "Toolik_1" ~ NA, 
 #   TRUE ~ NA )) %>%
 
+
+## ------------------------------------------ ##
+# Within site Slow P versus Total N Figures  -----
+## ------------------------------------------ ##
+
 #### Sevilleta ##### 
 aa<-subset(cores,dataset=="Sevilleta_1")
 plot<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg,slow.P_conc_mg.kg)~plot,mean, data=aa,na.rm=T)
@@ -910,3 +915,521 @@ Tapajos
 CrossSiteTotal <- cowplot::plot_grid(Jornada_2,Sevilleta_1,Calhoun,Coweeta,Hubbard_Brook,Luquillo_2,Niwot_5,Tapajos)
 CrossSiteTotal
 
+
+## ------------------------------------------ ##
+# Within site Total P versus Total N Figures  -----
+## ------------------------------------------ ##
+
+# Doesn't make since for Arikaree, Hays, Smokey Valley, ChichaquaBottoms, or Konza 2 because they all have one point each 
+
+unique(cores$dataset)
+
+#### Bonanza Creek_1 ##### 
+aa<-subset(cores,dataset=="Bonanza Creek_1")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+BonanzaCreek_1 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Bonanza Creek (1)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+BonanzaCreek_1
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Bonanza Creek_2 ##### 
+aa<-subset(cores,dataset=="Bonanza Creek_2")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+BonanzaCreek_2 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Bonanza Creek (2)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+BonanzaCreek_2
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Bonanza Creek_3 ##### 
+aa<-subset(cores,dataset=="Bonanza Creek_3")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+BonanzaCreek_3 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Bonanza Creek (3)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+BonanzaCreek_3
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Brazil_AtlanticForest ##### 
+aa<-subset(cores,dataset=="Brazil_AtlanticForest")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Brazil_AtlanticForest <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Brazil (AtlanticForest)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Brazil_AtlanticForest
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Brazil_SouthernAmazon ##### 
+aa<-subset(cores,dataset=="Brazil_SouthernAmazon")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Brazil_SouthernAmazon <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Brazil (SouthernAmazon)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Brazil_SouthernAmazon
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Calhoun ##### 
+aa<-subset(cores,dataset=="Calhoun")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Calhoun <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site, color = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = FALSE, size=0.5, alpha=0.3, linetype = "dashed") +
+  # geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 4, stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site, color = site), shape = 21, size=7,  stroke = .5 ) +
+  ggtitle("Calhoun") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Calhoun
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### CedarCreek ##### 
+aa<-subset(cores,dataset=="CedarCreek")
+plot<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~plot,mean, data=aa,na.rm=T)
+
+CedarCreek <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = plot) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = plot, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = plot, aes(total.P_conc_mg.kg,N_conc_percent,  fill = plot),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("CedarCreek") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+CedarCreek
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(plot$N_conc_percent ~ plot$total.P_conc_mg.kg))
+
+#### Coweeta ##### 
+aa<-subset(cores,dataset=="Coweeta")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Coweeta <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Coweeta") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Coweeta
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Hubbard Brook ##### 
+aa<-subset(cores,dataset=="Hubbard Brook")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Hubbard_Brook <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Hubbard Brook") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Hubbard_Brook
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Jornada_2 ##### 
+aa<-subset(cores,dataset=="Jornada_2")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Jornada_2 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Jornada (2)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Jornada_2
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(plot$N_conc_percent ~ plot$total.P_conc_mg.kg))
+
+#### Jornada_1 ##### 
+aa<-subset(cores,dataset=="Jornada_1")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Jornada_1 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Jornada (1)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Jornada_1
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(plot$N_conc_percent ~ plot$total.P_conc_mg.kg))
+
+#### Luquillo_2 ##### 
+aa<-subset(cores,dataset=="Luquillo_2")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Luquillo_2 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Luquillo (2)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Luquillo_2
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Luquillo_1 ##### # NOT WORKING RN
+aa<-subset(cores,dataset=="Luquillo_1")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Luquillo_1 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Luquillo (1)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Luquillo_1
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+
+#### Luquillo_3 ##### 
+aa<-subset(cores,dataset=="Luquillo_3")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Luquillo_3 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Luquillo (3)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Luquillo_3
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Niwot_1 ##### 
+aa<-subset(cores,dataset=="Niwot_1")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Niwot_1 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Niwot (1)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Niwot_1
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Niwot_2 ##### 
+aa<-subset(cores,dataset=="Niwot_2")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Niwot_2 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Niwot (2)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Niwot_2
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Niwot_3 ##### 
+aa<-subset(cores,dataset=="Niwot_3")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Niwot_3 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Niwot (3)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Niwot_3
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Niwot_4 ##### 
+aa<-subset(cores,dataset=="Niwot_4")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Niwot_4 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Niwot (4)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Niwot_4
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Niwot_5 ##### 
+aa<-subset(cores,dataset=="Niwot_5")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Niwot_5 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Niwot (5)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Niwot_5
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Sevilleta_1 ##### 
+aa<-subset(cores,dataset=="Sevilleta_1")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Sevilleta_1 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Sevilleta (1)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Sevilleta_1
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Sevilleta_2 ##### 
+aa<-subset(cores,dataset=="Sevilleta_2")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Sevilleta_2 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Sevilleta (2)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Sevilleta_2
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Tapajos ##### 
+aa<-subset(cores,dataset=="Tapajos")
+site<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~site,mean, data=aa,na.rm=T)
+
+Tapajos <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = site) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = site, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = site, aes(total.P_conc_mg.kg, N_conc_percent,  fill = site),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Tapajos") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Tapajos
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(site$N_conc_percent ~ site$total.P_conc_mg.kg))
+
+#### Toolik_1 ##### NOT WORKING 
+aa<-subset(cores,dataset=="Toolik_1")
+plot<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~plot,mean, data=aa,na.rm=T)
+
+Toolik_1 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = plot) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = plot, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = plot, aes(total.P_conc_mg.kg, N_conc_percent,  fill = plot),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Toolik (1)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Toolik_1
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(plot$N_conc_percent ~ plot$total.P_conc_mg.kg))
+
+
+#### Toolik_2 ##### NOT WORKING 
+aa<-subset(cores,dataset=="Toolik_2")
+plot<-aggregate(cbind(N_conc_percent,total.P_conc_mg.kg)~plot,mean, data=aa,na.rm=T)
+
+Toolik_2 <-ggplot(data = aa, aes(total.P_conc_mg.kg,N_conc_percent,  fill = plot) ) +
+  geom_smooth(aes(group = 1), method = "lm", colour="black", se = TRUE, size=0.5, alpha=0.3) +
+  geom_smooth(data = plot, aes(total.P_conc_mg.kg,N_conc_percent),method = "lm", colour="blue", se = TRUE, fill = "blue", alpha=0.15) +
+  geom_point(shape = 21, size = 2, color = "black", stroke = .5 ) +
+  geom_point(data = plot, aes(total.P_conc_mg.kg, N_conc_percent,  fill = plot),shape = 21, size=4, color = "black", stroke = .5 ) +
+  ggtitle("Toolik (2)") + ylab ("Soil N (%)") +
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),  
+        panel.grid.minor = element_blank() ) 
+
+Toolik_2
+
+summary(lm(aa$N_conc_percent ~ aa$total.P_conc_mg.kg))
+summary(lm(plot$N_conc_percent ~ plot$total.P_conc_mg.kg))
+
+#### Making cowplot grid figure ##### 
+
+totalP_N_combined <- cowplot::plot_grid(BonanzaCreek_1,BonanzaCreek_2,BonanzaCreek_3,Brazil_AtlanticForest,Brazil_SouthernAmazon,Calhoun,CedarCreek,Coweeta,Hubbard_Brook,Jornada_2,Jornada_1,Luquillo_1,Luquillo_2,Luquillo_3,Niwot_1,Niwot_2,Niwot_3,Niwot_4,Niwot_5,Sevilleta_1,Sevilleta_2,Tapajos,Toolik_1,Toolik_2)
