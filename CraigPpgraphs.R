@@ -252,15 +252,15 @@ dataset_means_totalP <- dataset_means_totalP %>%
                           Konza_2 = "Konza (2)",
                           Sevilleta_1 = "Sevilleta (1)")) 
 
-TotalN_TotalPfig_dataset <- ggplot(data = dataset_means_totalP,
+TotalN_TotalPfig_dataset_log <- ggplot(data = dataset_means_totalP,
                                   aes(x=mean_P, y=mean_N) ) +
   geom_point(aes(color=dataset), size=3) + # removing se size for now 
-  labs(title = "Total P versus Total N",
+  labs(title = "Total P versus Total N (Log transformed)",
        y = "Total N (%)") + 
   xlab(bquote(Total~P~(mg~kg^-1))) +
-  # geom_label_repel(data = dataset_means_totalP, 
-  #                  aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
-  #                  arrow=NULL, max.overlaps = 20) +
+  geom_label_repel(data = dataset_means_totalP,
+                   aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+                   arrow=NULL, max.overlaps = 20) +
   stat_smooth(method = 'lm', se = TRUE, color = "black") +
   theme_bw() +
   theme(
@@ -272,9 +272,42 @@ TotalN_TotalPfig_dataset <- ggplot(data = dataset_means_totalP,
     legend.title = element_text(size = 14),      # Legend title text size
     legend.text = element_text(size = 12)        # Legend text size
   ) +
-  labs(color = "Dataset")  
+  labs(color = "Dataset")  +
+  scale_x_log10() +
+  scale_y_log10()
 
-ggsave(plot = TotalN_TotalPfig_dataset, filename = "figures/TotalN_TotalPfig_dataset.png", width = 15, height = 10)
+ggsave(plot = TotalN_TotalPfig_dataset_log, filename = "figures/TotalN_TotalPfig_dataset_logged.png", width = 15, height = 10)
+# ggsave(plot = TotalN_TotalPfig_dataset, filename = "figures/TotalN_TotalPfig_dataset.png", width = 15, height = 10)
+
+
+
+test <- subset(dataset_means_slowP, dataset == "Niwot (1)" | dataset == "Niwot (2)" | dataset == "Niwot (5)" )
+
+# figure with just Niwot sites on it 
+Niwot_sites <- ggplot(data = subset(dataset_means_slowP, dataset == "Niwot (1)" | dataset == "Niwot (2)" | dataset == "Niwot (5)" ),aes(x=mean_P, y=mean_N) ) +
+  geom_point(aes(color = mean_ratio), size=3) + # removing se size for now 
+  labs(title = "Slow P versus Total N",
+       y = "Total N (%)") + 
+  xlab(bquote(Slow~P~(mg~kg^-1))) +
+  geom_label_repel(data = dataset_means_slowP,
+                   aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+                   arrow=NULL) +
+  stat_smooth(method = 'lm', se = TRUE, color = "black") +
+  theme_bw() +
+  scale_color_gradientn(colours = rainbow(5)) +
+  labs(color = "Ratio of Slow P to Total P")  +
+  theme(
+    plot.title = element_text(size = 20),        # Title text size
+    axis.title.x = element_text(size = 14),      # X-axis title text size
+    axis.title.y = element_text(size = 14),      # Y-axis title text size
+    axis.text.x = element_text(size = 12),       # X-axis text size
+    axis.text.y = element_text(size = 12),       # Y-axis text size
+    legend.title = element_text(size = 14),      # Legend title text size
+    legend.text = element_text(size = 12)        # Legend text size
+  ) 
+
+ggsave(plot = Niwot_sites, filename = "figures/TotalN_SlowPfig_Niwot_sites.png", width = 15, height = 10)
+
 
 comb <- cowplot::plot_grid(TotalN_TotalPfig_dataset,TotalN_SlowPfig_dataset)
 
