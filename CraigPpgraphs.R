@@ -280,7 +280,6 @@ ggsave(plot = TotalN_TotalPfig_dataset_log, filename = "figures/TotalN_TotalPfig
 # ggsave(plot = TotalN_TotalPfig_dataset, filename = "figures/TotalN_TotalPfig_dataset.png", width = 15, height = 10)
 
 
-
 test <- subset(dataset_means_slowP, dataset == "Niwot (1)" | dataset == "Niwot (2)" | dataset == "Niwot (5)" )
 
 # figure with just Niwot sites on it 
