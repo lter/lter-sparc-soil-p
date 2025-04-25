@@ -220,13 +220,13 @@ TotalN_SlowPfig_dataset <- ggplot(data = dataset_means_slowP,
   labs(title = "Slow P versus Total N",
        y = "Total N (%)") + 
   xlab(bquote(Slow~P~(mg~kg^-1))) +
-  geom_label_repel(data = dataset_means_slowP,
-            aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
-            arrow=NULL) +
-  stat_smooth(method = 'lm', se = TRUE, color = "black") +
+  # geom_label_repel(data = dataset_means_slowP,
+  #           aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+  #           arrow=NULL) +
+  stat_smooth(method = 'lm', se = FALSE, color = "black", linetype = "dashed") +
   theme_bw() +
   scale_color_gradientn(colours = rainbow(5)) +
-  labs(color = "Ratio of Slow P to Total P")  +
+  labs(color = "Slow to Total P")  +
   theme(
     plot.title = element_text(size = 20),        # Title text size
     axis.title.x = element_text(size = 14),      # X-axis title text size
@@ -235,10 +235,16 @@ TotalN_SlowPfig_dataset <- ggplot(data = dataset_means_slowP,
     axis.text.y = element_text(size = 12),       # Y-axis text size
     legend.title = element_text(size = 14),      # Legend title text size
     legend.text = element_text(size = 12)        # Legend text size
-  ) 
-
+  ) +
+  theme(legend.position = c(0.95, 0.95),  # x and y coordinates (0 to 1)
+    legend.justification = c(1, 1),   # aligns the legend's top right corner to that position
+    legend.background = element_rect(fill = "white", color = "black", size = 0.5) ) 
+    
 ggsave(plot = TotalN_SlowPfig_dataset, filename = "figures/TotalN_SlowPfig_dataset.png", width = 15, height = 10)
 
+SlowP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_slowP)
+summary(SlowP_dataset_lm)
+tab_model(SlowP_dataset_lm)
 
 dataset_means_totalP <- dataset_means_totalP %>% 
   mutate(dataset = recode(dataset, 
@@ -251,6 +257,39 @@ dataset_means_totalP <- dataset_means_totalP %>%
                           Niwot_5 = "Niwot (5)",
                           Konza_2 = "Konza (2)",
                           Sevilleta_1 = "Sevilleta (1)")) 
+
+TotalN_TotalPfig_dataset <- ggplot(data = dataset_means_totalP,
+                                       aes(x=mean_P, y=mean_N) ) +
+  geom_point(size=3) + # removing se size for now 
+  labs(title = "Total P versus Total N",
+       y = "Total N (%)") + 
+  xlab(bquote(Total~P~(mg~kg^-1))) +
+  # geom_label_repel(data = dataset_means_totalP,
+  #                  aes(label = dataset), nudge_x=0.45, nudge_y=0.025,
+  #                  arrow=NULL, max.overlaps = 20) +
+  stat_smooth(method = 'lm', se = TRUE, color = "black") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 20),        # Title text size
+    axis.title.x = element_text(size = 14),      # X-axis title text size
+    axis.title.y = element_text(size = 14),      # Y-axis title text size
+    axis.text.x = element_text(size = 12),       # X-axis text size
+    axis.text.y = element_text(size = 12),       # Y-axis text size
+    legend.title = element_text(size = 14),      # Legend title text size
+    legend.text = element_text(size = 12)        # Legend text size
+  ) +
+  labs(color = "Dataset") 
+
+TotalP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_totalP)
+summary(TotalP_dataset_lm)
+tab_model(TotalP_dataset_lm)
+
+comb <- cowplot::plot_grid(TotalN_TotalPfig_dataset,TotalN_SlowPfig_dataset)
+
+# controls_y_FIXED <- cowplot::plot_grid(group1_fig_F, group2_fig_F, group3_fig_F, group4_fig_F)
+
+ggsave(plot = comb, filename = "figures/CrossSite_Figure.png", width = 11, height = 5)
+
 
 TotalN_TotalPfig_dataset_log <- ggplot(data = dataset_means_totalP,
                                   aes(x=mean_P, y=mean_N) ) +
@@ -306,14 +345,6 @@ Niwot_sites <- ggplot(data = subset(dataset_means_slowP, dataset == "Niwot (1)" 
   ) 
 
 ggsave(plot = Niwot_sites, filename = "figures/TotalN_SlowPfig_Niwot_sites.png", width = 15, height = 10)
-
-
-comb <- cowplot::plot_grid(TotalN_TotalPfig_dataset,TotalN_SlowPfig_dataset)
-
-# controls_y_FIXED <- cowplot::plot_grid(group1_fig_F, group2_fig_F, group3_fig_F, group4_fig_F)
-
-
-ggsave(plot = comb, filename = "figures/Figure_1.png", width = 25, height = 10)
 
 
 SlowPfig_dataset2 <- ggplot(data = subset(dataset_means_slowP, dataset != "Niwot_5"),
