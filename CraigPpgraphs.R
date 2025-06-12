@@ -212,6 +212,11 @@ dataset_means_slowP <- dataset_means_slowP %>%
 # %>% 
 # rename('Ratio of Slow P over Total P' = mean_ratio) 
 
+
+## ------------------------------------------ ##
+# Final figures for paper and statistical model results  -----
+## ------------------------------------------ ##
+
 library(ggrepel)
 
 TotalN_SlowPfig <- ggplot(data = dataset_means_slowP,
@@ -246,6 +251,8 @@ ggsave(plot = TotalN_SlowPfig, filename = "figures/TotalN_SlowPfig_dataset.5.30.
 SlowP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_slowP)
 summary(SlowP_dataset_lm)
 tab_model(SlowP_dataset_lm)
+
+
 
 dataset_means_totalP <- dataset_means_totalP %>% 
   mutate(dataset = recode(dataset, 
@@ -566,16 +573,190 @@ tab_model(TotalP_dataset_lm_log)
 #   theme_minimal() 
 
 ## ------------------------------------------ ##
-# Moving previous code down here that we don't need for now 5/12/24 EV  -----
+# For loops by dataset for simple linear regressions of total P and slow P versus total N  -----
 ## ------------------------------------------ ##
+
+# BEGIN CODE ELLERY IS EDITING - (Started by copying and editing Craig's for loop code from below)
 
 # SIMPLE LINEAR REGRESSIONS BY SITE OF TOTAL P VS TOTAL N
 
-# This code produces a summary table with the slope and p-value for each dataset,doing a simple linear model
+# The following code chunks produces a summary table with the slope, p-value and r-squared for each dataset, doing a simple linear model for each. (Write 1-2 sentences in results section just summarizing this table (put table in appendix and reference))
+
+# making copy of cores dataset
+cores_totalP<-cores
+# filter out missing total P or N observations
+cores_totalP<-subset(cores_totalP,is.na(total.P_conc_mg.kg)==F) # keep rows where total P is not not na 
+cores_totalP<-subset(cores_totalP,is.na(N_conc_percent)==F) # same for total N
+cores_totalP<-subset(cores_totalP,lter!="CDR")#remove CDR because only 1 observation
+cores_totalP<-subset(cores_totalP,dataset!="Konza_2")#remove Konza_2 because only 1 observation
+cores_totalP<-subset(cores_totalP,dataset!="Toolik_1")# Total P showing up as zero but should be NA
+cores_totalP$set<-as.numeric(as.factor(cores_totalP$dataset)) # produces table with only observations that have both total P and total N
+
+# double check no NA in N or P columns
+print("Count of missing values in P column")
+sum(is.na(cores_totalP$total.P_conc_mg.kg))
+
+print("Count of missing values in N column")
+sum(is.na(cores_totalP$N_conc_percent))
+
+# for loop subsets by dataset and produces the summary of an lm for each dataset, pulls parameters from summary and includes in table for each site 
+
+# Initialize an empty data frame
+sum_table <- data.frame(
+  dataset = character(),
+  n = integer(),
+  slope = numeric(),
+  intercept = numeric(),
+  Equation = character(),
+  adj_rsquared = numeric(),
+  m_rsquared = numeric(),
+  p_value = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through datasets
+for (i in 1:max(cores_totalP$set)) {
+  a <- subset(cores_totalP, set == i)
+  
+  if (nrow(a) >= 3 && length(unique(a$total.P_conc_mg.kg)) > 1) {
+    model <- lm(N_conc_percent ~ total.P_conc_mg.kg, data = a)
+    b <- summary(model)
+    
+    intercept_val <- b$coefficients[1, 1]
+    slope_val <- b$coefficients[2, 1]
+    intercept_r <- round(intercept_val, 3)
+    slope_r <- round(slope_val, 3)
+    eqn <- paste0("y = ", slope_r, "x + ", intercept_r)
+    
+    new_row <- data.frame(
+      dataset = a$dataset[1],
+      n = nrow(a),
+      slope = slope_val,
+      intercept = intercept_val,
+      Equation = eqn,
+      adj_rsquared = round(b$adj.r.squared, 3),
+      m_rsquared = round(b$r.squared, 3),
+      p_value = round(b$coefficients[2, 4], 4)
+    )
+  } else {
+    new_row <- data.frame(
+      dataset = a$dataset[1],
+      n = nrow(a),
+      slope = NA,
+      intercept = NA,
+      Equation = NA,
+      adj_rsquared = NA,
+      m_rsquared = NA,
+      p_value = NA
+    )
+  }
+  
+  sum_table <- rbind(sum_table, new_row)
+}
+
+Final_table_totalPstats<-merge(Final_table,sum_table,all.x = T) # merging the looped product table with final table that has all possible datasets in our study       
+
+# double checking stats values are correct
+testdata <- cores %>% filter(dataset == "Calhoun")
+testdata_lm <- lm(N_conc_percent ~ total.P_conc_mg.kg, data = testdata)
+summary(testdata_lm)
+tab_model(testdata_lm)
+
+# SIMPLE LINEAR REGRESSIONS BY SITE OF SLOW P VS TOTAL N
+
+# making copy of cores dataset
+cores_SlowP<-cores
+# filter out missing slow P or N observations
+cores_SlowP<-subset(cores_SlowP,is.na(slow.P_conc_mg.kg)==F)
+cores_SlowP<-subset(cores_SlowP,is.na(N_conc_percent)==F)
+cores_SlowP<-subset(cores_SlowP,lter!="CDR") #remove CDR because only 1 observation
+cores_SlowP<-subset(cores_SlowP,dataset!="Konza_2") #remove Konza_2 because only 1 observation
+# cores_SlowP<-subset(cores_SlowP,dataset!="Niwot_5") # Slow P same values for all 3 observations
+cores_SlowP$set<-as.numeric(as.factor(cores_SlowP$dataset))
+
+# double check no NA in N or P columns
+print("Count of missing values in P column")
+sum(is.na(cores_SlowP$slow.P_conc_mg.kg))
+
+print("Count of missing values in N column")
+sum(is.na(cores_SlowP$N_conc_percent))
+
+# for loop subsets by dataset and produces the summary of an lm for each dataset, pulls parameters from summary and includes in table for each site 
+
+# Initialize an empty data frame
+sum_table2 <- data.frame(
+  dataset = character(),
+  n = integer(),
+  slope = numeric(),
+  intercept = numeric(),
+  Equation = character(),
+  adj_rsquared = numeric(),
+  m_rsquared = numeric(),
+  p_value = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through datasets
+for (i in 1:max(cores_SlowP$set)) {
+  a <- subset(cores_SlowP, set == i)
+  
+  if (nrow(a) >= 3 && length(unique(a$slow.P_conc_mg.kg)) > 1) {
+    model <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = a)
+    b <- summary(model)
+    
+    intercept_val <- b$coefficients[1, 1]
+    slope_val <- b$coefficients[2, 1]
+    intercept_r <- round(intercept_val, 3)
+    slope_r <- round(slope_val, 3)
+    eqn <- paste0("y = ", slope_r, "x + ", intercept_r)
+    
+    new_row <- data.frame(
+      dataset = a$dataset[1],
+      n = nrow(a),
+      slope = slope_val,
+      intercept = intercept_val,
+      Equation = eqn,
+      adj_rsquared = round(b$adj.r.squared, 3),
+      m_rsquared = round(b$r.squared, 3),
+      p_value = round(b$coefficients[2, 4], 4)
+    )
+  } else {
+    new_row <- data.frame(
+      dataset = a$dataset[1],
+      n = nrow(a),
+      slope = NA,
+      intercept = NA,
+      Equation = NA,
+      adj_rsquared = NA,
+      m_rsquared = NA,
+      p_value = NA
+    )
+  }
+  
+  sum_table2 <- rbind(sum_table2, new_row)
+}
+
+Final_table_slowPstats<-merge(Final_table,sum_table2,all.x = T) # merging the looped product table with final table that has all possible datasets in our study       
+
+# double checking stats values are correct
+testdata <- cores %>% filter(dataset == "Niwot_1")
+testdata_lm <- lm(N_conc_percent ~ slow.P_conc_mg.kg, data = testdata)
+summary(testdata_lm)
+tab_model(testdata_lm)
+
+# END CODE ELLERY IS EDITING 
+
+
+# SIMPLE LINEAR REGRESSIONS BY SITE OF TOTAL P VS TOTAL N
+
+# This code produces a summary table with the slope and p-value for each dataset, doing a simple linear model
 # Write 1-2 sentences in results section just summarizing this table (put table in appendix and reference)
+# creates empty summary table
 sum_table<-data.frame(matrix(nrow=length(unique(cores$dataset)),ncol=3)) 
 names(sum_table) <- c('dataset', 'Total_P.N_slope', 'Total_P.N_.pvalue')
+# making copy of cores dataset
 cores_totalP<-cores
+# filter out missing total P or N observations
 cores_totalP<-subset(cores_totalP,is.na(total.P_conc_mg.kg)==F) # keep rows where total P is not not na 
 cores_totalP<-subset(cores_totalP,is.na(N_conc_percent)==F) # same for total N
 cores_totalP<-subset(cores_totalP,lter!="CDR")#remove CDR because only 1 observation
@@ -687,7 +868,9 @@ for(i in 1:max(site_slowP$set)){
 }
 Final_table<-merge(Final_table,sum_table,all.x = T)   
 
-
+## ------------------------------------------ ##
+# Moving previous code down here that we don't need for now 5/12/24 EV  -----
+## ------------------------------------------ ##
 
 # LOWERING CODE WE DONT NEED FOR NOW
 # mean 
