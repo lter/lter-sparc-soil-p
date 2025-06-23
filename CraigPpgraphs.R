@@ -246,7 +246,7 @@ TotalN_SlowPfig <- ggplot(data = dataset_means_slowP,
     legend.background = element_rect(fill = "white", color = "black", size = 0.5),
     panel.grid = element_blank() ) 
     
-ggsave(plot = TotalN_SlowPfig, filename = "figures/TotalN_SlowPfig_dataset.5.30.png", width = 15, height = 10)
+ggsave(plot = TotalN_SlowPfig, filename = "figures/TotalN_SlowPfig_dataset.6.20.png", width = 15, height = 10)
 
 SlowP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_slowP)
 summary(SlowP_dataset_lm)
@@ -303,7 +303,7 @@ comb <- cowplot::plot_grid(TotalN_TotalPfig,TotalN_SlowPfig)
 
 # controls_y_FIXED <- cowplot::plot_grid(group1_fig_F, group2_fig_F, group3_fig_F, group4_fig_F)
 
-ggsave(plot = comb, filename = "figures/CrossSite_Figure.5.30.png", width = 11, height = 5)
+ggsave(plot = comb, filename = "figures/CrossSite_Figure.6.20.png", width = 11, height = 5)
 
 
 TotalN_TotalPfig_dataset_log <- ggplot(data = dataset_means_totalP,
