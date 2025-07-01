@@ -126,12 +126,13 @@ dataset_means_slowP <- site_slowP %>%
 
 ## SELECTING ONLY THE SITES WHERE WE HAVE SLOW P (AND REMOVING FCE AND TOOLIK 1)
 dataset_means_slowP <- dataset_means_slowP %>% 
-  filter(dataset %in% c("Calhoun","Niwot_1","Sevilleta_1","Coweeta","Hubbard Brook","Luquillo_2","Niwot_2","Konza_1","HJ_Andrews_1","CedarCreek","Jornada_2","Luquillo_3","Tapajos","Niwot_5","Konza_2","Smokey Valley","Hays","Arikaree") )
+  filter(dataset %in% c("Calhoun","Niwot_1","Sevilleta_1","Coweeta","Hubbard Brook","Luquillo_2","Niwot_2","Konza_1","HJ_Andrews_1","CedarCreek","Jornada_2","Tapajos","Niwot_5","Konza_2","Smokey Valley","Hays","Arikaree") )
 
 # MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
 # Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
-dataset_means_slowP <- dataset_means_slowP %>% 
-  mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
+# Getting rid of this 7/1/25 because fixed unit conversion in raw dataset 
+# dataset_means_slowP <- dataset_means_slowP %>% 
+#   mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
 
 # Grouping site Slow P dataset by SITE and adding columns for mean, standard deviation and standard error for N and P 
 site_means_slowP <- site_slowP %>% 
@@ -147,8 +148,9 @@ site_means_slowP <- site_slowP %>%
 site_means_slowP <- site_means_slowP %>% 
   filter(dataset %in% c("Calhoun","Niwot_1","Sevilleta_1","Coweeta","Hubbard Brook","Luquillo_2","Niwot_2","Konza_1","HJ_Andrews_1","CedarCreek","Jornada_2","Luquillo_3","Tapajos","Niwot_5","Konza_2","Smokey Valley","Hays","Arikaree") )
 
-site_means_slowP <- site_means_slowP %>% 
-  mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
+# Getting rid of this 7/1/25 because fixed unit conversion in raw dataset 
+# site_means_slowP <- site_means_slowP %>% 
+#   mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
 
 ## TOTAL P SUMMARIZED AND SITE SELECTED DATASETS 
 dataset_means_totalP <- site_totalP %>% 
@@ -171,8 +173,9 @@ dataset_means_totalP <- dataset_means_totalP %>%
 
 # MANUALLY CHANGING SEV 1 TOTAL N MEAN FOR NOW, NEED TO DISCUSS WITH ANNE FINAL SOLUTION
 # Sev total N mean of grasslands and shrub sites from Anne's thesis = 0.055
-dataset_means_totalP <- dataset_means_totalP %>% 
-  mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
+# Getting rid of this 7/1/25 because fixed unit conversion in raw dataset 
+# dataset_means_totalP <- dataset_means_totalP %>% 
+#   mutate(mean_N = ifelse(dataset == "Sevilleta_1",0.055,mean_N))
 
 site_means_totalP <- site_totalP %>% 
   select(dataset,site,N_conc_percent,total.P_conc_mg.kg) %>% 
@@ -246,12 +249,15 @@ TotalN_SlowPfig <- ggplot(data = dataset_means_slowP,
     legend.background = element_rect(fill = "white", color = "black", size = 0.5),
     panel.grid = element_blank() ) 
     
-ggsave(plot = TotalN_SlowPfig, filename = "figures/TotalN_SlowPfig_dataset.6.20.png", width = 15, height = 10)
+ggsave(plot = TotalN_SlowPfig, filename = "figures/TotalN_SlowPfig_dataset.7.1.png", width = 15, height = 10)
 
 SlowP_dataset_lm <- lm(mean_N ~ mean_P, data = dataset_means_slowP)
 summary(SlowP_dataset_lm)
 tab_model(SlowP_dataset_lm)
 
+SlowP_dataset_ExpM <- nls(mean_N ~ exp(-k*mean_P), start = list(k=0.5), data = dataset_means_slowP)
+summary(SlowP_dataset_ExpM)
+tab_model(SlowP_dataset_ExpM)
 
 
 dataset_means_totalP <- dataset_means_totalP %>% 
@@ -303,7 +309,7 @@ comb <- cowplot::plot_grid(TotalN_TotalPfig,TotalN_SlowPfig)
 
 # controls_y_FIXED <- cowplot::plot_grid(group1_fig_F, group2_fig_F, group3_fig_F, group4_fig_F)
 
-ggsave(plot = comb, filename = "figures/CrossSite_Figure.6.20.png", width = 11, height = 5)
+ggsave(plot = comb, filename = "figures/CrossSite_Figure.7.1.png", width = 11, height = 5)
 
 
 TotalN_TotalPfig_dataset_log <- ggplot(data = dataset_means_totalP,
@@ -377,6 +383,21 @@ SlowPfig_dataset2 <- ggplot(data = subset(dataset_means_slowP, dataset != "Niwot
 ratio_dataset_lm <- lm(mean_N ~ mean_ratio, data = dataset_means_slowP)
 summary(ratio_dataset_lm)
 tab_model(ratio_dataset_lm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### END of Figure 1 ###
 
 # + 
 #   scale_color_gradientn(colours = rainbow(5))
